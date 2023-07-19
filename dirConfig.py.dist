@@ -1,0 +1,3 @@
+srcDir = "/tmp/to_encode/"
+encDir = "/tmp/encoding/"
+outDir = "/tmp/encoded/"
