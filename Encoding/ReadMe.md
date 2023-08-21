@@ -23,3 +23,16 @@ ffmpeg -i test.mkv -c:v hevc_nvenc -crf 20 -keyint 240 -pix_fmt yuv420p10le test
 
 
 ffmpeg -i test.mkv testsrtlaopus111.mkv
+
+
+
+---
+
+
+
+
+for filename in os.listdir(path):
+    if (filename.endswith(".mp4")): #or .avi, .mpeg, whatever.
+        os.system(f'ffmpeg -i {filename} -f image2 -vf fps=fps=1 output%d.png')
+    else:
+        continue
