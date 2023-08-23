@@ -1,0 +1,32 @@
+import subprocess
+
+process = subprocess.Popen(
+    ['ffmpeg', '--help'],
+    stderr=subprocess.PIPE,
+    text=True,
+)
+
+print(process.stderr.read())
+
+
+
+
+import subprocess
+
+command = subprocess.Popen(
+    ['ffmpeg',
+     '-i', 'test.mkv',
+     '-vcodec', 'libsvtav1',
+     '-crf', '20',
+     '-preset', '5',
+     '-g', '240',
+     '-pix_fmt', 'yuv420p10le',
+     '-c:s', 'srt',
+     '-c:a', 'libopus',
+     'pythontest.mkv'],
+    stderr=subprocess.PIPE,
+    text=True)
+
+print(command.stderr.read())
+
+
