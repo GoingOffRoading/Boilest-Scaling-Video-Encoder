@@ -26,3 +26,7 @@ Hypothedically:
 * Worker logs job stats (file name, before size, after size, vmaf score)
 
 None of this works today
+
+# What is in this repo today?
+
+Little bits of code that work, and me struggling with the basics to glue it all together
