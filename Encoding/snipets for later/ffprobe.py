@@ -1,63 +1,34 @@
-ffprobe -v quiet -print_format json -show_format -show_streams test.mkv
-
-
- ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of json test.mkv
-
-
-
-
-import subprocess as sp
-import shlex
-import json
-
-video = 'test.mkv'
-
-# Execute ffprobe (to show streams), and get the output in JSON format
-data = sp.run(shlex.split(f'ffprobe -loglevel error -show_streams -of json {video}'), capture_output=True).stdout
-
-# Convert data from JSON string to dictionary
-d = json.loads(data)
-
-#print(d['codec_name'])
-print(json.dumps(d, indent = 4, sort_keys=True))
-
-
-
-
-
-
-
-
 import subprocess as sp
 import shlex
 import json
 
 video = 'pythontest.mkv'
 
-# Execute ffprobe (to show streams), and get the output in JSON format
-data = sp.run(shlex.split(f'ffprobe -loglevel error -show_streams -of json {video}'), capture_output=True).stdout
+# Execute ffprobe and get the codec of the first video, audio, and subtitle stream
+vcodec = sp.run(shlex.split(f'ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 {video}'), capture_output=True).stdout
+acodec = sp.run(shlex.split(f'ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 {video}'), capture_output=True).stdout
+scodec = sp.run(shlex.split(f'ffprobe -v error -select_streams s:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 {video}'), capture_output=True).stdout
 
+# Same as above, but outputs a larger object as json
+# I abandoned this approach as it was too dificult to loop through the JSON to find the first stream of each codec type (vido, audio, subtitle)
+# This would be ideal, as it reduces the file calls from three to one, so lets call this a someday task
+#data = sp.run(shlex.split(f'ffprobe -loglevel error -show_streams -of json {video}'), capture_output=True).stdout
 # Convert data from JSON string to dictionary
-d = json.loads(data)
-
+#d = json.loads(data)
 # Uncoment these for diagnostics
-#print(d['codec_name'])
-#print(json.dumps(d, indent = 4, sort_keys=True))
-
 # Get codecs
-#print({d["streams"][0]["codec_name"]})
-#print({d["streams"][0]["pix_fmt"]})
-#print({d["streams"][1]["codec_name"]})
-#print({d["streams"][2]["codec_name"]})
+#video_codec = ({d["streams"][0]["codec_name"]})
+#audio_codec = ({d["streams"][1]["codec_name"]})
+#subtitle_format = ({d["streams"][2]["codec_name"]})
 
-video_codec = ({d["streams"][0]["codec_name"]})
-video_format =({d["streams"][0]["pix_fmt"]})
-audio_codec = ({d["streams"][1]["codec_name"]})
-subtitle_format = ({d["streams"][2]["codec_name"]})
+vc = vcodec.decode('utf-8')
+ac = acodec.decode('utf-8')
+sc = scodec.decode('utf-8')
 
-if (video_codec) == {'av1'} and video_format == {'yuv420p10le'} and audio_codec == {'opus'} and subtitle_format == {'subrip'}:
-    print ('all done')
-else:
-    print ('f')
+if vc == 'av1':
+    print ('done')
+else if 
     
-    print(json.dumps(d, indent = 4, sort_keys=True))
+    
+else:
+    print ('not AV1')
