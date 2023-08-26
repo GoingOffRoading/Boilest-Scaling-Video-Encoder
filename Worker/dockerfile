@@ -7,6 +7,10 @@ RUN apk add --no-cache ffmpeg
 RUN apk add --no-cache python3 py3-pip
 RUN pip install --no-cache-dir celery
 
+RUN mkdir -p /boil_watch
+RUN mkdir -p /boil_transcode
+RUN mkdir -p /boil_hold
+
 COPY ./tasks.py /
 CMD ["celery", "-A", "tasks", "worker", "-l", "INFO"]
 

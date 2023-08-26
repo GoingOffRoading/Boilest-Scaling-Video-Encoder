@@ -1,6 +1,6 @@
 import os
 # traverse whole directory
-for root, dirs, files in os.walk(r'\\192.168.1.200\Hephaestus\Media'):
+for root, dirs, files in os.walk(r'\boil_watch'):
     # select file name
     for file in files:
         # check the extension of files
