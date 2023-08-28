@@ -8,12 +8,10 @@ RUN apk add --no-cache python3 py3-pip
 RUN pip install --no-cache-dir celery
 
 RUN mkdir -p /boil_watch
-RUN mkdir -p /boil_transcode
 RUN mkdir -p /boil_hold
 
 RUN mkdir -p /boilest
 COPY /scripts /boilest
 WORKDIR "/boilest"
 CMD ["celery", "-A", "tasks", "worker", "-l", "INFO"]
-
 #ENTRYPOINT ["/entrypoint"]

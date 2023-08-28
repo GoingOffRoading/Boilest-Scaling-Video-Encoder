@@ -29,7 +29,7 @@ encode = str()
 
 if vcodec != 'av1':
     print (video + ' is not AV1')
-    encode = encode + '-c:v libsvtav1 -crf 20 -preset 5 -g 240 -pix_fmt yuv420p10le'
+    encode = encode + '-c:v libsvtav1 -crf 20 -preset 4 -g 240 -pix_fmt yuv420p10le'
 
 if acodec != 'opus':
     print (video + ' is not OPUS')
