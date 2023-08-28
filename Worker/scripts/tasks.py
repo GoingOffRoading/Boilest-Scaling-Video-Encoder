@@ -13,7 +13,7 @@ app = Celery('tasks', backend = 'rpc://test:test@192.168.1.110:31672/celery', br
 def add(x, y):
     return x + y
 
-def scan(DIRECTORY):
+def ffscan(DIRECTORY):
     findmedia(DIRECTORY)
 
 def ffprobe(FILEPATH):
