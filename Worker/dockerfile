@@ -11,7 +11,9 @@ RUN mkdir -p /boil_watch
 RUN mkdir -p /boil_transcode
 RUN mkdir -p /boil_hold
 
-COPY ./tasks.py /
+RUN mkdir -p /boilest
+COPY /scripts /boilest
+WORKDIR "/boilest"
 CMD ["celery", "-A", "tasks", "worker", "-l", "INFO"]
 
 #ENTRYPOINT ["/entrypoint"]
