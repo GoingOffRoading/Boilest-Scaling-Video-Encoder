@@ -1,4 +1,5 @@
 import os
+from tasks import ffprobe
 
 def findmedia(DIRECTORY):
     print('Going to start scanning ' + DIRECTORY)

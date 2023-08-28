@@ -1,6 +1,7 @@
 import subprocess as sp
 import shlex
 import json
+from tasks import ffencode  
 
 def ffprober(FILEPATH):
     # Execute ffprobe and get the codec of the first FILEPATH, audio, and subtitle stream
