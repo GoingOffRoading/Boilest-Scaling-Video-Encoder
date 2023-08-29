@@ -1,6 +1,6 @@
 import subprocess
 
-def ffstatrecorder(FILEPATH)
+def ffstatrecorder(FILEPATH):
     command = subprocess.Popen(
         ['ffmpeg',
         '-i', 'test.mkv',

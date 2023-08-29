@@ -13,7 +13,7 @@ app = Celery('tasks', backend = 'rpc://test:test@192.168.1.110:31672/celery', br
 def add(x, y):
     return x + y
 
-def scan(DIRECTORY):
+def fffind(DIRECTORY):
     findmedia(DIRECTORY)
 
 def ffprobe(FILEPATH):
@@ -22,7 +22,7 @@ def ffprobe(FILEPATH):
 def ffencode(FILEPATH, ENCODESTRING):
     ffencoder(FILEPATH, ENCODESTRING)
 
-def ffstats(FILEPATH, FILENAME, STARTSZIE, ENDSIZE, VMAF):
+def ffstatrecorde(FILEPATH, FILENAME, STARTSZIE, ENDSIZE, VMAF):
     ffstatrecorder(FILEPATH, FILENAME, STARTSZIE, ENDSIZE, VMAF)
 
 

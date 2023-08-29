@@ -4,6 +4,7 @@ import json
 
 def ffprober(FILEPATH):
     # Execute ffprobe and get the codec of the first FILEPATH, audio, and subtitle stream
+   
     container = sp.run(shlex.split(f'ffprobe -v quiet -show_entries format=format_name -of default=noprint_wrappers=1:nokey=1 {FILEPATH}'), capture_output=True).stdout.decode('utf8').strip()       
     vcodec = sp.run(shlex.split(f'ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 {FILEPATH}'), capture_output=True).stdout.decode('utf8').strip()
     acodec = sp.run(shlex.split(f'ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 {FILEPATH}'), capture_output=True).stdout.decode('utf8').strip()
@@ -27,15 +28,15 @@ def ffprober(FILEPATH):
     encode = str()
 
     if vcodec != 'av1':
-        print (FILEPATH + ' is not AV1')
+        print (FILEPATH + ' is using ' + vcodec + ', not AV1')
         encode = encode + '-c:v libsvtav1 -crf 20 -preset 4 -g 240 -pix_fmt yuv420p10le'
 
     if acodec != 'opus':
-        print (FILEPATH + ' is not OPUS')
+        print (FILEPATH + ' is using ' + acodec + ', not OPUS')
         encode = encode + '-c:a libopus'
         
     if scodec != 'subrip':
-        print (FILEPATH + ' is not SRT')
+        print (FILEPATH + ' is using ' + scodec + ', not SRT')
         encode = encode + '-c:s srt'
 
     # Now lets determine if we should pass a FILEPATH file to the next step, and what that step will cover

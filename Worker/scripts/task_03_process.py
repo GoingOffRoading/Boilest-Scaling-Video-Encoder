@@ -1,6 +1,6 @@
 import subprocess
 
-def ffencoder(FILEPATH)
+def ffencoder(FILEPATH):
     command = subprocess.Popen(
         ['ffmpeg',
         '-i', FILEPATH,
