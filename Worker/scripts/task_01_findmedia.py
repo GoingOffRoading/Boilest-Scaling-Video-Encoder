@@ -10,3 +10,6 @@ def findmedia(DIRECTORY):
             if file.endswith('.mkv') or file.endswith('.mp4'):
                 # print whole path of files
                 print(os.path.join(root, file))
+                FILEPATH = os.path.join(root, file)
+                return FILEPATH
+
