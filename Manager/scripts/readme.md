@@ -5,6 +5,10 @@ This is the Boilest workflow, and work that is currently outstanding
 # Phase One - Basics
 Phase one is a basic working pipeline
 
+## Start UI
+
+- [ ] Start Flower
+
 ## Start workflow 
 
 - [ ] Cron that checks the queue, and injects the find_files task if the queue is empty
@@ -29,6 +33,9 @@ Phase two will bring three major pieces to the workflow:
 - Configuration based
 - Logging to container
 - Writing results to SQL
+- Container startup starts jobs based on container config
+
+## Start UI
 
 ## Start workflow 
 
@@ -60,6 +67,12 @@ Phase two will bring three major pieces to the workflow:
 - Add a GUI via Django
 - Create the plugin templte in Github
 - Optimize the functions
+
+## Start UI
+
+- [ ] Add Django to the repo
+- [ ] Add a UI element to determine how many jobs are in the queue
+- [ ] Add a UI element to query how much data has been saved
 
 ## Start workflow 
 
