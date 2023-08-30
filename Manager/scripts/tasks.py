@@ -25,6 +25,11 @@ def ffencode(FILEPATH, ENCODESTRING):
 def ffstatrecorde(FILEPATH, FILENAME, STARTSZIE, ENDSIZE, VMAF):
     ffstatrecorder(FILEPATH, FILENAME, STARTSZIE, ENDSIZE, VMAF)
 
+def ffchain(DIRECTORY):
+    # fetch_page -> parse_page -> store_page
+    chain = fffind(DIRECTORY) | ffprobe(FILEPATH) 
+    chain()
+
 
     
 
