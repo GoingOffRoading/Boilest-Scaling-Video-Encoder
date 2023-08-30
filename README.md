@@ -1,8 +1,16 @@
 # Boilest
 
-Boilest, the result of a terrible random name generator, is taking a stab at a Docker/Kubernetes native distribued video encoding platform.
+Boilest is my solution to:
 
-# What about Tdarr or Unmanic?
+- Having video media in lots of different formats, but wanting to consolidate it into one format
+- Having video media consume a lot of disk space, and desiring to compress it
+- Wanting to do this work at scale
+
+# Why 'Boilest'?
+
+Because I am terrible at naming things, and it was the first agreeable thing to come out of a random name generator.
+
+# What about Tdarr, Unmanic, or other existing distributed solutions??
 
 [Tdarr](https://home.tdarr.io/) is a great platform, but didn't setup or scale as well as I would have liked.  I also found it dificult to under documented, closed source, had some design oddities, and hid features behind a paywall.
 
@@ -11,6 +19,14 @@ As frenzied as Tdarr fans are on Reddit, I just can't commit/subscribe to a serv
 [Unmanic](https://github.com/Unmanic/unmanic/tree/master) is magic...  I am a big fan, and Unmanuc is comftorably the inspiration of this project.
 
 I would be using Unmanic today, instead of writing spagetti code, but Josh5 has [hardcoded the platform on an older version of FFmpeg](https://github.com/Unmanic/unmanic/blob/master/docker/Dockerfile#L82), doesn't currently support AV1, [has some complexities to build the container](https://github.com/Unmanic/unmanic/blob/master/docker/README.md) that make it dificult to code my own support, and doesn't seem to be keeping up on the repo or accepting PRs.
+
+# Why not Handbrake?
+
+Handbrake is awesome, but:
+
+- It's not distributed
+- It's 'watch folder' functionality doesn't do any file checking, sorting, or filtering to decide if it should actually process a file
+- Does not have the functionality for monitoring an existing media collection
 
 # How does Boilest work?
 
