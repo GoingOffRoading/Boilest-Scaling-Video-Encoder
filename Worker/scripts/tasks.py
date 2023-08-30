@@ -1,6 +1,7 @@
 from celery import Celery
 import os
 from subprocess import call
+from task_01_findmedia import fffinder
 import subprocess as sp
 import shlex
 import json
@@ -9,8 +10,6 @@ import json
 app = Celery('tasks', backend = 'rpc://test:test@192.168.1.110:31672/celery', broker = 'amqp://test:test@192.168.1.110:31672/celery')
 
 @app.task
-
-# The firt task searches the directory looking for files
 def fffinder(DIRECTORY):
     print('Going to start scanning ' + DIRECTORY)
     # traverse whole directory
@@ -24,7 +23,7 @@ def fffinder(DIRECTORY):
                 FILEPATH = os.path.join(root, file)
                 ffprober.delay(FILEPATH)
 
-
+@app.task
 def ffprober(FILEPATH):
     # Execute ffprobe and get the codec of the first FILEPATH, audio, and subtitle stream
    
@@ -63,14 +62,16 @@ def ffprober(FILEPATH):
         job = {'file':FILEPATH, 'encode_string':encode}
         jobjson = json.dumps(job)
         print(jobjson)
-        
 
-def ffencode(FILEPATH, ENCODESTRING):
-    ffencoder(FILEPATH, ENCODESTRING)
+@app.task
+def ffencode(jobjson):
+    print('ntohing')
 
+@app.task
 def ffstatrecorde(FILEPATH, FILENAME, STARTSZIE, ENDSIZE, VMAF):
     ffstatrecorder(FILEPATH, FILENAME, STARTSZIE, ENDSIZE, VMAF)
 
+@app.task
 def ffchain(DIRECTORY):
     # fetch_page -> parse_page -> store_page
     chain = fffind(DIRECTORY) | ffprobe(FILEPATH) 

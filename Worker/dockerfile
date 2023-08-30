@@ -13,7 +13,9 @@ RUN mkdir -p /boil_hold
 RUN mkdir -p /boilest
 COPY /scripts /boilest
 WORKDIR "/boilest"
-CMD ["celery", "-A", "tasks", "worker", "-l", "INFO"]
 
-ENTRYPOINT [ "/bin/sh" ]
-CMD [ "/boilest/scripts/celery.sh" ]    
+#ENTRYPOINT [ "/bin/sh" ]
+#CMD [ "/boilest/celery.sh" ]    
+
+
+CMD ["celery", "-A", "tasks.app", "worker", "-l", "INFO"]

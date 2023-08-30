@@ -1,6 +1,6 @@
 import os
 
-def findmedia(DIRECTORY):
+def fffinder(DIRECTORY):
     print('Going to start scanning ' + DIRECTORY)
     # traverse whole directory
     for root, dirs, files in os.walk(DIRECTORY):
@@ -11,5 +11,5 @@ def findmedia(DIRECTORY):
                 # print whole path of files
                 print(os.path.join(root, file))
                 FILEPATH = os.path.join(root, file)
-                return FILEPATH
+                ffprober.delay(FILEPATH)
 
