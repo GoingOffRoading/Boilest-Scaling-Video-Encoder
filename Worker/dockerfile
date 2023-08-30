@@ -14,4 +14,6 @@ RUN mkdir -p /boilest
 COPY /scripts /boilest
 WORKDIR "/boilest"
 CMD ["celery", "-A", "tasks", "worker", "-l", "INFO"]
-#ENTRYPOINT ["/entrypoint"]
+
+ENTRYPOINT [ "/bin/sh" ]
+CMD [ "/boilest/scripts/celery.sh" ]    
