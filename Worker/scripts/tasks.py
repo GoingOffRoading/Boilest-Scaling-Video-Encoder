@@ -51,10 +51,10 @@ def ffprober(FILEPATH):
         encode = encode + ' -c:v libsvtav1 -crf 20 -preset 4 -g 240 -pix_fmt yuv420p10le'
     if acodec != 'opus':
         print (FILEPATH + ' is using ' + acodec + ', not OPUS')
-        encode = encode + ' -c:a libopus,'
+        encode = encode + ' -c:a libopus'
     if scodec != 'subrip':
         print (FILEPATH + ' is using ' + scodec + ', not SRT')
-        encode = encode + ' -c:s srt,'
+        encode = encode + ' -c:s srt'
     # Now lets determine if we should pass a FILEPATH file to the next step, and what that step will cover
     if container == 'matroska,webm' and vcodec == 'av1' and acodec == 'opus' and scodec == 'subrip': 
         print (FILEPATH + ' is using all of the correct containers and codecs')
@@ -80,17 +80,18 @@ def ffencode(JOBJSON):
     ffmpeg_string = 'ffmpeg -hide_banner -loglevel 16 -stats -i ' + input_file + ffmpeg_string + ' /boil_hold/'+ file_name + '.mkv'
     print (ffmpeg_string)
 
-    os.system(ffmpeg_string)
+    ffmpeg_string = ffmpeg_string.split()
+    print (ffmpeg_string)
+
+    process = subprocess.Popen(
+        ffmpeg_string,
+        stderr=subprocess.PIPE,
+        text=True,
+        bufsize=0)
+    # bufsize = 1 to stream output 
+    # https://stackoverflow.com/questions/3991104/very-large-input-and-piping-using-subprocess-popen
     
-    #process = subprocess.Popen(
-    #    ffmpeg_string,
-    #    stderr=subprocess.PIPE,
-    #    text=True)
-        
-    #for line in process.stdout:
-    #    print(line)
-    
-    #print(process.stderr.read())
+    print(process.stderr.read())
 
 
 

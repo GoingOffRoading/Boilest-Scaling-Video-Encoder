@@ -1,11 +1,13 @@
 FROM alpine
+#FROM jrottenberg/ffmpeg:snapshot-ubuntu
 
 RUN apk update
 RUN apk upgrade
 RUN apk add --no-cache ffmpeg
 
 RUN apk add --no-cache python3 py3-pip
-RUN pip install --no-cache-dir celery
+RUN pip install --no-cache-dir celery flower
+
 
 RUN mkdir -p /boil_watch
 RUN mkdir -p /boil_hold
@@ -18,4 +20,4 @@ WORKDIR "/boilest"
 #CMD [ "/boilest/celery.sh" ]    
 
 
-CMD ["celery", "-A", "tasks.app", "worker", "-l", "INFO"]
+CMD ["celery", "-A", "tasks", "worker", "-l", "INFO"]
