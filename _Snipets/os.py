@@ -18,3 +18,11 @@ os.system(cmd)
 
 
 ffmpeg -i distorted.mp4 -i original.mp4 -filter_complex libvmaf -f null -
+
+
+>>> mystr = "abcdefghijkl"
+>>> mystr[-4:]
+'ijkl'
+
+https://stackoverflow.com/questions/7983820/get-the-last-4-characters-of-a-string
+
