@@ -14,3 +14,7 @@ cmd = 'ffmpeg -r 24 -i test.mkv -r 24 -i testsrtlaopus111.mkv -lavfi libvmaf="n_
   
 # Using os.system() method
 os.system(cmd)
+
+
+
+ffmpeg -i distorted.mp4 -i original.mp4 -filter_complex libvmaf -f null -
