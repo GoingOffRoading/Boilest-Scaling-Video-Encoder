@@ -1,4 +1,5 @@
 {
+    "config_name": "default",
     "watch_folder": "/boil_watch",
     "container": "MKV",
     "container_ffmpeg_string": "matroska,webm",
