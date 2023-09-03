@@ -1,6 +1,5 @@
 from celery import Celery
 import os
-from subprocess import call
 from task_01_findmedia import fffinder
 import subprocess
 import shlex
