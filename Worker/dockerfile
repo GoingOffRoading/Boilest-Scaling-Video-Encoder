@@ -20,4 +20,6 @@ WORKDIR "/boilest"
 #CMD [ "/boilest/celery.sh" ]    
 
 
-CMD ["celery", "-A", "tasks", "worker", "--concurrency", "1","-l", "INFO"]
+CMD ["celery", "-A", "tasks", "worker", "-l", "INFO"]
+
+# "--concurrency", "1",
