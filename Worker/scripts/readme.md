@@ -17,11 +17,12 @@ Phase one is a basic working pipeline
 ## Determine if the Media File needs to be prpocessed
 
 - [x] Function that calls FFprobe for the file, and determines next step
-- [ ] For each file, calls the next step
+- [x] For each file, calls the next step
 
 ## Process the file
 
-- [ ] Function that calls FFmpeg and processes the file
+- [x] Function that calls FFmpeg and processes the file
+- [ ] Function that moves the encoded file into the source and deletes the soure file
 
 # Phase Two - Configuration & Logging
 Phase two will bring three major pieces to the workflow:
@@ -48,6 +49,7 @@ Phase two will bring three major pieces to the workflow:
 ## Process the file
 
 - [ ] Posts events to teh container
+- [ ] File validation
 - [ ] Pass JSON to the write SQL step
 
 ## Write to the SQL

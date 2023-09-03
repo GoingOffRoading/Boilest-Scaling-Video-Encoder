@@ -88,10 +88,24 @@ def ffencode(JOBJSON):
         stderr=subprocess.PIPE,
         text=True,
         bufsize=0)
-    # bufsize = 1 to stream output 
-    # https://stackoverflow.com/questions/3991104/very-large-input-and-piping-using-subprocess-popen
-    
+
     print(process.stderr.read())
+
+    # Going to redo this later
+    # Need to add data validations
+
+    if os.path.exists('/boil_hold/' + file_name) and os.path.exists(input_file):
+        print('Original and Encoded Files Exists')
+        time.sleep(1)
+        print('Removing the original file from ' + file)
+        os.remove(file) 
+        time.sleep(1)
+        print('Moving the encoded file')
+        os.rename('./boil_hold/' + file, file)
+        print ('Done')    
+    else:
+         print("Something Broke")
+
 
 
 
