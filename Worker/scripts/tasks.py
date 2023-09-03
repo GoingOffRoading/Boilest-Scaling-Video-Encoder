@@ -92,9 +92,13 @@ def ffencode(JOBJSON):
     # Going to redo this later
     # Need to add data validations
 
-    if os.path.exists('/boil_hold/' + file_name) and os.path.exists(input_file):
+    if os.path.exists('/boil_hold/' + file_name + '.mkv') and os.path.exists(input_file):
         print('Original and Encoded Files Exists')
         time.sleep(1)
+        file_stats = os.stat(input_file)
+        print(f'Original file Size in MegaBytes is {file_stats.st_size / (1024 * 1024)}') 
+        file_stats2 = os.stat('/boil_hold/'+ file_name + '.mkv')
+        print(f'Encoded file Size in MegaBytes is {file_stats2.st_size / (1024 * 1024)}') 
         print('Removing the original file from ' + file)
         os.remove(file) 
         time.sleep(1)
