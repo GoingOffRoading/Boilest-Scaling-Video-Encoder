@@ -1,2 +1,4 @@
-json_file = f'/boilest/worker v2/templatesAV1.json'
-finder(json_file)
+json_file = f'C:\\Users\\Chase\\media\\Newfolder\\AV1.json'
+mygenerator = finder(json_file) 
+for finder_data in mygenerator:
+    print(finder_data)
