@@ -1,0 +1,14 @@
+{
+  "config_name": "default",
+  "ffmpeg_audio_codec": "OPUS",
+  "ffmpeg_audio_string": "-c:a libopus",
+  "ffmpeg_container": "MKV",
+  "ffmpeg_container_string": "matroska,webm",
+  "ffmpeg_subtitle_format": "SRT",
+  "ffmpeg_subtitle_string": "-c:s srt",
+  "ffmpeg_video_codec": "AV1",
+  "ffmpeg_video_string": "-c:v libsvtav1 -crf 20 -preset 4 -g 240 -pix_fmt yuv420p10le",
+  "file_name": "testsrtlaopusasd.mkv",
+  "file_path": "C:\\Users\\Chase\\media\\Newfolder\\boil_watch\\asd asd",
+  "watch_folder": "C:\\Users\\Chase\\media\\Newfolder"
+}
