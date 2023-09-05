@@ -8,5 +8,6 @@
     "audio_codec": "OPUS",
     "audio_ffmpeg_string": "-c:a libopus",
     "subtitle_format": "SRT",
-    "subtitle_ffmpeg_string": "-c:s srt"
+    "subtitle_ffmpeg_string": "-c:s srt",
+    "ffmpeg_settings": "-hide_banner -loglevel 8 -stats"
   }
