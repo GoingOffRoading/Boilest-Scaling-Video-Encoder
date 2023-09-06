@@ -45,9 +45,6 @@ def probe_file(filename):
             break
     #print(original_audio_codec)
     
-    
-    
-    
     # Here we check the output of ffprobe against the configurations for the library
     # See the template.json
     
