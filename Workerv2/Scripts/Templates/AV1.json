@@ -1,6 +1,6 @@
 {
   "config_name": "default",
-  "watch_folder": "C:\\Users\\Chase\\media\\Newfolder",
+  "watch_folder": "/boil_watch",
   "ffmpeg_container": "MKV",
   "ffmpeg_container_string": "matroska,webm",
   "ffmeg_container_extension":"mkv",

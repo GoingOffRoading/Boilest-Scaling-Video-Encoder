@@ -1,5 +1,5 @@
 import  json, subprocess, os
-def probe_file(filename):
+def fprober(ffinder_json):
     
     # Uncomment to see the incoming JSON
     #print(json.dumps(filename, indent=3, sort_keys=True))
@@ -78,10 +78,10 @@ def probe_file(filename):
     else:
         print (ffprobe_path + ' is going to have to be processed by FFmpeg')
         ffmpeg_json = {'ffmpeg_encoding_string':encode}
-        finder_data.update(ffmpeg_json)
-        finder_data.update(filename) 
-        print(json.dumps(finder_data, indent=3, sort_keys=True))
-        return finder_data
+        fprober_json.update(ffmpeg_json)
+        fprober_json.update(filename) 
+        print(json.dumps(fprober_json, indent=3, sort_keys=True))
+        return fprober_json
         
         
         

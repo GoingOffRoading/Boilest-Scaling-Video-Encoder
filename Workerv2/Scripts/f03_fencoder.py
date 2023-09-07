@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 import os
 
-def ffmpeger(ffmpeg_json):
+def fencoder(ffmpeg_json):
     
     print ('================= ffmpeger JSON inputs =================')
     print(json.dumps(ffmpeg_json, indent=3, sort_keys=True))
@@ -39,7 +39,7 @@ def ffmpeger(ffmpeg_json):
 
     #print (ffmpeg_command)
     print ('Please hold')
-    os.system(ffmpeg_command)
+    #os.system(ffmpeg_command)
     
     # Would love to revisit this as a subprocess, but was having issues getting everything to slice as desired
     #print ('=============== assembled ffmpeg command ===============')

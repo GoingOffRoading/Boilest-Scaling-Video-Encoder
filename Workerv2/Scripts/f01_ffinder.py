@@ -1,18 +1,15 @@
 import json
 import os
-import time
 
-def finder(json_file):
+def ffinder(json_template):
     # Need to change this line to be a variable passed to the function
     # I.E. Invoke the search based on feeding it a JSON
-    f = open(json_file)
-
+    #f = open(json_template)
     # returns JSON object as
     # a dictionary
-    data = json.load(f)
-
-    print (data)
-
+    #data = json.load(f)
+    #print (data)
+    print(json.dumps(json_template, indent=3, sort_keys=True))
     # Get the folder to scan
     directory = (data['watch_folder'])
 
@@ -25,7 +22,7 @@ def finder(json_file):
             # check the extension of files
             if file.endswith('.mkv') or file.endswith('.mp4'):
                 # append the desired fields to the original json
-                finder_data = {'file_path':root, 'file_name':file}
-                finder_data.update(data)      
-                print(json.dumps(finder_data, indent=3, sort_keys=True))
-                yield(finder_data)
+                ffinder_json = {'file_path':root, 'file_name':file}
+                ffinder_json.update(data)      
+                print(json.dumps(ffinder_json, indent=3, sort_keys=True))
+                yield(ffinder_json)
