@@ -1,6 +1,7 @@
 {
   "config_name": "default",
   "watch_folder": "/boil_watch",
+  "production_run": "yes",
   "ffmpeg_container": "MKV",
   "ffmpeg_container_string": "matroska,webm",
   "ffmeg_container_extension":"mkv",

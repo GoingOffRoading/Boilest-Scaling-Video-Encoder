@@ -155,8 +155,12 @@ def fencoder(fprober_json):
     print (ffmpeg_command)    
     print ('=============== Executing ffmpeg =======================')
 
-    print ('Please hold')
-    os.system(ffmpeg_command)
+    # We need to determine if this is a production run and run the function like normal
+    if (fprober_json["production_run"]) == 'yes':
+        print ('Please hold')
+        os.system(ffmpeg_command)
+    else:
+        print ('This is a test run, so lets maybe not polute production')
     
     # Would love to revisit this as a subprocess, but was having issues getting everything to slice as desired
     #print ('=============== assembled ffmpeg command ===============')
@@ -184,9 +188,15 @@ def fencoder(fprober_json):
         os.remove(ffmeg_input_file) 
         print('Moving ' + ffmpeg_output_file + ' to ' + ffmeg_input_file)
         shutil.move(ffmpeg_output_file, ffmeg_input_file)
-        print ('Done')    
+        print ('Done')
+        fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats}
+        fencoder_json.update(fprober_json) 
+        print(json.dumps(fencoder_json, indent=3, sort_keys=True))
+        #fencoder.delay(fencoder_json)
+
+            
     else:
-         print("Something Broke")
+         print("Either source or encoding is missing, so exiting")
 
 
 
