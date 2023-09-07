@@ -22,14 +22,14 @@ Phase one is a basic working pipeline
 ## Process the file
 
 - [x] Function that calls FFmpeg and processes the file
-- [ ] Function that moves the encoded file into the source and deletes the soure file
+- [x] Function that moves the encoded file into the source and deletes the soure file
 
 # Phase Two - Configuration & Logging
 Phase two will bring three major pieces to the workflow:
 
-- Configuration based
-- Logging to container
-- Writing results to SQL
+- [x] Configuration based
+- [ ] Logging to container
+- [ ] Writing results to SQL
 
 ## Start workflow 
 
@@ -45,6 +45,7 @@ Phase two will bring three major pieces to the workflow:
 
 - [ ] Appends found file to the JSON configuration
 - [ ] Posts events to teh container
+- [ ] Checkpoints to see if the file is valid
 
 ## Process the file
 
@@ -60,22 +61,3 @@ Phase two will bring three major pieces to the workflow:
 # Phase Three - GUI and Function Optimization
 TBD
 
-## Start workflow 
-
-- [ ] Optimize the function
-
-## Find Media Files
-
-- [ ] Optimize the function
-
-## Determine if the Media File needs to be prpocessed
-
-- [ ] Optimize the function
-
-## Process the file
-
-- [ ] Optimize the function
-
-## Write to the SQL
-
-- [ ] Optimize the function
