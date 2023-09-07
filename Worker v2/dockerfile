@@ -13,7 +13,7 @@ RUN mkdir -p /boil_watch
 RUN mkdir -p /boil_hold
 
 RUN mkdir -p /boilest
-COPY /scripts /boilest
+COPY /src /boilest
 WORKDIR "/boilest"
 
 #ENTRYPOINT [ "/bin/sh" ]
