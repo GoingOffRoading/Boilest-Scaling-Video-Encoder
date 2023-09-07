@@ -1,6 +1,6 @@
 from celery import Celery
 from pathlib import Path
-import json, subprocess, os
+import json, subprocess, os, shutil
 
 app = Celery('tasks', backend = 'rpc://test:test@192.168.1.110:31672/celery', broker = 'amqp://test:test@192.168.1.110:31672/celery')
 
@@ -26,6 +26,7 @@ def ffinder(json_template):
             # check the extension of files
             if file.endswith('.mkv') or file.endswith('.mp4'):
                 # append the desired fields to the original json
+                print ('================ media file located ================')
                 ffinder_json = {'file_path':root, 'file_name':file}
                 ffinder_json.update(json_template)      
                 print(json.dumps(ffinder_json, indent=3, sort_keys=True))
@@ -89,29 +90,29 @@ def fprober(ffinder_json):
     encode = str()
 
     # Determine if the container needs to be changed
-    if original_container != (ffinder_json["ffmpeg_container"]):
-        print (ffprobe_path + ' is using ' + original_container + ', not' + (ffinder_json["ffmpeg_container"]))
+    if original_container != (ffinder_json["ffmpeg_container_string"]):
+        print (ffprobe_path + ' is using ' + original_container + ', not ' + (ffinder_json["ffmpeg_container_string"]))
 
     # Determine if the video needs to be re-encoded
     if original_video_codec != (ffinder_json["ffmpeg_video_codec"]):
-        print (ffprobe_path + ' is using ' + original_video_codec + ', not' + (ffinder_json["ffmpeg_video_codec"]))
-        encode = encode + (ffinder_json["ffmpeg_video_string"])
+        print (ffprobe_path + ' is using ' + original_video_codec + ', not ' + (ffinder_json["ffmpeg_video_codec"]))
+        encode = encode + ' ' + (ffinder_json["ffmpeg_video_string"])
     
     # Determine if the audio needs to be re-encoded
     if original_audio_codec != (ffinder_json["ffmpeg_audio_codec"]):
         print (ffprobe_path + ' is using ' + original_audio_codec + ', not ' + (ffinder_json["ffmpeg_audio_codec"]))
-        encode = encode + (ffinder_json["ffmpeg_audio_string"])
+        encode = encode + ' ' + (ffinder_json["ffmpeg_audio_string"])
         
     # Determine if the subtitles needs to be re-formatted
     if ffmpeg_subtitle_format != (ffinder_json["ffmpeg_subtitle_format"]):
-        print (ffprobe_path + ' is using ' + original_subtitle_codec + ', not ' + (ffinder_json["ffmpeg_subtitle_format"]))
-        encode = encode + (ffinder_json["ffmpeg_subtitle_string"])  
+        print (ffprobe_path + ' is using ' + ffmpeg_subtitle_format + ', not ' + (ffinder_json["ffmpeg_subtitle_format"]))
+        encode = encode + ' ' + (ffinder_json["ffmpeg_subtitle_string"])  
     
     # Part 2 determines if the string is needed
-    if original_container == (ffinder_json["ffmpeg_container"]) and original_video_codec == (ffinder_json["ffmpeg_video_codec"]) and original_audio_codec == (filename["ffmpeg_audio_codec"]) and (filename["ffmpeg_subtitle_format"]): 
-        print (ffprobe_path + ' is using all of the correct containers and codecs')
+    if original_container == (ffinder_json["ffmpeg_container_string"]) and original_video_codec == (ffinder_json["ffmpeg_video_codec"]) and original_audio_codec == (ffinder_json["ffmpeg_audio_codec"]) and (ffinder_json["ffmpeg_subtitle_format"]): 
+        print ('============== ' + file_name + ' does not need encoding ==============')
     else:
-        print (ffprobe_path + ' is going to have to be processed by FFmpeg')
+        print ('============== ' + file_name + ' needs encoding ==============')
         fprober_json = {'ffmpeg_encoding_string':encode}
         fprober_json.update(ffinder_json) 
         print(json.dumps(fprober_json, indent=3, sort_keys=True))
@@ -149,14 +150,13 @@ def fencoder(fprober_json):
     #print ('file name with path is: ' + ffmpeg_output_file)
     
     # All together now
-    print ('=============== assembled ffmpeg command ===============')
-    ffmpeg_command = 'ffmpeg ' + ffmpeg_settings + ' -i "' + ffmeg_input_file + '"' + ffmpeg_encoding_settings + ' ".' + ffmpeg_output_file + '"'
+    print ('=============== Assembled ffmpeg command ===============')
+    ffmpeg_command = 'ffmpeg ' + ffmpeg_settings + ' -i "' + ffmeg_input_file + '"' + ffmpeg_encoding_settings + ' "' + ffmpeg_output_file + '"'
     print (ffmpeg_command)    
-    print ('=============== executing ffmpeg =======================')
+    print ('=============== Executing ffmpeg =======================')
 
-    #print (ffmpeg_command)
     print ('Please hold')
-    #os.system(ffmpeg_command)
+    os.system(ffmpeg_command)
     
     # Would love to revisit this as a subprocess, but was having issues getting everything to slice as desired
     #print ('=============== assembled ffmpeg command ===============')
@@ -181,9 +181,9 @@ def fencoder(fprober_json):
         output_file_stats = os.stat(ffmpeg_output_file)
         print(f'Encoded file Size in MegaBytes is {output_file_stats.st_size / (1024 * 1024)}') 
         print('Removing ' + ffmeg_input_file)
-        #os.remove(ffmeg_input_file) 
+        os.remove(ffmeg_input_file) 
         print('Moving ' + ffmpeg_output_file + ' to ' + ffmeg_input_file)
-        #os.rename(ffmpeg_output_file, ffmeg_input_file)
+        shutil.move(ffmpeg_output_file, ffmeg_input_file)
         print ('Done')    
     else:
          print("Something Broke")
