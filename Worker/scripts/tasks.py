@@ -1,171 +1,193 @@
 from celery import Celery
-import os
-import subprocess
-import shlex
-import json
-import time
 from pathlib import Path
+import json, subprocess, os, shutil
 
 app = Celery('tasks', backend = 'rpc://test:test@192.168.1.110:31672/celery', broker = 'amqp://test:test@192.168.1.110:31672/celery')
 
 @app.task
-def fffinder(DIRECTORY):
-    print('Going to start scanning ' + DIRECTORY)
+def ffinder(json_template):
+    # Need to change this line to be a variable passed to the function
+    # I.E. Invoke the search based on feeding it a JSON
+    #f = open(json_template)
+    # returns JSON object as
+    # a dictionary
+    #data = json.load(f)
+    print ('================= json template =================')
+    print (json.dumps(json_template, indent=3, sort_keys=True))
+    print ('================ starting search ================')
+    #print (data)
+    # Get the folder to scan
+    directory = (json_template['watch_folder'])
+    print ('Will now search the directory ' + directory + ' and provide the relevant config flags:')
     # traverse whole directory
-    for root, dirs, files in os.walk(DIRECTORY):
+    for root, dirs, files in os.walk(directory):
         # select file name
         for file in files:
             # check the extension of files
             if file.endswith('.mkv') or file.endswith('.mp4'):
-                # print whole path of files
-                print(os.path.join(root, file))
-                FILEPATH = os.path.join(root, file)
-                ffprober.delay(FILEPATH)
+                # append the desired fields to the original json
+                print ('================ media file located ================')
+                ffinder_json = {'file_path':root, 'file_name':file}
+                ffinder_json.update(json_template)      
+                print(json.dumps(ffinder_json, indent=3, sort_keys=True))
+                fprober.delay(ffinder_json)
 
 @app.task
-def ffprober(FILEPATH):
-    # Execute ffprobe and get the codec of the first FILEPATH, audio, and subtitle stream
-   
-    container = subprocess.run(shlex.split(f'ffprobe -v quiet -show_entries format=format_name -of default=noprint_wrappers=1:nokey=1 "{FILEPATH}"'), capture_output=True).stdout.decode('utf8').strip()       
-    vcodec = subprocess.run(shlex.split(f'ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "{FILEPATH}"'), capture_output=True).stdout.decode('utf8').strip()
-    acodec = subprocess.run(shlex.split(f'ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "{FILEPATH}"'), capture_output=True).stdout.decode('utf8').strip()
-    scodec = subprocess.run(shlex.split(f'ffprobe -v error -select_streams s:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "{FILEPATH}"'), capture_output=True).stdout.decode('utf8').strip()
-
-    # Same as above, but outputs a larger object as json
-    # I abandoned this approach as it was too dificult to loop through the JSON to find the first stream of each codec type (vido, audio, subtitle)
-    # This would be ideal, as it reduces the file calls from three to one, so lets call this a someday task
-    #data = subprocess.run(shlex.split(f'ffprobe -loglevel error -show_streams -of json {FILEPATH}'), capture_output=True).stdout
-    # Convert data from JSON string to dictionary
-    #d = json.loads(data)
-    # Uncoment these for diagnostics
-    # Get codecs
-    #FILEPATH_codec = ({d["streams"][0]["codec_name"]})
-    #audio_codec = ({d["streams"][1]["codec_name"]})
-    #subtitle_format = ({d["streams"][2]["codec_name"]})
-
-    # Now lets determine how the file needs to be processed by ffmpeg
-    encode = str()
-    if vcodec != 'av1':
-        print (FILEPATH + ' is using ' + vcodec + ', not AV1')
-        encode = encode + ' -c:v libsvtav1 -crf 20 -preset 4 -g 240 -pix_fmt yuv420p10le'
-    if acodec != 'opus':
-        print (FILEPATH + ' is using ' + acodec + ', not OPUS')
-        encode = encode + ' -c:a libopus'
-    if scodec != 'subrip':
-        print (FILEPATH + ' is using ' + scodec + ', not SRT')
-        encode = encode + ' -c:s srt'
+def fprober(ffinder_json):
     
-    # Now lets determine if we should pass a FILEPATH file to the next step, and what that step will cover
-    if container == 'matroska,webm' and vcodec == 'av1' and acodec == 'opus' and scodec == 'subrip': 
-        print (FILEPATH + ' is using all of the correct containers and codecs')
+    # Uncomment to see the incoming JSON
+    #print(json.dumps(filename, indent=3, sort_keys=True))
+    
+    # Need to assemble the full filepath to pass to FFprobe
+    file_path = (ffinder_json["file_path"])
+    file_name = (ffinder_json["file_name"])
+    ffprobe_path = os.path.join(file_path,file_name)
+    print ('================= Executing FFprobe =================')
+    print ('Going to execute FFprobe on: ' + ffprobe_path)
+    
+    # Using subprocess to call FFprobe, get JSON back    
+    cmnd = [f'ffprobe', '-loglevel', 'quiet', '-show_entries', 'format:stream=index,stream,codec_type,codec_name', '-of', 'json', ffprobe_path]
+    p = subprocess.run(cmnd, capture_output=True).stdout
+    d = json.loads(p)
+
+    # Uncomment this if you want to do diagnostics on the JSON FFmpeg outputs
+    #print(json.dumps(d, indent=3, sort_keys=True))
+    
+    print ('================= Extracing Variables =================')
+    # Get the container type from the FFProbe output
+    original_container = (d["format"]["format_name"])
+    #print (original_container)
+    
+    # Get the video codec from the first video stream
+    for stream in d['streams']:
+        if stream['codec_type']=="video":
+            original_video_codec = stream['codec_name']
+            break
+    #print(original_audio_codec)
+    
+     # Get the video codec from the first audio stream
+    for stream in d['streams']:
+        if stream['codec_type']=="audio":
+            original_audio_codec = stream['codec_name']
+            break
+    #print(original_audio_codec)
+
+    # Get the subtitle format from the first subtitle stream
+    for stream in d['streams']:
+        if stream['codec_type']=="subtitle":
+            ffmpeg_subtitle_format = stream['codec_name']
+            break
+    #print(original_audio_codec)
+    
+    # Here we check the output of ffprobe against the configurations for the library
+    # See the template.json
+    
+    # Part 1 (bellow) checks the container, codecs, formats and builds the relevant ffmpeg string 
+    
+    print ('================= Building FFMpeg String =================')
+
+    # Create an empty string variable that will become our FFmpeg variables
+    encode = str()
+
+    # Determine if the container needs to be changed
+    if original_container != (ffinder_json["ffmpeg_container_string"]):
+        print (ffprobe_path + ' is using ' + original_container + ', not ' + (ffinder_json["ffmpeg_container_string"]))
+
+    # Determine if the video needs to be re-encoded
+    if original_video_codec != (ffinder_json["ffmpeg_video_codec"]):
+        print (ffprobe_path + ' is using ' + original_video_codec + ', not ' + (ffinder_json["ffmpeg_video_codec"]))
+        encode = encode + ' ' + (ffinder_json["ffmpeg_video_string"])
+    
+    # Determine if the audio needs to be re-encoded
+    if original_audio_codec != (ffinder_json["ffmpeg_audio_codec"]):
+        print (ffprobe_path + ' is using ' + original_audio_codec + ', not ' + (ffinder_json["ffmpeg_audio_codec"]))
+        encode = encode + ' ' + (ffinder_json["ffmpeg_audio_string"])
+        
+    # Determine if the subtitles needs to be re-formatted
+    if ffmpeg_subtitle_format != (ffinder_json["ffmpeg_subtitle_format"]):
+        print (ffprobe_path + ' is using ' + ffmpeg_subtitle_format + ', not ' + (ffinder_json["ffmpeg_subtitle_format"]))
+        encode = encode + ' ' + (ffinder_json["ffmpeg_subtitle_string"])  
+    
+    # Part 2 determines if the string is needed
+    if original_container == (ffinder_json["ffmpeg_container_string"]) and original_video_codec == (ffinder_json["ffmpeg_video_codec"]) and original_audio_codec == (ffinder_json["ffmpeg_audio_codec"]) and (ffinder_json["ffmpeg_subtitle_format"]): 
+        print ('============== ' + file_name + ' does not need encoding ==============')
     else:
-        job = {'file':FILEPATH, 'encode_string':encode}
-        JOBJSON = json.dumps(job)
-        print('JSON is as follows: '+ JOBJSON)
-        ffencode.delay(JOBJSON)
+        print ('============== ' + file_name + ' needs encoding ==============')
+        fprober_json = {'ffmpeg_encoding_string':encode}
+        fprober_json.update(ffinder_json) 
+        print(json.dumps(fprober_json, indent=3, sort_keys=True))
+        fencoder.delay(fprober_json)
+
 
 @app.task
-def ffencode(JOBJSON):
-    d = json.loads(JOBJSON)
+def fencoder(fprober_json):
+    
+    print ('================= ffmpeger JSON inputs =================')
+    print (json.dumps(fprober_json, indent=3, sort_keys=True))
+    
+    # ffmpeg is ffmpeg + settings + input file + encoding settings + output file
+    # So we're going to grab each of those pieces
 
-    input_file = (d["file"]) 
-    #newinput_file = '"' + input_file + '"'
-    print ('input file is: ' + input_file)
+    # Need to get the ffmpeg settings
+    ffmpeg_settings = (fprober_json["ffmpeg_settings"])
+    #print ('ffmpeg settings are: ' + ffmpeg_settings)
+        
+    # Need to get the input filepath
+    file_path = (fprober_json["file_path"])
+    file_name = (fprober_json["file_name"])
+    ffmeg_input_file = os.path.join(file_path,file_name)
+    #print ('input file is: ' + ffmeg_input_file)
+    
+    # Need to get the encoding settings     
+    ffmpeg_encoding_settings = (fprober_json["ffmpeg_encoding_string"])
+    #print ('encoding settings are: ' + ffmpeg_encoding_settings)
+    
+    # Need to get the output filepath   
+    file_name = Path(file_name).stem
+    output_extension = (fprober_json["ffmeg_container_extension"])
+    #print ('filename is currently: ' + file_name)
+    ffmpeg_output_file = '/boil_hold/' + file_name + '.' + output_extension
+    #print ('file name with path is: ' + ffmpeg_output_file)
+    
+    # All together now
+    print ('=============== Assembled ffmpeg command ===============')
+    ffmpeg_command = 'ffmpeg ' + ffmpeg_settings + ' -i "' + ffmeg_input_file + '"' + ffmpeg_encoding_settings + ' "' + ffmpeg_output_file + '"'
+    print (ffmpeg_command)    
+    print ('=============== Executing ffmpeg =======================')
 
-    ffmpeg_string = (d["encode_string"])
-    ffmpeg_string = ffmpeg_string + ' '
-    print ('ffmpeg string is: ' + ffmpeg_string)
+    print ('Please hold')
+    os.system(ffmpeg_command)
+    
+    # Would love to revisit this as a subprocess, but was having issues getting everything to slice as desired
+    #print ('=============== assembled ffmpeg command ===============')
+    #ffmpeg_settings = ffmpeg_settings.split()
+    #ffmpeg_settings = ', '.join(ffmpeg_settings)
+    #ffmpeg_encoding_settings = ffmpeg_encoding_settings.split()
+    #ffmeg_input_file = '"' + ffmeg_input_file + '"'
+    #ffmpeg_output_file = '"' + ffmpeg_output_file + '"'
+    #ffmpeg_command = 'ffmpeg', ffmpeg_settings, '-i', ffmeg_input_file, ffmpeg_encoding_settings,ffmpeg_output_file
+    #print (ffmpeg_command)    
+    #print ('=============== executing ffmpeg =======================')
+    
+    #p = subprocess.run(cmnd, capture_output=True).stdout
+    #d = json.loads(p)
 
-    file_name = Path(input_file).stem
-    print ('filename is currently: ' + file_name)
-    file_name = '/boil_hold/' + file_name + '.mkv'
-    #newfile_name = '"' + file_name + '"'
-    print ('file name with path is:' + file_name)
-
-    ffmpeg_string = 'ffmpeg -hide_banner -loglevel 8 -stats -i "' + input_file + '"' + ffmpeg_string + '"' + file_name + '"'
-    print (ffmpeg_string)
-    os.system(ffmpeg_string)
-
-    # I think I would like to do this as a subprocess instead of an OS call, but ran into too many issues having to split the string
-    # Specifically, ffmpeg_string... Splitting it created 'SyntaxError: invalid syntax'
-    # Given that it's going to take an investment of time to figure that out, and there's no advantage to the subprocess call of ffmpeg, I am going to leave it as an OS call above
-    #ffmpeg_string = ffmpeg_string.split()
-    #ffmpeg_string = 'ffmpeg, -hide_banner, -loglevel, 16, -stats, -i, ' + input_file + ', ', ffmpeg_string, ', /boil_hold/' + file_name + '.mkv'
-    # Inserting a list into a string
-    # https://stackoverflow.com/questions/56313176/how-to-fix-typeerror-can-only-concatenate-str-not-list-to-str
-    #print (ffmpeg_string)
-    # Current issues with the subprocess.popen is this error "TypeError: expected str, bytes or os.PathLike object, not list"
-    #process = subprocess.Popen(
-    #    ffmpeg_string,
-    #    stderr=subprocess.PIPE,
-    #    text=True,
-    #    bufsize=0)
-    #print(process.stderr.read())
-
-    # Going to redo this later
-    # Need to add data validations
-    # When we get to validations, we need to explore StatReport: https://gitlab.com/AOMediaCodec/SVT-AV1/-/blob/master/Docs/Parameters.md
-
-    #    >>>>>>>>>>>>>>>>>>>> HERE <<<<<<<<<<<<<<<<<<<<<<<<<
-    # Try this: https://stackoverflow.com/questions/3751900/create-file-path-from-variables
-
-    file_name = '"' + file_name + '"'
-    input_file = '"' + input_file + '"'
-
-    print ('now going to check on the existance of ' + file_name + ' and ' + input_file)
-
-    if os.path.exists(file_name):
-        print (file_name + ' exists')
-    else:
-        print (file_name + ' does not exist')   
-    if os.path.exists(input_file):
-        print (input_file + ' exists')
-    else:
-        print (input_file + ' does not exist')
-
-    if os.path.exists(file_name and input_file):
-        print('Original and Encoded Files Exists')
-        time.sleep(1)
-        file_stats = os.stat(input_file)
-        print(f'Original file Size in MegaBytes is {file_stats.st_size / (1024 * 1024)}') 
-        file_stats2 = os.stat(file_name)
-        print(f'Encoded file Size in MegaBytes is {file_stats2.st_size / (1024 * 1024)}') 
-        print('Removing the original file from ' + input_file)
-        os.remove(input_file) 
-        time.sleep(1)
-        print('Moving the encoded file')
-        os.rename(file_name, input_file)
+    print ('=============== Checking output =======================')
+    
+    if os.path.exists(ffmeg_input_file and ffmpeg_output_file):
+        print( ffmeg_input_file + ' and ' + ffmpeg_output_file + ' Files Exists')
+        input_file_stats = os.stat(ffmeg_input_file)
+        print(f'Original file Size in MegaBytes is {input_file_stats.st_size / (1024 * 1024)}') 
+        output_file_stats = os.stat(ffmpeg_output_file)
+        print(f'Encoded file Size in MegaBytes is {output_file_stats.st_size / (1024 * 1024)}') 
+        print('Removing ' + ffmeg_input_file)
+        os.remove(ffmeg_input_file) 
+        print('Moving ' + ffmpeg_output_file + ' to ' + ffmeg_input_file)
+        shutil.move(ffmpeg_output_file, ffmeg_input_file)
         print ('Done')    
     else:
          print("Something Broke")
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-@app.task
-def ffstatrecorde(FILEPATH, FILENAME, STARTSZIE, ENDSIZE, VMAF):
-    ffstatrecorder(FILEPATH, FILENAME, STARTSZIE, ENDSIZE, VMAF)
-
-@app.task
-def ffchain(DIRECTORY):
-    # fetch_page -> parse_page -> store_page
-    chain = fffind(DIRECTORY) | ffprobe(FILEPATH) 
-    chain()
 
