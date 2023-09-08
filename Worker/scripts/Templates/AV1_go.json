@@ -12,5 +12,5 @@
   "ffmpeg_subtitle_format": "subrip",
   "ffmpeg_subtitle_string": "-c:s srt",
   "ffmpeg_settings": "-hide_banner -loglevel 16 -stats",
-  "show_diagnostic_messages": "no"
+  "show_diagnostic_messages": "yes"
 }
