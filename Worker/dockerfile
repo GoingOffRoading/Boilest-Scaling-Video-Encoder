@@ -1,5 +1,5 @@
 FROM alpine
-RUN apk add --no-cache python3 py3-pip ffmpeg sqlite
+RUN apk add --no-cache python3 py3-pip ffmpeg sqlite bash
 RUN pip install --no-cache-dir celery flower
 
 RUN apk update
@@ -15,9 +15,12 @@ WORKDIR "/Scripts"
 EXPOSE 80
 EXPOSE 5555
 
-#ENTRYPOINT [ "/bin/sh" ]
-#CMD [ "/boilest/celery.sh" ]    
+#CMD ["celery", "-A", "tasks", "worker", "-l", "INFO", "-c", "1"]
+#RUN chmod +x /Scripts/celery.sh
+#Run [/Scripts/celery.sh]    
+#CMD ["celery", "-A", "tasks", "worker", "-l", "INFO", "-c", "1", "&", "celery", "-A", "tasks", "flower", "-l", "INFO"]
+#ENTRYPOINT [ "/bin/bash", "-l", "-c" ]
+#CMD ["python3", "/Scripts/Celery.py"]
 
-CMD ["celery", "-A", "tasks", "worker", "-l", "INFO", "-c", "1"]
-
-# "--concurrency", "1",
+ENTRYPOINT [ "/bin/sh"]
+CMD ["/Scripts/Celery.sh"]
