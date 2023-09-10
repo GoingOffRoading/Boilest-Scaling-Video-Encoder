@@ -193,9 +193,13 @@ def fencoder(fprober_json):
     if os.path.exists(ffmeg_input_file and ffmpeg_output_file):
         print( ffmeg_input_file + ' and ' + ffmpeg_output_file + ' Files Exists')
         input_file_stats = os.stat(ffmeg_input_file)
-        print(f'Original file Size in MegaBytes is {input_file_stats.st_size / (1024 * 1024)}') 
+        input_file_stats = input_file_stats.st_size / (1024 * 1024)
+        print(f'Original file Size in MegaBytes is:')
+        print (input_file_stats) 
         output_file_stats = os.stat(ffmpeg_output_file)
-        print(f'Encoded file Size in MegaBytes is {output_file_stats.st_size / (1024 * 1024)}') 
+        output_file_stats = output_file_stats.st_size / (1024 * 1024)
+        print(f'Encoded file Size in MegaBytes is:')
+        print(output_file_stats) 
         print('Removing ' + ffmeg_input_file)
         if (fprober_json["production_run"]) == 'yes':
             os.remove(ffmeg_input_file) 
@@ -216,5 +220,6 @@ def fencoder(fprober_json):
          print("Either source or encoding is missing, so exiting")
 
 
-
+#@app.task
+#def fencoder(fprober_json):
 
