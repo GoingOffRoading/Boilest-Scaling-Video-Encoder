@@ -5,6 +5,10 @@ RUN pip install --no-cache-dir celery flower
 RUN apk update
 RUN apk upgrade
 
+# Need to set UID/GID since we're likely interfacing with files owned by a non-root user
+ARG UID=1000
+ARG GID=1000
+
 RUN mkdir -p /boil_watch
 RUN mkdir -p /boil_hold
 RUN mkdir -p /Boilest
@@ -12,15 +16,15 @@ RUN mkdir -p /Scripts
 COPY /Scripts /Scripts
 WORKDIR "/Scripts"
 
+# Add a user that is the same user group as the data being read
+# Is this clean?  Not really...  Will need to revisit this later
+RUN addgroup -g 1000 boil 
+RUN adduser -D boil -G boil -u 1000
+RUN chown boil /boil_watch /boil_hold /Boilest /Scripts
+USER boil
+
 EXPOSE 80
 EXPOSE 5555
-
-#CMD ["celery", "-A", "tasks", "worker", "-l", "INFO", "-c", "1"]
-#RUN chmod +x /Scripts/celery.sh
-#Run [/Scripts/celery.sh]    
-#CMD ["celery", "-A", "tasks", "worker", "-l", "INFO", "-c", "1", "&", "celery", "-A", "tasks", "flower", "-l", "INFO"]
-#ENTRYPOINT [ "/bin/bash", "-l", "-c" ]
-#CMD ["python3", "/Scripts/Celery.py"]
 
 ENTRYPOINT [ "/bin/sh"]
 CMD ["/Scripts/Celery.sh"]
