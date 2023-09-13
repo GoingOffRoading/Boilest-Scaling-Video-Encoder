@@ -20,7 +20,7 @@ WORKDIR "/Scripts"
 # Is this clean?  Not really...  Will need to revisit this later
 RUN addgroup -g 1000 boil 
 RUN adduser -D boil -G boil -u 1000
-RUN chown boil /boil_watch /boil_hold /Boilest /Scripts
+RUN chown -R boil:boil /boil_watch /boil_hold /Boilest /Scripts
 USER boil
 
 EXPOSE 80
