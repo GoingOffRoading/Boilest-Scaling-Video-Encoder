@@ -1,6 +1,6 @@
 FROM alpine
 RUN apk add --no-cache python3 py3-pip ffmpeg sqlite bash
-RUN pip install --no-cache-dir celery flower
+RUN pip install --no-cache-dir --root-user-action=ignore celery flower
 
 RUN apk update
 RUN apk upgrade
@@ -18,9 +18,10 @@ WORKDIR "/Scripts"
 
 # Add a user that is the same user group as the data being read
 # Is this clean?  Not really...  Will need to revisit this later
+
 RUN addgroup -g 1000 boil 
 RUN adduser -D boil -G boil -u 1000
-RUN chown -R boil:boil /boil_watch /boil_hold /Boilest /Scripts
+RUN chown -R boil:boil /boil_hold /Boilest /Scripts
 USER boil
 
 EXPOSE 80
