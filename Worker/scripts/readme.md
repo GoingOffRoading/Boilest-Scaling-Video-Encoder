@@ -14,7 +14,7 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] Logging
 - [ ] Writing results of the ffencode step to SQLite
 - [x] Starts workflow based on a JSON configuration
-- [ ] Rewrite the FFProbe section to handle when a media file doesn't have a video, audio, or subtitle stream
+- [x] Rewrite the FFProbe section to handle when a media file doesn't have a video, audio, or subtitle stream
 - [ ] Expirement with AV1 film grain: https://www.google.com/search?q=av1+film+grain+synthesis+anime
 - [ ] Expirement with subtitle settings
 - [ ] Experiement with audio codec settings
