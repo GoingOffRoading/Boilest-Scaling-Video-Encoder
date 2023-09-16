@@ -74,7 +74,7 @@ def fprober(ffinder_json):
     if original_container != (ffinder_json["ffmpeg_container_string"]):
         file_name = (ffinder_json["file_name"])
         file_name = Path(file_name).stem 
-        output_extension = (fprober_json["ffmeg_container_extension"])
+        output_extension = (ffinder_json["ffmeg_container_extension"])
         print ('Changing video output to: ' + output_extension)
         ffmpeg_output_file = file_name + '.' + output_extension
     else:
@@ -84,12 +84,14 @@ def fprober(ffinder_json):
 
     print ('================= Video Stream =================')
 
+    original_video_codec = ('no_video_stream')
     for stream in d['streams']:
         if stream['codec_type']=="video":
             original_video_codec = stream['codec_name']
             break
+    print ('original_video_codec is: ' + original_video_codec)
 
-    if 'video' in ffinder_json and original_video_codec != (ffinder_json["ffmpeg_video_codec"]):
+    if original_video_codec != 'no_video_stream' and original_video_codec != (ffinder_json["ffmpeg_video_codec"]):
         print (ffprobe_path + ' is using ' + original_video_codec + ', not ' + (ffinder_json["ffmpeg_video_codec"]))
         encode = encode + ' ' + (ffinder_json["ffmpeg_video_string"])
     else:
@@ -97,17 +99,19 @@ def fprober(ffinder_json):
 
     # Get the video codec from the first video stream
  
-    #print(original_audio_codec)
     
     print ('================= Audio Stream Contaiener =================')
 
+    original_audio_codec = ('no_audio_stream')
      # Get the video codec from the first audio stream
     for stream in d['streams']:
         if stream['codec_type']=="audio":
             original_audio_codec = stream['codec_name']
             break
+    
+    print ('original_audio_codec is: ' + original_audio_codec)
 
-    if 'audio' in ffinder_json and original_audio_codec != (ffinder_json["ffmpeg_audio_codec"]):
+    if original_audio_codec != 'no_audio_stream' and original_audio_codec != (ffinder_json["ffmpeg_audio_codec"]):
         print (ffprobe_path + ' is using ' + original_audio_codec + ', not ' + (ffinder_json["ffmpeg_audio_codec"]))
         encode = encode + ' ' + (ffinder_json["ffmpeg_audio_string"])
     else:
@@ -116,13 +120,16 @@ def fprober(ffinder_json):
     #print(original_audio_codec)
 
     print ('================= Subtitle Stream Contaiener =================')
+
     # Get the subtitle format from the first subtitle stream
+    original_subtitle_format = ('no_subtitle_stream')
     for stream in d['streams']:
         if stream['codec_type']=="subtitle":
             original_subtitle_format = stream['codec_name']
             break
+    print ('original_subtitle_format is: ' + original_subtitle_format)
 
-    if 'subtitle' in ffinder_json and original_subtitle_format != (ffinder_json["ffmpeg_subtitle_format"]):
+    if original_subtitle_format != 'no_subtitle_stream' and original_subtitle_format != (ffinder_json["ffmpeg_subtitle_format"]):
         print (ffprobe_path + ' is using ' + original_subtitle_format + ', not ' + (ffinder_json["ffmpeg_subtitle_format"]))
         encode = encode + ' ' + (ffinder_json["ffmpeg_subtitle_string"])    
     else:
@@ -180,6 +187,7 @@ def fencoder(fprober_json):
     #output_extension = (fprober_json["ffmeg_container_extension"])
     
     #print ('filename is currently: ' + file_name)
+    
     ffmpeg_output_file = (fprober_json["ffmpeg_output_file"])
     ffmpeg_output_file = '/boil_hold/' + ffmpeg_output_file
     
