@@ -4,7 +4,7 @@ import json, subprocess, os, shutil
 
 app = Celery('tasks', backend = 'rpc://test:test@192.168.1.110:31672/celery', broker = 'amqp://test:test@192.168.1.110:31672/celery')
 
-@app.task
+@app.task(queue='manager')
 def ffinder(json_template):
     # Need to change this line to be a variable passed to the function
     # I.E. Invoke the search based on feeding it a JSON
@@ -35,7 +35,7 @@ def ffinder(json_template):
                     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
                 fprober.delay(ffinder_json)
 
-@app.task
+@app.task(queue='manager')
 def fprober(ffinder_json):
     
     # Uncomment to see the incoming JSON
@@ -100,7 +100,7 @@ def fprober(ffinder_json):
     # Get the video codec from the first video stream
  
     
-    print ('================= Audio Stream Contaiener =================')
+    print ('>>>>>>>>>>>>>>>>> Audio Stream Contaiener <<<<<<<<<<<<<<<<<')
 
     original_audio_codec = ('no_audio_stream')
      # Get the video codec from the first audio stream
@@ -157,7 +157,7 @@ def fprober(ffinder_json):
         fencoder.delay(fprober_json)
 
 
-@app.task
+@app.task(queue='worker')
 def fencoder(fprober_json):
     if (fprober_json["show_diagnostic_messages"]) == 'yes':
         print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')

@@ -25,5 +25,5 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] Stopping the script does not stop the ffmpeg terminal/os command.  There should be a way to interupt ffmpeg from the script
 - [ ] Add more inline documentation
 - [ ] Add additional fields so different file attributes can get different ffmpeg commands
-- [ ] Celery queues
+- [ ] Celery queues: https://stackoverflow.com/questions/51631455/how-to-route-tasks-to-different-queues-with-celery-and-django
 - [ ] Celery starts queues based on docker env variables
