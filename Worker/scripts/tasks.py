@@ -4,7 +4,7 @@ import json, subprocess, os, shutil
 
 app = Celery('tasks', backend = 'rpc://test:test@192.168.1.110:31672/celery', broker = 'amqp://test:test@192.168.1.110:31672/celery')
 
-@app.task(queue='manager')
+@app.task
 def ffinder(json_template):
     # We feed this function a JSON string of configurations
     # Configurations are stored in the /Templates directory
@@ -32,7 +32,7 @@ def ffinder(json_template):
                     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
                 fprober.delay(ffinder_json)
 
-@app.task(queue='manager')
+@app.task
 def fprober(ffinder_json):
     
     # Uncomment to see the incoming JSON
@@ -158,7 +158,7 @@ def fprober(ffinder_json):
         fencoder.delay(fprober_json)
 
 
-@app.task(queue='worker')
+@app.task
 def fencoder(fprober_json):
     if (fprober_json["show_diagnostic_messages"]) == 'yes':
         print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
