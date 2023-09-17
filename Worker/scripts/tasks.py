@@ -6,16 +6,13 @@ app = Celery('tasks', backend = 'rpc://test:test@192.168.1.110:31672/celery', br
 
 @app.task(queue='manager')
 def ffinder(json_template):
-    # Need to change this line to be a variable passed to the function
-    # I.E. Invoke the search based on feeding it a JSON
-    #f = open(json_template)
-    # returns JSON object as
-    # a dictionary
-    #data = json.load(f)
-    print ('================= json template =================')
+    # We feed this function a JSON string of configurations
+    # Configurations are stored in the /Templates directory
+    # The future state is that this is triggered as a Bloom/cron function, and configured in a UI
+    # The purpose of this function of to search a directory for files, filter for specific formats, and send those filtered results to the next function
+    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ffinder input json <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
     print (json.dumps(json_template, indent=3, sort_keys=True))
-    print ('================ starting search ================')
-    #print (data)
+    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> starting file search <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
     # Get the folder to scan
     directory = (json_template['watch_folder'])
     print ('Will now search the directory ' + directory + ' and provide the relevant config flags:')
@@ -26,7 +23,7 @@ def ffinder(json_template):
             # check the extension of files
             if file.endswith('.mkv') or file.endswith('.mp4'):
                 # append the desired fields to the original json
-                print ('================ media file located ================')
+                print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> media file located <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
                 ffinder_json = {'file_path':root, 'file_name':file}
                 ffinder_json.update(json_template)      
                 if (json_template["show_diagnostic_messages"]) == 'yes':
@@ -129,7 +126,11 @@ def fprober(ffinder_json):
             break
     print ('original_subtitle_format is: ' + original_subtitle_format)
 
-    if original_subtitle_format != 'no_subtitle_stream' and original_subtitle_format != (ffinder_json["ffmpeg_subtitle_format"]):
+    # We need to filter for three things:
+    # 1) The 'no_subtitle_stream' set a few lines up.   This is to prevent passing subtitle configurations to ffmpeg for subtitles that don't exist, and crash ffmpeg
+    # 2) Check if the subtitle format of source matches the configuration; which is the intent of this pipeline
+    # 3) Not attempt to convert picture based subtitles to text based subtitles.   It's unclear what other non-text based subtitles exist outside of hdmv_pgs_subtitle, but more edge cases will get added
+    if original_subtitle_format != 'no_subtitle_stream' and original_subtitle_format != (ffinder_json["ffmpeg_subtitle_format"]) and original_subtitle_format != 'hdmv_pgs_subtitle':
         print (ffprobe_path + ' is using ' + original_subtitle_format + ', not ' + (ffinder_json["ffmpeg_subtitle_format"]))
         encode = encode + ' ' + (ffinder_json["ffmpeg_subtitle_string"])    
     else:
@@ -203,20 +204,6 @@ def fencoder(fprober_json):
         os.system(ffmpeg_command)
     else:
         print ('This is a test run, so lets maybe not polute production')
-    
-    # Would love to revisit this as a subprocess, but was having issues getting everything to slice as desired
-    #print ('=============== assembled ffmpeg command ===============')
-    #ffmpeg_settings = ffmpeg_settings.split()
-    #ffmpeg_settings = ', '.join(ffmpeg_settings)
-    #ffmpeg_encoding_settings = ffmpeg_encoding_settings.split()
-    #ffmeg_input_file = '"' + ffmeg_input_file + '"'
-    #ffmpeg_output_file = '"' + ffmpeg_output_file + '"'
-    #ffmpeg_command = 'ffmpeg', ffmpeg_settings, '-i', ffmeg_input_file, ffmpeg_encoding_settings,ffmpeg_output_file
-    #print (ffmpeg_command)    
-    #print ('=============== executing ffmpeg =======================')
-    
-    #p = subprocess.run(cmnd, capture_output=True).stdout
-    #d = json.loads(p)
 
     print ('=============== Checking output =======================')
     
@@ -231,7 +218,10 @@ def fencoder(fprober_json):
         print(f'Encoded file Size in MegaBytes is:')
         print(output_file_stats) 
         print('Removing ' + ffmeg_input_file)
-        if (fprober_json["production_run"]) == 'yes':
+        # We're checking for to things:
+        # 1) If this is a production run, and we intend to delete source
+        # 2) Don't delete sourec if the ffmpeg encode failed
+        if (fprober_json["production_run"]) == 'yes' and output_file_stats != 0.0:
             os.remove(ffmeg_input_file) 
             print('Moving ' + ffmpeg_output_file + ' to ' + ffmeg_input_file)
             shutil.move(ffmpeg_output_file, ffmeg_input_file)
@@ -243,7 +233,7 @@ def fencoder(fprober_json):
             #fencoder.delay(fencoder_json)
         else:
             print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
-            print('In test mode, not moving files')
+            print('This is either a test, or an error, and the file was not moved')
             print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
                     
     else:
