@@ -16,6 +16,7 @@ This is the Boilest workflow, and work that is currently outstanding
 - [x] Starts workflow based on a JSON configuration
 - [x] Rewrite the FFProbe section to handle when a media file doesn't have a video, audio, or subtitle stream
 - [ ] Expirement with AV1 film grain: https://www.google.com/search?q=av1+film+grain+synthesis+anime
+- [x] Fix an issue where invalid ffmpeg settings would crash ffmpeg, and a file of 0kb would replace source 
 - [ ] Expirement with subtitle settings
 - [ ] Experiement with audio codec settings
 - [ ] Django project
