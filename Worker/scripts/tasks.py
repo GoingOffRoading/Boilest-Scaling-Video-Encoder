@@ -34,70 +34,83 @@ def ffinder(json_template):
 
 @app.task
 def fprober(ffinder_json):
-    
-    # Uncomment to see the incoming JSON
-    #print(json.dumps(filename, indent=3, sort_keys=True))
-    
-    # Need to assemble the full filepath to pass to FFprobe
+    # This function is kicked off from the individual file results from the ffinder function
+    # fprober's functions are three:
+    # 1) For each file, run ffprobe to get details on the file
+    # 2) Loop through those the ffprobe results to determine if any changes need to be made to the video container or it's video, audio, or subtitle streams 
+    # 3) Determine if the file needs to be encoded, and if yes, pass the changes to the fencoder function
+
     file_path = (ffinder_json["file_path"])
     file_name = (ffinder_json["file_name"])
     ffprobe_path = os.path.join(file_path,file_name)
-    print ('================= Executing FFprobe =================')
-    print ('Going to execute FFprobe on: ' + ffprobe_path + 'using:')
-    
-    # Using subprocess to call FFprobe, get JSON back    
+    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> starting fprober step on <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ' + file_name + ' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')  
+    # Using subprocess to call FFprobe, get JSON back on the video's container, and streams  
+    # And displaying the outputs  
     cmnd = [f'ffprobe', '-loglevel', 'quiet', '-show_entries', 'format:stream=index,stream,codec_type,codec_name', '-of', 'json', ffprobe_path]
+    print ("ffprobe's command on " + file_name + ":")
     print (cmnd)
     p = subprocess.run(cmnd, capture_output=True).stdout
     d = json.loads(p)
-
-    # Diagnostics
-    if (ffinder_json["show_diagnostic_messages"]) == 'yes':
-        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
-        print(json.dumps(d, indent=3, sort_keys=True))
-        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    print ("ffprobe's results on " + file_name + ":")
+    print(json.dumps(d, indent=3, sort_keys=True))
     
-    print ('================= Extracing Variables =================')
-    # Get the container type from the FFProbe output
-    encode = str()
-    print ('encode string started')
+    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Evaluating Codecs In <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ' + file_name + ' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')   
+    # Now that we have FFProbe's output, we want to evaluate the container, video stream, audio stream, and subtitle formats
+    # If those values don't match the input templte, then we flip encode_decision to yes, and transmit the results to fencoder
+    encode_string = str()
+    encode_decision = 'no'
 
-    print ('================= Stream Container =================')
+    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Stream Container <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
     
     original_container = (d['format']['format_name'])
     # Determine if the container needs to be changed
-    print ('Video container is: ' + original_container)
+    print ('Original Video container is: ' + original_container)
 
     if original_container != (ffinder_json["ffmpeg_container_string"]):
         file_name = (ffinder_json["file_name"])
         file_name = Path(file_name).stem 
-        output_extension = (ffinder_json["ffmeg_container_extension"])
-        print ('Changing video output to: ' + output_extension)
+        output_extension = (ffinder_json["ffmpeg_container_extension"])
+        print (file_name + ' will need its container changed to: ' + output_extension)
         ffmpeg_output_file = file_name + '.' + output_extension
+        encode_decision = 'yes'
     else:
         ffmpeg_output_file = file_name
+        print (file_name + ' is already: ' + (ffinder_json["ffmpeg_container_string"]))
     
-    print ('Output file will be: ' + ffmpeg_output_file)
-
-    print ('================= Video Stream =================')
-
+    
+    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Video Stream <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    # FFprobe JSON output organizes attributes of streams into a list of stream IDs
+    # We need to loop through the streams to find the first instance of the relevant stream (video), then get it's codec
     original_video_codec = ('no_video_stream')
     for stream in d['streams']:
         if stream['codec_type']=="video":
             original_video_codec = stream['codec_name']
             break
-    print ('original_video_codec is: ' + original_video_codec)
+    print (file_name + "'s video codec is: " + original_video_codec)
 
-    if original_video_codec != 'no_video_stream' and original_video_codec != (ffinder_json["ffmpeg_video_codec"]):
-        print (ffprobe_path + ' is using ' + original_video_codec + ', not ' + (ffinder_json["ffmpeg_video_codec"]))
-        encode = encode + ' ' + (ffinder_json["ffmpeg_video_string"])
+
+    # Ok this is messy...  We have three possibilities:
+    # 1) There is no video stream.  In this case, we do not want ffmpeg to encode anything
+    # 2) There is a video stream, and it's the wrong codec.  In that case we want to append the ffmpeg commands to the encode string, and set encode_decision to yes
+    # 3) The video stream is the correct codec, in which case we just want to copy the stream if we end up running ffmpeg on the file
+    if original_video_codec == 'no_video_stream':
+        print (file_name + ' does not have a video stream')
+    elif original_video_codec != (ffinder_json["ffmpeg_video_codec"]):
+        print (file_name + ' is using ' + original_video_codec + ', not ' + (ffinder_json["ffmpeg_video_codec"]))
+        encode_decision = 'yes'
+        encode_string = encode_string + ' ' + (ffinder_json["ffmpeg_video_string"])
     else:
-        print ('Either the video stream does not exist, or it does not need to be encoded')
+        print ('The video stream does not need to be encoded')
+        encode_string = encode_string + ' -c:v copy'
 
-    # Get the video codec from the first video stream
- 
-    
-    print ('>>>>>>>>>>>>>>>>> Audio Stream Contaiener <<<<<<<<<<<<<<<<<')
+
+    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Audio Stream <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    # FFprobe JSON output organizes attributes of streams into a list of stream IDs
+    # We need to loop through the streams to find the first instance of the relevant stream (audio), then get it's codec
 
     original_audio_codec = ('no_audio_stream')
      # Get the video codec from the first audio stream
@@ -105,20 +118,28 @@ def fprober(ffinder_json):
         if stream['codec_type']=="audio":
             original_audio_codec = stream['codec_name']
             break
-    
     print ('original_audio_codec is: ' + original_audio_codec)
 
-    if original_audio_codec != 'no_audio_stream' and original_audio_codec != (ffinder_json["ffmpeg_audio_codec"]):
-        print (ffprobe_path + ' is using ' + original_audio_codec + ', not ' + (ffinder_json["ffmpeg_audio_codec"]))
-        encode = encode + ' ' + (ffinder_json["ffmpeg_audio_string"])
+    # Ok this is messy...  We have three possibilities:
+    # 1) There is no audio stream.  In this case, we do not want ffmpeg to encode anything
+    # 2) There is an audio stream, and it's the wrong codec.  In that case we want to append the ffmpeg commands to the encode string, and set encode_decision to yes
+    # 3) The audio stream is the correct codec, in which case we just want to copy the stream if we end up running ffmpeg on the file
+
+    if original_audio_codec == 'no_audio_stream':
+        print (file_name + ' does not have a video stream')
+    elif original_audio_codec != (ffinder_json["ffmpeg_audio_codec"]):
+        print (file_name + ' is using ' + original_audio_codec + ', not ' + (ffinder_json["ffmpeg_audio_codec"]))
+        encode_decision = 'yes'
+        encode_string = encode_string + ' ' + (ffinder_json["ffmpeg_audio_string"])
     else:
-        print ('Either the audio stream does not exist, or it does not need to be encoded')
+        print ('The audio stream does not need to be encoded')
+        encode_string = encode_string + ' -c:a copy'
     
-    #print(original_audio_codec)
 
-    print ('================= Subtitle Stream Contaiener =================')
+    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Subtitle Stream Contaiener <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    # FFprobe JSON output organizes attributes of streams into a list of stream IDs
+    # We need to loop through the streams to find the first instance of the relevant stream (subtitle), then get it's format
 
-    # Get the subtitle format from the first subtitle stream
     original_subtitle_format = ('no_subtitle_stream')
     for stream in d['streams']:
         if stream['codec_type']=="subtitle":
@@ -126,35 +147,39 @@ def fprober(ffinder_json):
             break
     print ('original_subtitle_format is: ' + original_subtitle_format)
 
-    # We need to filter for three things:
-    # 1) The 'no_subtitle_stream' set a few lines up.   This is to prevent passing subtitle configurations to ffmpeg for subtitles that don't exist, and crash ffmpeg
-    # 2) Check if the subtitle format of source matches the configuration; which is the intent of this pipeline
-    # 3) Not attempt to convert picture based subtitles to text based subtitles.   It's unclear what other non-text based subtitles exist outside of hdmv_pgs_subtitle, but more edge cases will get added
-    if original_subtitle_format != 'no_subtitle_stream' and original_subtitle_format != (ffinder_json["ffmpeg_subtitle_format"]) and original_subtitle_format != 'hdmv_pgs_subtitle':
-        print (ffprobe_path + ' is using ' + original_subtitle_format + ', not ' + (ffinder_json["ffmpeg_subtitle_format"]))
-        encode = encode + ' ' + (ffinder_json["ffmpeg_subtitle_string"])    
+    # Ok this is messy...  We have three possibilities:
+    # 1) There is no audio stream.  In this case, we do not want ffmpeg to encode anything
+    # 2) There is an audio stream, and it's the wrong codec.  In that case we want to append the ffmpeg commands to the encode string, and set encode_decision to yes
+    # 3) The audio stream is the correct codec, in which case we just want to copy the stream if we end up running ffmpeg on the file
+    if original_subtitle_format == 'no_subtitle_stream':
+        print (file_name + ' does not have subtitles')
+    elif original_subtitle_format == 'hdmv_pgs_subtitle':
+        print (file_name + ' is using hdmv_pgs_subtitle, which is imaged based subtitles, can not be converted, and that sucks')
+        encode_string = encode_string +  ' -c:s copy'           
+    elif original_subtitle_format != (ffinder_json["ffmpeg_subtitle_format"]):
+        print (file_name + ' is using ' + original_subtitle_format + ', not ' + (ffinder_json["ffmpeg_subtitle_format"]))
+        encode_decision = 'yes'
+        encode_string = encode_string + ' ' + (ffinder_json["ffmpeg_subtitle_string"])    
     else:
-        print ('Either the subtitle format does not exist, or it does not need to be encoded')
-    #print(original_audio_codec)
+        print ('The subtitle format does not need to be changed')
+        encode_string = encode_string +  ' -c:s copy' 
     
-    # Here we check the output of ffprobe against the configurations for the library
-    # See the template.json
-    
-    # Part 1 (bellow) checks the container, codecs, formats and builds the relevant ffmpeg string 
-    
-    print ('================= Building FFMpeg String =================')
+    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Passing FFMpeg String for <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ' + file_name + ' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<') 
    
     # Part 2 determines if the string is needed
-    if original_container == (ffinder_json["ffmpeg_container_string"]) and original_video_codec == (ffinder_json["ffmpeg_video_codec"]) and original_audio_codec == (ffinder_json["ffmpeg_audio_codec"]) and original_subtitle_format == (ffinder_json["ffmpeg_subtitle_format"]): 
-        print ('============== ' + file_name + ' does not need encoding ==============')
+    if encode_decision == 'no': 
+        print (file_name + ' does not need encoding')
     else:
-        print ('============== ' + file_name + ' needs encoding ==============')
-        fprober_json = {'ffmpeg_encoding_string':encode, 'original_container':original_container, 'original_video_codec':original_video_codec, 'original_audio_codec':original_audio_codec, 'original_subtitle_format':original_subtitle_format, 'ffmpeg_output_file':ffmpeg_output_file}
+        print (file_name + ' needs encoding')
+        fprober_json = {'ffmpeg_encoding_string':encode_string, 'original_container':original_container, 'original_video_codec':original_video_codec, 'original_audio_codec':original_audio_codec, 'original_subtitle_format':original_subtitle_format, 'ffmpeg_output_file':ffmpeg_output_file}
         fprober_json.update(ffinder_json) 
-        if (fprober_json["show_diagnostic_messages"]) == 'yes':
-            print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
-            print(json.dumps(fprober_json, indent=3, sort_keys=True))
-            print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fprober_json output <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+        print(json.dumps(fprober_json, indent=3, sort_keys=True))
+        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fprober step complete <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ' + file_name + ' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<') 
+        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
         fencoder.delay(fprober_json)
 
 
