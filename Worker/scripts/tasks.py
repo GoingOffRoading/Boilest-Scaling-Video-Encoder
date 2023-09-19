@@ -231,12 +231,12 @@ def fencoder(fprober_json):
         print (ffmeg_input_file + ' and ' + ffmpeg_output_file + ' Files Exists')
         input_file_stats = os.stat(ffmeg_input_file)
         input_file_stats = input_file_stats.st_size / (1024 * 1024)
-        print (f'Original file Size in MegaBytes is: ' + input_file_stats) 
+        print (f'Original file Size in MegaBytes is: ' + str(input_file_stats)) 
         output_file_stats = os.stat(ffmpeg_output_file)
         output_file_stats = output_file_stats.st_size / (1024 * 1024)
+        print (f'Encoded file Size in MegaBytes is: ' + str(output_file_stats)) 
         output_space_difference = input_file_stats - output_file_stats
-        print (f'Encoded file Size in MegaBytes is: ' + output_file_stats) 
-        print (f'Total Space savings is:' + output_space_difference)
+        print (f'Total Space savings is:' + str(output_space_difference))
         print ('Removing ' + ffmeg_input_file)
         # We're checking for to things:
         # 1) If this is a production run, and we intend to delete source
