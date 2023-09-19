@@ -185,14 +185,10 @@ def fprober(ffinder_json):
 
 @app.task
 def fencoder(fprober_json):
-    if (fprober_json["show_diagnostic_messages"]) == 'yes':
-        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
-        print ('================= ffmpeger JSON inputs =================')
-        print (json.dumps(fprober_json, indent=3, sort_keys=True))
-        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
-        
-    # ffmpeg is ffmpeg + settings + input file + encoding settings + output file
-    # So we're going to grab each of those pieces
+    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fencoder for' + (fprober_json["file_name"]) + ' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    print (json.dumps(fprober_json, indent=3, sort_keys=True))
+    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
 
     # Need to get the ffmpeg settings
     ffmpeg_settings = (fprober_json["ffmpeg_settings"])
@@ -218,10 +214,9 @@ def fencoder(fprober_json):
     ffmpeg_output_file = '/boil_hold/' + ffmpeg_output_file
     
     # All together now
-    print ('=============== Assembled ffmpeg command ===============')
+    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> FFmpeg for' + (fprober_json["file_name"]) + ' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
     ffmpeg_command = 'ffmpeg ' + ffmpeg_settings + ' -i "' + ffmeg_input_file + '"' + ffmpeg_encoding_settings + ' "' + ffmpeg_output_file + '"'
     print (ffmpeg_command)    
-    print ('=============== Executing ffmpeg =======================')
 
     # We need to determine if this is a production run and run the function like normal
     if (fprober_json["production_run"]) == 'yes':
@@ -230,19 +225,19 @@ def fencoder(fprober_json):
     else:
         print ('This is a test run, so lets maybe not polute production')
 
-    print ('=============== Checking output =======================')
+    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Checking on the output for' + (fprober_json["file_name"]) + ' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
     
     if os.path.exists(ffmeg_input_file and ffmpeg_output_file):
-        print( ffmeg_input_file + ' and ' + ffmpeg_output_file + ' Files Exists')
+        print (ffmeg_input_file + ' and ' + ffmpeg_output_file + ' Files Exists')
         input_file_stats = os.stat(ffmeg_input_file)
         input_file_stats = input_file_stats.st_size / (1024 * 1024)
-        print(f'Original file Size in MegaBytes is:')
-        print (input_file_stats) 
+        print (f'Original file Size in MegaBytes is: ' + input_file_stats) 
         output_file_stats = os.stat(ffmpeg_output_file)
         output_file_stats = output_file_stats.st_size / (1024 * 1024)
-        print(f'Encoded file Size in MegaBytes is:')
-        print(output_file_stats) 
-        print('Removing ' + ffmeg_input_file)
+        output_space_difference = input_file_stats - output_file_stats
+        print (f'Encoded file Size in MegaBytes is: ' + output_file_stats) 
+        print (f'Total Space savings is:' + output_space_difference)
+        print ('Removing ' + ffmeg_input_file)
         # We're checking for to things:
         # 1) If this is a production run, and we intend to delete source
         # 2) Don't delete sourec if the ffmpeg encode failed
@@ -251,18 +246,18 @@ def fencoder(fprober_json):
             print('Moving ' + ffmpeg_output_file + ' to ' + ffmeg_input_file)
             shutil.move(ffmpeg_output_file, ffmeg_input_file)
             print ('Done')
-            fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats}
+            fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats, 'output_space_difference':output_space_difference}
             fencoder_json.update(fprober_json) 
-            if (fprober_json["show_diagnostic_messages"]) == 'yes':
-                print(json.dumps(fencoder_json, indent=3, sort_keys=True))
+            print(json.dumps(fencoder_json, indent=3, sort_keys=True))
             #fencoder.delay(fencoder_json)
-        else:
             print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
-            print('This is either a test, or an error, and the file was not moved')
+            print('>>>>>>>>>>>>>>>>>>DONE<<<<<<<<<<<<<')
             print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
                     
     else:
-         print("Either source or encoding is missing, so exiting")
+        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+        print("Either source or encoding is missing, so exiting")
+        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
 
 
 #@app.task
