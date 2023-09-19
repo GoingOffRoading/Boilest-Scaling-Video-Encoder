@@ -235,8 +235,8 @@ def fencoder(fprober_json):
         output_file_stats = os.stat(ffmpeg_output_file)
         output_file_stats = output_file_stats.st_size / (1024 * 1024)
         print (f'Encoded file Size in MegaBytes is: ' + str(output_file_stats)) 
-        output_space_difference = input_file_stats - output_file_stats
-        print (f'Total Space savings is:' + str(output_space_difference))
+        new_file_size_difference = input_file_stats - output_file_stats
+        print (f'Total Space savings is:' + str(new_file_size_difference))
         print ('Removing ' + ffmeg_input_file)
         # We're checking for to things:
         # 1) If this is a production run, and we intend to delete source
@@ -246,7 +246,7 @@ def fencoder(fprober_json):
             print('Moving ' + ffmpeg_output_file + ' to ' + ffmeg_input_file)
             shutil.move(ffmpeg_output_file, ffmeg_input_file)
             print ('Done')
-            fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats, 'output_space_difference':output_space_difference}
+            fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats, 'new_file_sizeifference':new_file_size_difference}
             fencoder_json.update(fprober_json) 
             print(json.dumps(fencoder_json, indent=3, sort_keys=True))
             #fencoder.delay(fencoder_json)
