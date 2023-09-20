@@ -1,6 +1,6 @@
 from celery import Celery
 from pathlib import Path
-import json, subprocess, os, shutil
+import json, subprocess, os, shutil, sqlite3
 
 app = Celery('tasks', backend = 'rpc://test:test@192.168.1.110:31672/celery', broker = 'amqp://test:test@192.168.1.110:31672/celery')
 
@@ -246,7 +246,7 @@ def fencoder(fprober_json):
             print('Moving ' + ffmpeg_output_file + ' to ' + ffmeg_input_file)
             shutil.move(ffmpeg_output_file, ffmeg_input_file)
             print ('Done')
-            fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats, 'new_file_sizeifference':new_file_size_difference}
+            fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats, 'new_file_size_difference':new_file_size_difference}
             fencoder_json.update(fprober_json) 
             print(json.dumps(fencoder_json, indent=3, sort_keys=True))
             fresults.delay(fencoder_json)
