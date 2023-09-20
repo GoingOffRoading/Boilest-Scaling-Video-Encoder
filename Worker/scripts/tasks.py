@@ -42,14 +42,14 @@ def fprober(ffinder_json):
 
     file_path = (ffinder_json["file_path"])
     file_name = (ffinder_json["file_name"])
-    ffprobe_path = os.path.join(file_path,file_name)
+    file_full_path = os.path.join(file_path,file_name)
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> starting fprober step on <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ' + file_name + ' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')  
     # Using subprocess to call FFprobe, get JSON back on the video's container, and streams  
     # And displaying the outputs  
-    cmnd = [f'ffprobe', '-loglevel', 'quiet', '-show_entries', 'format:stream=index,stream,codec_type,codec_name', '-of', 'json', ffprobe_path]
+    cmnd = [f'ffprobe', '-loglevel', 'quiet', '-show_entries', 'format:stream=index,stream,codec_type,codec_name', '-of', 'json', file_full_path]
     print ("ffprobe's command on " + file_name + ":")
     print (cmnd)
     p = subprocess.run(cmnd, capture_output=True).stdout
@@ -172,7 +172,7 @@ def fprober(ffinder_json):
         print (file_name + ' does not need encoding')
     else:
         print (file_name + ' needs encoding')
-        fprober_json = {'ffmpeg_encoding_string':encode_string, 'original_container':original_container, 'original_video_codec':original_video_codec, 'original_audio_codec':original_audio_codec, 'original_subtitle_format':original_subtitle_format, 'ffmpeg_output_file':ffmpeg_output_file}
+        fprober_json = {'ffmpeg_encoding_string':encode_string, 'original_container':original_container, 'original_video_codec':original_video_codec, 'original_audio_codec':original_audio_codec, 'original_subtitle_format':original_subtitle_format, 'ffmpeg_output_file':ffmpeg_output_file, 'file_full_path':file_full_path}
         fprober_json.update(ffinder_json) 
         print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fprober_json output <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
         print(json.dumps(fprober_json, indent=3, sort_keys=True))
@@ -249,7 +249,7 @@ def fencoder(fprober_json):
             fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats, 'new_file_sizeifference':new_file_size_difference}
             fencoder_json.update(fprober_json) 
             print(json.dumps(fencoder_json, indent=3, sort_keys=True))
-            #fencoder.delay(fencoder_json)
+            fresults.delay(fencoder_json)
             print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
             print('>>>>>>>>>>>>>>>>>>DONE<<<<<<<<<<<<<')
             print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
@@ -260,6 +260,63 @@ def fencoder(fprober_json):
         print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
 
 
-#@app.task
-#def fencoder(fprober_json):
+@app.task
+def fresults(fencoder_json):
+    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fresults <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    #config_name = (fencoder_json["config_name"])
+    #ffmpeg_audio_codec = (fencoder_json["ffmpeg_audio_codec"])
+    #ffmpeg_audio_string = (fencoder_json["ffmpeg_audio_string"])
+    #ffmpeg_container = (fencoder_json["ffmpeg_container"])
+    #ffmpeg_container_string = (fencoder_json["ffmpeg_container_string"])
+    #ffmpeg_encoding_string = (fencoder_json["ffmpeg_encoding_string"])
+    #ffmpeg_output_file = (fencoder_json["ffmpeg_output_file"])
+    #ffmpeg_subtitle_format = (fencoder_json["ffmpeg_subtitle_format"])
+    #ffmpeg_subtitle_string = (fencoder_json["ffmpeg_subtitle_string"])
+    #ffmpeg_video_codec = (fencoder_json["ffmpeg_video_codec"])
+    file_name = (fencoder_json["file_name"])
+    file_path = (fencoder_json["file_path"])
+    file_full_path = (fencoder_json["file_full_path"])
+    new_file_size = (fencoder_json["new_file_size"])
+    new_file_size_difference = (fencoder_json["new_file_size_difference"])
+    old_file_size = (fencoder_json["old_file_size"])
+    #original_audio_codec = (fencoder_json["original_audio_codec"])
+    #original_container = (fencoder_json["original_container"])
+    #original_subtitle_format = (fencoder_json["original_subtitle_format"])
+    #original_video_codec = (fencoder_json["original_video_codec"])
+    #production_run = (fencoder_json["production_run"])
+    #show_diagnostic_messages = (fencoder_json["show_diagnostic_messages"])
+    #watch_folder = (fencoder_json["watch_folder"])
+
+    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fresults db part <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+
+    database = r"/Boilest/DB/ffencode_results.db"
+    conn = sqlite3.connect(database)
+    c = conn.cursor()
+    c.execute("INSERT INTO ffencode_results VALUES (?,?,?,?,?,?)", (file_name, file_path, file_full_path, new_file_size, new_file_size_difference, old_file_size,))
+    conn.commit()
+    conn.close()
+
+    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fresults db part done <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+
+#config_name,
+#ffmpeg_audio_codec,
+#ffmpeg_audio_string,
+#ffmpeg_container,
+#ffmpeg_container_string,
+#ffmpeg_encoding_string,
+#ffmpeg_output_file,
+#ffmpeg_subtitle_format,
+#ffmpeg_subtitle_string,
+#ffmpeg_video_codec,
+#file_name,
+#file_full_path,
+#new_file_size,
+#new_file_size_difference,
+#old_file_size,
+#original_audio_codec,
+#original_container,
+#original_subtitle_format,
+#original_video_codec,
+#production_run,
+#show_diagnostic_messages,
 
