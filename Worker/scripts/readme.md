@@ -30,3 +30,4 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] Celery starts queues based on docker env variables
 - [x] Around line 150 in tasks...  The function to check if ffmpeg should run checks for a variable like subtitle, without establishing if the subtitle stream exists.  This casues all media missing the stream to encode.  Need to fix.
 - [ ] Documentation
+- [ ] Add the other two SQL insert statements to fresults

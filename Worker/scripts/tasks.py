@@ -287,10 +287,11 @@ def fresults(fencoder_json):
     show_diagnostic_messages = (fencoder_json["show_diagnostic_messages"])
     watch_folder = (fencoder_json["watch_folder"])
 
-    current_GMT = time.gmtime()
-    time_stamp = calendar.timegm(current_GMT)
-    print("Current timestamp:", time_stamp)
-    unique_identifier = file_name + time_stamp
+    print (datetime.strptime(datetime.now(), %f))
+    stamp = datetime.strptime(datetime.now(), %f)
+    print (stamp)
+    unique_identifier = file_name + stamp
+
     print (datetime.datetime.now().replace(microsecond=0).isoformat())
     recorded_date = datetime.datetime.now().replace(microsecond=0).isoformat()
     print recorded_date
@@ -300,25 +301,27 @@ def fresults(fencoder_json):
     database = r"/Boilest/DB/ffencode_results.db"
     conn = sqlite3.connect(database)
     c = conn.cursor()
-    c.execute("INSERT INTO ffencode_results VALUES \
-            (?,?,?,?,?,?,?,?,?,?)", \
-            (
-                unique_identifier,
-                recorded_date,
-                file_name, 
-                file_path, 
-                file_full_path, 
-                config_name,
-                new_file_size, 
-                new_file_size_difference, 
-                old_file_size,
-                watch_folder,
-            )
-            )
+    c.execute(
+        "INSERT INTO ffencode_results"
+        " VALUES (?,?,?,?,?,?,?,?,?,?)",
+        (
+            unique_identifier,
+            recorded_date,
+            file_name, 
+            file_path, 
+            file_full_path, 
+            config_name,
+            new_file_size, 
+            new_file_size_difference, 
+            old_file_size,
+            watch_folder,
+        )
+    )
     #c.execute("INSERT INTO ffencode_results VALUES (?,?,?,?,?,?)", (file_name, file_path, file_full_path, new_file_size, new_file_size_difference, old_file_size,))
     #c.execute("INSERT INTO ffencode_results VALUES (?,?,?,?,?,?)", (file_name, file_path, file_full_path, new_file_size, new_file_size_difference, old_file_size,))
     conn.commit()
     conn.close()
+
 
     print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fresults db part done <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
 
