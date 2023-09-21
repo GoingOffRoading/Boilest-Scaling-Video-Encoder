@@ -1,6 +1,6 @@
 from celery import Celery
 from pathlib import Path
-import json, subprocess, os, shutil, sqlite3
+import json, subprocess, os, shutil, sqlite3, time, datetime
 
 app = Celery('tasks', backend = 'rpc://test:test@192.168.1.110:31672/celery', broker = 'amqp://test:test@192.168.1.110:31672/celery')
 
@@ -263,36 +263,60 @@ def fencoder(fprober_json):
 @app.task
 def fresults(fencoder_json):
     print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fresults <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
-    #config_name = (fencoder_json["config_name"])
-    #ffmpeg_audio_codec = (fencoder_json["ffmpeg_audio_codec"])
-    #ffmpeg_audio_string = (fencoder_json["ffmpeg_audio_string"])
-    #ffmpeg_container = (fencoder_json["ffmpeg_container"])
-    #ffmpeg_container_string = (fencoder_json["ffmpeg_container_string"])
-    #ffmpeg_encoding_string = (fencoder_json["ffmpeg_encoding_string"])
-    #ffmpeg_output_file = (fencoder_json["ffmpeg_output_file"])
-    #ffmpeg_subtitle_format = (fencoder_json["ffmpeg_subtitle_format"])
-    #ffmpeg_subtitle_string = (fencoder_json["ffmpeg_subtitle_string"])
-    #ffmpeg_video_codec = (fencoder_json["ffmpeg_video_codec"])
+    config_name = (fencoder_json["config_name"])
+    ffmpeg_audio_codec = (fencoder_json["ffmpeg_audio_codec"])
+    ffmpeg_audio_string = (fencoder_json["ffmpeg_audio_string"])
+    ffmpeg_container = (fencoder_json["ffmpeg_container"])
+    ffmpeg_container_string = (fencoder_json["ffmpeg_container_string"])
+    ffmpeg_encoding_string = (fencoder_json["ffmpeg_encoding_string"])
+    ffmpeg_output_file = (fencoder_json["ffmpeg_output_file"])
+    ffmpeg_subtitle_format = (fencoder_json["ffmpeg_subtitle_format"])
+    ffmpeg_subtitle_string = (fencoder_json["ffmpeg_subtitle_string"])
+    ffmpeg_video_codec = (fencoder_json["ffmpeg_video_codec"])
     file_name = (fencoder_json["file_name"])
     file_path = (fencoder_json["file_path"])
     file_full_path = (fencoder_json["file_full_path"])
     new_file_size = (fencoder_json["new_file_size"])
     new_file_size_difference = (fencoder_json["new_file_size_difference"])
     old_file_size = (fencoder_json["old_file_size"])
-    #original_audio_codec = (fencoder_json["original_audio_codec"])
-    #original_container = (fencoder_json["original_container"])
-    #original_subtitle_format = (fencoder_json["original_subtitle_format"])
-    #original_video_codec = (fencoder_json["original_video_codec"])
-    #production_run = (fencoder_json["production_run"])
-    #show_diagnostic_messages = (fencoder_json["show_diagnostic_messages"])
-    #watch_folder = (fencoder_json["watch_folder"])
+    original_audio_codec = (fencoder_json["original_audio_codec"])
+    original_container = (fencoder_json["original_container"])
+    original_subtitle_format = (fencoder_json["original_subtitle_format"])
+    original_video_codec = (fencoder_json["original_video_codec"])
+    production_run = (fencoder_json["production_run"])
+    show_diagnostic_messages = (fencoder_json["show_diagnostic_messages"])
+    watch_folder = (fencoder_json["watch_folder"])
+
+    current_GMT = time.gmtime()
+    time_stamp = calendar.timegm(current_GMT)
+    print("Current timestamp:", time_stamp)
+    unique_identifier = file_name + time_stamp
+    print (datetime.datetime.now().replace(microsecond=0).isoformat())
+    recorded_date = datetime.datetime.now().replace(microsecond=0).isoformat()
+    print recorded_date
 
     print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fresults db part <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
 
     database = r"/Boilest/DB/ffencode_results.db"
     conn = sqlite3.connect(database)
     c = conn.cursor()
-    c.execute("INSERT INTO ffencode_results VALUES (?,?,?,?,?,?)", (file_name, file_path, file_full_path, new_file_size, new_file_size_difference, old_file_size,))
+    c.execute("INSERT INTO ffencode_results VALUES \
+            (?,?,?,?,?,?,?,?,?,?)", \
+            (
+                unique_identifier,
+                recorded_date,
+                file_name, 
+                file_path, 
+                file_full_path, 
+                config_name,
+                new_file_size, 
+                new_file_size_difference, 
+                old_file_size,
+                watch_folder,
+            )
+            )
+    #c.execute("INSERT INTO ffencode_results VALUES (?,?,?,?,?,?)", (file_name, file_path, file_full_path, new_file_size, new_file_size_difference, old_file_size,))
+    #c.execute("INSERT INTO ffencode_results VALUES (?,?,?,?,?,?)", (file_name, file_path, file_full_path, new_file_size, new_file_size_difference, old_file_size,))
     conn.commit()
     conn.close()
 
