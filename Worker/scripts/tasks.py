@@ -366,6 +366,4 @@ def fresults(fencoder_json):
     print (c.fetchone())
 
     conn.close()
-
-
     print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fresults db part done <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
