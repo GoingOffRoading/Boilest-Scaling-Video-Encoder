@@ -25,7 +25,7 @@ def create_table(conn, create_table_sql):
     try:
         c = conn.cursor()
         c.execute(create_table_sql)
-        conn.close()
+        
     except Error as e:
         print(e)
 
@@ -38,7 +38,7 @@ def main():
                                         recorded_date TEXT,
                                         file_name TEXT,
                                         file_path TEXT,
-                                        config_name TEXT
+                                        config_name TEXT,
                                         new_file_size REAL,
                                         new_file_sizeifference REAL, 
                                         old_file_size REAL,
@@ -54,7 +54,7 @@ def main():
                                         config_name TEXT,
                                         ffmpeg_audio_codec TEXT,
                                         ffmpeg_audio_string TEXT,
-                                        ffmpeg_container TEXT
+                                        ffmpeg_container TEXT,
                                         ffmpeg_container_extension TEXT,
                                         ffmpeg_container_string TEXT,
                                         ffmpeg_encoding_string TEXT,
@@ -72,7 +72,7 @@ def main():
                                         recorded_date TEXT,
                                         file_name TEXT,
                                         file_path TEXT,
-                                        config_name TEXT
+                                        config_name TEXT,
                                         original_audio_codec TEXT,
                                         original_container TEXT,
                                         original_subtitle_format TEXT,
@@ -88,7 +88,8 @@ def main():
         # create projects table
         create_table(conn, sql_create_projects_table)
         create_table(conn, sql_create_projects_table)  
-        create_table(conn, sql_create_projects_table)            
+        create_table(conn, sql_create_projects_table) 
+        conn.close()           
     else:
         print("Error! cannot create the database connection.")
 

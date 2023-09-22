@@ -1,6 +1,7 @@
 from celery import Celery
 from pathlib import Path
-import json, subprocess, os, shutil, sqlite3, time, datetime
+from datetime import datetime
+import json, subprocess, os, shutil, sqlite3
 
 app = Celery('tasks', backend = 'rpc://test:test@192.168.1.110:31672/celery', broker = 'amqp://test:test@192.168.1.110:31672/celery')
 
@@ -224,6 +225,9 @@ def fencoder(fprober_json):
         os.system(ffmpeg_command)
     else:
         print ('This is a test run, so lets maybe not polute production')
+        input_file_stats = float(31.441486358642578)
+        output_file_stats = float(34.31477642059326)
+        new_file_size_difference = float(2.8732900619506836)
 
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Checking on the output for' + (fprober_json["file_name"]) + ' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
     
@@ -246,18 +250,19 @@ def fencoder(fprober_json):
             print('Moving ' + ffmpeg_output_file + ' to ' + ffmeg_input_file)
             shutil.move(ffmpeg_output_file, ffmeg_input_file)
             print ('Done')
-            fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats, 'new_file_size_difference':new_file_size_difference}
-            fencoder_json.update(fprober_json) 
-            print(json.dumps(fencoder_json, indent=3, sort_keys=True))
-            fresults.delay(fencoder_json)
-            print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
-            print('>>>>>>>>>>>>>>>>>>DONE<<<<<<<<<<<<<')
-            print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
-                    
+            fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats, 'new_file_size_difference':new_file_size_difference}                   
     else:
         print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
         print("Either source or encoding is missing, so exiting")
         print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+
+    fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats, 'new_file_size_difference':new_file_size_difference} 
+    fencoder_json.update(fprober_json) 
+    print(json.dumps(fencoder_json, indent=3, sort_keys=True))
+    fresults.delay(fencoder_json)
+    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    print('>>>>>>>>>>>>>>>>>>DONE<<<<<<<<<<<<<')
+    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
 
 
 @app.task
@@ -275,7 +280,6 @@ def fresults(fencoder_json):
     ffmpeg_video_codec = (fencoder_json["ffmpeg_video_codec"])
     file_name = (fencoder_json["file_name"])
     file_path = (fencoder_json["file_path"])
-    file_full_path = (fencoder_json["file_full_path"])
     new_file_size = (fencoder_json["new_file_size"])
     new_file_size_difference = (fencoder_json["new_file_size_difference"])
     old_file_size = (fencoder_json["old_file_size"])
@@ -283,18 +287,17 @@ def fresults(fencoder_json):
     original_container = (fencoder_json["original_container"])
     original_subtitle_format = (fencoder_json["original_subtitle_format"])
     original_video_codec = (fencoder_json["original_video_codec"])
-    production_run = (fencoder_json["production_run"])
-    show_diagnostic_messages = (fencoder_json["show_diagnostic_messages"])
     watch_folder = (fencoder_json["watch_folder"])
+    ffmpeg_container_extension = fencoder_json["ffmpeg_container_extension"]
+    ffmpeg_settings = fencoder_json["ffmpeg_settings"]
+    ffmpeg_video_string = fencoder_json["ffmpeg_video_string"]
 
-    print (datetime.strptime(datetime.now(), %f))
-    stamp = datetime.strptime(datetime.now(), %f)
-    print (stamp)
-    unique_identifier = file_name + stamp
 
-    print (datetime.datetime.now().replace(microsecond=0).isoformat())
-    recorded_date = datetime.datetime.now().replace(microsecond=0).isoformat()
-    print recorded_date
+    recorded_date = datetime.now()
+    print (recorded_date)
+    print("Current microsecond =" + str(recorded_date.microsecond))
+    unique_identifier = file_name + str(recorded_date.microsecond)
+    print (unique_identifier)
 
     print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fresults db part <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
 
@@ -303,13 +306,12 @@ def fresults(fencoder_json):
     c = conn.cursor()
     c.execute(
         "INSERT INTO ffencode_results"
-        " VALUES (?,?,?,?,?,?,?,?,?,?)",
+        " VALUES (?,?,?,?,?,?,?,?,?)",
         (
             unique_identifier,
             recorded_date,
             file_name, 
             file_path, 
-            file_full_path, 
             config_name,
             new_file_size, 
             new_file_size_difference, 
@@ -317,9 +319,54 @@ def fresults(fencoder_json):
             watch_folder,
         )
     )
+    c.execute(
+        "INSERT INTO ffencode_config"
+        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        (
+            unique_identifier,
+            recorded_date,
+            file_name, 
+            file_path, 
+            config_name,
+            ffmpeg_audio_codec, 
+            ffmpeg_audio_string, 
+            ffmpeg_container,
+            ffmpeg_container_extension,
+            ffmpeg_container_string,
+            ffmpeg_encoding_string,
+            ffmpeg_output_file,
+            ffmpeg_settings,
+            ffmpeg_subtitle_format,
+            ffmpeg_subtitle_string,
+            ffmpeg_video_codec,
+            ffmpeg_video_string,
+            watch_folder,
+        )
+    )
+    c.execute(
+        "INSERT INTO ffencode_source"
+        " VALUES (?,?,?,?,?,?,?,?,?,?)",
+        (
+            unique_identifier,
+            recorded_date,
+            file_name, 
+            file_path, 
+            config_name,
+            original_audio_codec, 
+            original_container, 
+            original_subtitle_format,
+            original_video_codec,
+            watch_folder,
+        )
+    )
     #c.execute("INSERT INTO ffencode_results VALUES (?,?,?,?,?,?)", (file_name, file_path, file_full_path, new_file_size, new_file_size_difference, old_file_size,))
     #c.execute("INSERT INTO ffencode_results VALUES (?,?,?,?,?,?)", (file_name, file_path, file_full_path, new_file_size, new_file_size_difference, old_file_size,))
     conn.commit()
+
+    c.execute("select sum(new_file_size_difference) from ffencode_results")
+    print ("We have saved so far:")
+    print (c.fetchone())
+
     conn.close()
 
 
