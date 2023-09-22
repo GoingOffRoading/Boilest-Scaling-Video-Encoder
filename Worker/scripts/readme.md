@@ -12,7 +12,7 @@ This is the Boilest workflow, and work that is currently outstanding
 - [x] Function that checks the files size of the new and old file
 - [x] Configuration based
 - [ ] Logging
-- [ ] Writing results of the ffencode step to SQLite
+- [x] Writing results of the ffencode step to SQLite
 - [x] Starts workflow based on a JSON configuration
 - [x] Rewrite the FFProbe section to handle when a media file doesn't have a video, audio, or subtitle stream
 - [ ] Expirement with AV1 film grain: https://www.google.com/search?q=av1+film+grain+synthesis+anime

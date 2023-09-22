@@ -359,8 +359,6 @@ def fresults(fencoder_json):
             watch_folder,
         )
     )
-    #c.execute("INSERT INTO ffencode_results VALUES (?,?,?,?,?,?)", (file_name, file_path, file_full_path, new_file_size, new_file_size_difference, old_file_size,))
-    #c.execute("INSERT INTO ffencode_results VALUES (?,?,?,?,?,?)", (file_name, file_path, file_full_path, new_file_size, new_file_size_difference, old_file_size,))
     conn.commit()
 
     c.execute("select sum(new_file_size_difference) from ffencode_results")
@@ -371,26 +369,3 @@ def fresults(fencoder_json):
 
 
     print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fresults db part done <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
-
-#config_name,
-#ffmpeg_audio_codec,
-#ffmpeg_audio_string,
-#ffmpeg_container,
-#ffmpeg_container_string,
-#ffmpeg_encoding_string,
-#ffmpeg_output_file,
-#ffmpeg_subtitle_format,
-#ffmpeg_subtitle_string,
-#ffmpeg_video_codec,
-#file_name,
-#file_full_path,
-#new_file_size,
-#new_file_size_difference,
-#old_file_size,
-#original_audio_codec,
-#original_container,
-#original_subtitle_format,
-#original_video_codec,
-#production_run,
-#show_diagnostic_messages,
-
