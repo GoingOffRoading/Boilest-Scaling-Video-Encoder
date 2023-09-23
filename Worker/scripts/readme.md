@@ -27,7 +27,7 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] Add more inline documentation
 - [ ] Add additional fields so different file attributes can get different ffmpeg commands
 - [ ] Celery queues: https://stackoverflow.com/questions/51631455/how-to-route-tasks-to-different-queues-with-celery-and-django
-- [ ] Celery starts queues based on docker env variables
+- [X] Celery starts queues based on docker env variables
 - [x] Around line 150 in tasks...  The function to check if ffmpeg should run checks for a variable like subtitle, without establishing if the subtitle stream exists.  This casues all media missing the stream to encode.  Need to fix.
 - [ ] Documentation
 - [ ] Add the other two SQL insert statements to fresults

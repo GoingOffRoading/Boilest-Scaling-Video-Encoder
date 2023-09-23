@@ -5,7 +5,7 @@ import json, subprocess, os, shutil, sqlite3
 
 app = Celery('tasks', backend = 'rpc://test:test@192.168.1.110:31672/celery', broker = 'amqp://test:test@192.168.1.110:31672/celery')
 
-@app.task
+@app.task(queue='worker')
 def ffinder(json_template):
     # We feed this function a JSON string of configurations
     # Configurations are stored in the /Templates directory
@@ -33,7 +33,7 @@ def ffinder(json_template):
                     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
                 fprober.delay(ffinder_json)
 
-@app.task
+@app.task(queue='worker')
 def fprober(ffinder_json):
     # This function is kicked off from the individual file results from the ffinder function
     # fprober's functions are three:
@@ -184,7 +184,7 @@ def fprober(ffinder_json):
         fencoder.delay(fprober_json)
 
 
-@app.task
+@app.task(queue='worker')
 def fencoder(fprober_json):
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fencoder for' + (fprober_json["file_name"]) + ' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
@@ -265,7 +265,7 @@ def fencoder(fprober_json):
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
 
 
-@app.task
+@app.task(queue='manager')
 def fresults(fencoder_json):
     print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fresults <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
     config_name = (fencoder_json["config_name"])

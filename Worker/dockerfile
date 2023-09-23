@@ -20,6 +20,9 @@ COPY /Scripts /Scripts
 COPY /Scripts/DB /Boilest/DB
 WORKDIR "/Scripts"
 
+ENV Worker Yes
+ENV Manager Yes
+
 # Add a user that is the same user group as the data being read
 # Is this clean?  Not really...  Will need to revisit this later
 
