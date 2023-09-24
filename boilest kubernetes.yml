@@ -32,6 +32,8 @@ spec:
           volumeMounts:
             - name: boilestmedia
               mountPath: "/boil_watch"
+      nodeSelector:
+        boilest: manager
       imagePullSecrets:
       - name: azureacr
       nodeName: node101-desktop
@@ -82,14 +84,14 @@ spec:
           imagePullPolicy: Always
           env:
             - name: Manager
-              value: "Yes"
-            - name: Worker
               value: "No"
-          ports:
-            - containerPort: 5555
+            - name: Worker
+              value: "Yes"
           volumeMounts:
             - name: boilestmedia
               mountPath: "/boil_watch"
+      nodeSelector:
+        boilest: worker
       imagePullSecrets:
       - name: azureacr
       nodeName: node101-desktop

@@ -46,3 +46,7 @@ None of this works today
 # What is in this repo today?
 
 Little bits of code that work, and me struggling with the basics to glue it all together
+
+# How to deploy
+
+https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/
