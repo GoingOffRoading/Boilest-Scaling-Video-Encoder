@@ -30,18 +30,12 @@ Handbrake is awesome, but:
 
 # How does Boilest work?
 
-Ask me in a few months.
+* A script scans a container volume for media.  Each file discovered is individually sent to an FFprobe function to determine if the file should be reencoded.
+* An FFProbe function scans each discovered piece of media and determines actions based on FFProbe outputs (re-encode video, re-encode audio, change subtitle format, change container, etc).  The decision is made against a configuration.  Any files determined to require encoding are sent to the next step.
+* Media files passed  from the FFprobe step are encoded using FFmpeg.  Once the file is done encoding, it is compared to the original.  If the comparison passes, the original file is replaced, and file stats are sent to the next step.
+* All encoded file states from the FFmpeg step are recorded in a SQL database.
 
-Hypothedically:
-
-* Scans a container volume for media
-* Determines actions based on FFProbe outputs (re-encode video, re-encode audio, change subtitle format, change container, etc) against a desired media spec
-* Leverages Celery to distrbute FFProbe tasks to worker nodes
-* Worker nodes validate their ouputs using libvmaf to quantify the file's accuracy
-* Worker replaces the original file with the newely encoded one
-* Worker logs job stats (file name, before size, after size, vmaf score)
-
-None of this works today
+This works end to end.  I'm on the fence about having the scan kick off at launch...  TBD...  The end goal is to have a configuration UI, but I am a little ways away from that step.
 
 # What is in this repo today?
 
