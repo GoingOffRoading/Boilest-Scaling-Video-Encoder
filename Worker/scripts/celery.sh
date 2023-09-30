@@ -2,12 +2,12 @@
 
 echo "Checking Variables"
 echo $Manager
-echo $Worker
 
 if [ $Manager == "Yes" ]; then
-    echo "Running Manager and Worker" 
-    celery -A tasks worker -B -l info -c 1 -Q manager &
+    echo "Running Manager" 
+    celery -A tasks worker -B -l info -c 1 -Q manager -n manager@%n &
     celery -A tasks flower -l debug 
 else
-    celery -A tasks worker -B -l info -c 1 -Q worker 
+    echo "Running Worker" 
+    celery -A tasks worker -B -l info -c 1 -Q worker -n worker@%n
 fi

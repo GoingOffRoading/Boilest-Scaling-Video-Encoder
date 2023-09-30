@@ -1,5 +1,5 @@
 {
-  "config_name": "default",
+  "config_name": "AV1_Default",
   "watch_folder": "/boil_watch",
   "production_run": "yes",
   "ffmpeg_container": "MKV",

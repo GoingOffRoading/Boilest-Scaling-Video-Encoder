@@ -5,6 +5,46 @@ import json, subprocess, os, shutil, sqlite3
 
 app = Celery('tasks', backend = 'rpc://test:test@192.168.1.110:31672/celery', broker = 'amqp://test:test@192.168.1.110:31672/celery')
 
+# Schedule, kicks off a scan for configs ever 15 minutes (15 x 60 = 900 seconds)
+# https://docs.celeryq.dev/en/stable/userguide/periodic-tasks.html#entries
+@app.on_after_configure.connect
+def setup_periodic_tasks(sender, **kwargs):
+    # Calls ffconfigs('hello') every 10 seconds.
+    sender.add_periodic_task(900.0, ffconfigs.s('hit it'))
+
+
+# Scan for condigurations, and post the to the next step
+@app.task(queue='manager')
+def ffconfigs(arg):
+    print (arg)
+    with app.connection_or_acquire() as conn:
+        conn.default_channel.queue_declare(
+            queue='worker', passive=True).message_count
+    print ('message count is')
+    print (message_count)
+
+
+
+    directory = '/Scripts/Configurations'
+    # traverse whole directory
+    print ('looking')
+    for root, dirs, files in os.walk(directory):
+        # select file name
+        for file in files:
+            # check the extension of files
+            if file.endswith('.json'):
+                # append the desired fields to the original json
+                print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Configuration Located <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+                json_file = os.path.join(root,file)
+                print (json_file)
+                f = open(json_file)
+                json_template = json.load(f)
+                print (json.dumps(json_template, indent=3, sort_keys=True))
+                ffinder.delay(json_template)
+            else:
+                print('Did not find Configurations')
+
+
 @app.task(queue='worker')
 def ffinder(json_template):
     # We feed this function a JSON string of configurations
