@@ -3,7 +3,7 @@
 This is the Boilest workflow, and work that is currently outstanding 
 
 # To Do List
-- [ ] Cron that checks the queue, and injects the find_files task if the queue is empty
+- [x] Cron that checks the queue, and injects the find_files task if the queue is empty
 - [x] Task that recusively searches directories based on file extensions
 - [x] For each file, calls the next step
 - [x] Function that calls FFprobe for the file, and determines next step
@@ -35,3 +35,5 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] Create and integrate a secrets/config file/template, or maybe use container evars
 - [ ] See if we can create a test pipeline using open source video clip
 - [ ] Sort through the test scrips, and start deleting duplicates
+- [ ] Rewrite the function that checks the queues as that is spagetti
+- [ ] Rewrite those print lien break things to be cooler

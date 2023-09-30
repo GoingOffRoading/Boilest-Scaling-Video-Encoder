@@ -1,9 +1,10 @@
 from celery import Celery
 from pathlib import Path
 from datetime import datetime
-import json, subprocess, os, shutil, sqlite3
+import json, subprocess, os, shutil, pika, sqlite3
 
 app = Celery('tasks', backend = 'rpc://test:test@192.168.1.110:31672/celery', broker = 'amqp://test:test@192.168.1.110:31672/celery')
+pika_conn_params = pika.ConnectionParameters(host='192.168.1.110', port=31672,credentials=pika.credentials.PlainCredentials('test', 'test'),)
 
 # Schedule, kicks off a scan for configs ever 15 minutes (15 x 60 = 900 seconds)
 # https://docs.celeryq.dev/en/stable/userguide/periodic-tasks.html#entries
@@ -17,32 +18,49 @@ def setup_periodic_tasks(sender, **kwargs):
 @app.task(queue='manager')
 def ffconfigs(arg):
     print (arg)
-    with app.connection_or_acquire() as conn:
-        conn.default_channel.queue_declare(
-            queue='worker', passive=True).message_count
-    print ('message count is')
-    print ()
+   
+    connection = pika.BlockingConnection(pika_conn_params)
+    channel = connection.channel()
+    queue = channel.queue_declare(
+        queue="worker", durable=True,
+        exclusive=False, auto_delete=False
+    )
+    tasks = queue.method.message_count
 
+    connection = pika.BlockingConnection(pika_conn_params)
+    channel = connection.channel()
+    queue = channel.queue_declare(
+        queue="manager", durable=True,
+        exclusive=False, auto_delete=False
+    )
+
+    tasks = tasks + queue.method.message_count
+
+    print ('Tasks in queue:')
+    print(tasks)
 
 
     directory = '/Scripts/Configurations'
     # traverse whole directory
     print ('looking')
-    for root, dirs, files in os.walk(directory):
-        # select file name
-        for file in files:
-            # check the extension of files
-            if file.endswith('.json'):
-                # append the desired fields to the original json
-                print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Configuration Located <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
-                json_file = os.path.join(root,file)
-                print (json_file)
-                f = open(json_file)
-                json_template = json.load(f)
-                print (json.dumps(json_template, indent=3, sort_keys=True))
-                ffinder.delay(json_template)
-            else:
-                print('Did not find Configurations')
+    if tasks == 0:
+        for root, dirs, files in os.walk(directory):
+            # select file name
+            for file in files:
+                # check the extension of files
+                if file.endswith('.json'):
+                    # append the desired fields to the original json
+                    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Configuration Located <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+                    json_file = os.path.join(root,file)
+                    print (json_file)
+                    f = open(json_file)
+                    json_template = json.load(f)
+                    print (json.dumps(json_template, indent=3, sort_keys=True))
+                    ffinder.delay(json_template)
+                else:
+                    print('Did not find Configurations')
+    else:
+        print ('Tasks in the queue.  Not adding more at this time')
 
 
 @app.task(queue='worker')
