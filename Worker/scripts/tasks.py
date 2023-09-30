@@ -21,7 +21,7 @@ def ffconfigs(arg):
         conn.default_channel.queue_declare(
             queue='worker', passive=True).message_count
     print ('message count is')
-    print (message_count)
+    print ()
 
 
 
