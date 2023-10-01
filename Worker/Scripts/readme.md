@@ -11,7 +11,6 @@ This is the Boilest workflow, and work that is currently outstanding
 - [x] Function that moves the encoded file into the source and deletes the soure file
 - [x] Function that checks the files size of the new and old file
 - [x] Configuration based
-- [ ] Logging
 - [x] Writing results of the ffencode step to SQLite
 - [x] Starts workflow based on a JSON configuration
 - [x] Rewrite the FFProbe section to handle when a media file doesn't have a video, audio, or subtitle stream
@@ -24,7 +23,7 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] Stopping the script does not stop the ffmpeg terminal/os command.  There should be a way to interupt ffmpeg from the script
 - [ ] Add more inline documentation
 - [ ] Add additional fields so different file attributes can get different ffmpeg commands
-- [ ] Celery queues: https://stackoverflow.com/questions/51631455/how-to-route-tasks-to-different-queues-with-celery-and-django
+- [x] Celery queues: https://stackoverflow.com/questions/51631455/how-to-route-tasks-to-different-queues-with-celery-and-django
 - [X] Celery starts queues based on docker env variables
 - [x] Around line 150 in tasks...  The function to check if ffmpeg should run checks for a variable like subtitle, without establishing if the subtitle stream exists.  This casues all media missing the stream to encode.  Need to fix.
 - [ ] Repo Documentation
@@ -35,4 +34,4 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] See if we can create a test pipeline using open source video clip
 - [ ] Sort through the test scrips, and start deleting duplicates
 - [ ] Rewrite the function that checks the queues as that is spagetti
-- [ ] Rewrite those print lien break things to be cooler
+- [ ] Replace the print statements with logging: https://docs.python.org/3/howto/logging.html
