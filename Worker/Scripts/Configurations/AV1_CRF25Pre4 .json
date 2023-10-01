@@ -6,7 +6,7 @@
   "ffmpeg_container_string": "matroska,webm",
   "ffmpeg_container_extension":"mkv",
   "ffmpeg_video_codec": "av1",
-  "ffmpeg_video_string": "-c:v libsvtav1 -crf 20 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0",
+  "ffmpeg_video_string": "-c:v libsvtav1 -crf 25 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0",
   "ffmpeg_audio_codec": "opus",
   "ffmpeg_audio_string": "-c:a libopus",
   "ffmpeg_subtitle_format": "subrip",

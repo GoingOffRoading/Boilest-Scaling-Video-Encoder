@@ -19,7 +19,6 @@ This is the Boilest workflow, and work that is currently outstanding
 - [x] Fix an issue where invalid ffmpeg settings would crash ffmpeg, and a file of 0kb would replace source 
 - [ ] Expirement with subtitle settings
 - [ ] Experiement with audio codec settings
-- [ ] UI Design
 - [ ] UI
 - [x] When establishing the codecs, we check for keywords like 'video' (see line 91 in Taks.py), which may return a false positive because ffprobe could use the keyworld 'video' in objects not related to defining the stream type.  Will need to figure out how to work around this.
 - [ ] Stopping the script does not stop the ffmpeg terminal/os command.  There should be a way to interupt ffmpeg from the script
@@ -28,7 +27,7 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] Celery queues: https://stackoverflow.com/questions/51631455/how-to-route-tasks-to-different-queues-with-celery-and-django
 - [X] Celery starts queues based on docker env variables
 - [x] Around line 150 in tasks...  The function to check if ffmpeg should run checks for a variable like subtitle, without establishing if the subtitle stream exists.  This casues all media missing the stream to encode.  Need to fix.
-- [ ] Documentation
+- [ ] Repo Documentation
 - [x] Add the other two SQL insert statements to fresults
 - [ ] Rearrange git repo/directory structure
 - [ ] Experiment with the Ubuntu FFMpeg image for SVT-AV! latest and greatest
