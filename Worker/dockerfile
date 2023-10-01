@@ -11,12 +11,13 @@ RUN apk upgrade
 ARG UID=1000
 ARG GID=1000
 
-RUN mkdir -p /boil_watch
+
 RUN mkdir -p /boil_hold
 RUN mkdir -p /Boilest
 RUN mkdir -p /Boilest/DB
 RUN mkdir -p /Scripts
 
+RUN mkdir -p /Media
 RUN mkdir -p /Anime_TV
 RUN mkdir -p /Aime_Movies
 RUN mkdir -p /Live_Action_TV
