@@ -11,7 +11,7 @@ pika_conn_params = pika.ConnectionParameters(host='192.168.1.110', port=31672,cr
 @app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
     # Calls ffconfigs('hello') every 10 seconds.
-    sender.add_periodic_task(900.0, ffconfigs.s('hit it'))
+    sender.add_periodic_task(300.0, ffconfigs.s('hit it'))
 
 
 # Scan for condigurations, and post the to the next step
