@@ -1,10 +1,10 @@
 from celery import Celery
 from pathlib import Path
 from datetime import datetime
-import json, subprocess, os, shutil, pika, sqlite3
+import json, subprocess, os, shutil, sqlite3, requests
 
 app = Celery('tasks', backend = 'rpc://test:test@192.168.1.110:31672/celery', broker = 'amqp://test:test@192.168.1.110:31672/celery')
-pika_conn_params = pika.ConnectionParameters(host='192.168.1.110', port=31672,credentials=pika.credentials.PlainCredentials('test', 'test'),)
+
 
 # Schedule, kicks off a scan for configs ever 15 minutes (15 x 60 = 900 seconds)
 # https://docs.celeryq.dev/en/stable/userguide/periodic-tasks.html#entries
@@ -18,27 +18,13 @@ def setup_periodic_tasks(sender, **kwargs):
 @app.task(queue='manager')
 def ffconfigs(arg):
     print (arg)
-   
-    connection = pika.BlockingConnection(pika_conn_params)
-    channel = connection.channel()
-    queue = channel.queue_declare(
-        queue="worker", durable=True,
-        exclusive=False, auto_delete=False
-    )
-    tasks = queue.method.message_count
-
-    connection = pika.BlockingConnection(pika_conn_params)
-    channel = connection.channel()
-    queue = channel.queue_declare(
-        queue="manager", durable=True,
-        exclusive=False, auto_delete=False
-    )
-
-    tasks = tasks + queue.method.message_count
-
+    worker_queue = json.loads((requests.get('http://192.168.1.110:32311/api/queues/celery/worker', auth=('test', 'test'))).text)
+    worker_queue_messages_unacknowledged = (worker_queue["messages_unacknowledged"])
+    manager_queue = json.loads((requests.get('http://192.168.1.110:32311/api/queues/celery/manager', auth=('test', 'test'))).text)
+    manager_queue_messages_unacknowledged = (manager_queue["messages_unacknowledged"])    
+    tasks = worker_queue_messages_unacknowledged + manager_queue_messages_unacknowledged
     print ('Tasks in queue:')
     print(tasks)
-
 
     directory = '/Scripts/Configurations'
     # traverse whole directory
