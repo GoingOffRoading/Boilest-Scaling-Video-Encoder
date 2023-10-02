@@ -15,3 +15,9 @@ ffmpeg -video_size 3840x2160 -framerate 60 -pixel_format yuv420p10le -i decoded_
 
 
 https://stackoverflow.com/questions/16691161/getting-number-of-messages-in-a-rabbitmq-queue
+
+
+
+
+
+https://stackoverflow.com/questions/5844672/delete-an-element-from-a-dictionary
