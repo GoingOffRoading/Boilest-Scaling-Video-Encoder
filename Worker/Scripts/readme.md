@@ -35,3 +35,4 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] Sort through the test scrips, and start deleting duplicates
 - [ ] Rewrite the function that checks the queues as that is spagetti
 - [ ] Replace the print statements with logging: https://docs.python.org/3/howto/logging.html
+- [ ] Add python scripts to the DB folder to get stats
