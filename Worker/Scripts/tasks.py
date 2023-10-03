@@ -28,7 +28,6 @@ def ffconfigs(arg):
 
     directory = '/Scripts/Configurations'
     # traverse whole directory
-    print ('looking')
     if tasks == 0:
         for root, dirs, files in os.walk(directory):
             # select file name
