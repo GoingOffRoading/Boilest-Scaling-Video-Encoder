@@ -36,3 +36,5 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] Rewrite the function that checks the queues as that is spagetti
 - [ ] Replace the print statements with logging: https://docs.python.org/3/howto/logging.html
 - [ ] Add python scripts to the DB folder to get stats
+- [ ] Resolve issues with OPUS compatibility
+- [ ] Resolve issues where output = 0.0 but tries to get moved anyway

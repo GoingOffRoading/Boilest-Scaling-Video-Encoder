@@ -268,9 +268,9 @@ def fencoder(fprober_json):
         os.system(ffmpeg_command)
     else:
         print ('This is a test run, so lets maybe not polute production')
-        input_file_stats = float(31.441486358642578)
-        output_file_stats = float(34.31477642059326)
-        new_file_size_difference = float(2.8732900619506836)
+        input_file_stats = float(31.44148)
+        output_file_stats = float(34.31477626)
+        new_file_size_difference = float(2.873836)
 
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Checking on the output for' + (fprober_json["file_name"]) + ' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
     
@@ -293,7 +293,14 @@ def fencoder(fprober_json):
             print('Moving ' + ffmpeg_output_file + ' to ' + ffmeg_input_file)
             shutil.move(ffmpeg_output_file, ffmeg_input_file)
             print ('Done')
-            fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats, 'new_file_size_difference':new_file_size_difference}                   
+            fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats, 'new_file_size_difference':new_file_size_difference}
+        elif output_file_stats == 0.0:
+            print ('Something went wrong, and the output file size is 0.0 KB')
+            print ('Deleting: ' + ffmpeg_output_file)
+            os.remove(ffmpeg_output_file) 
+        else:
+            print ('Something went wrong, and neither source nor encoded were deleted ')
+
     else:
         print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
         print("Either source or encoding is missing, so exiting")
