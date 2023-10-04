@@ -93,7 +93,7 @@ def fprober(ffinder_json):
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')  
     # Using subprocess to call FFprobe, get JSON back on the video's container, and streams  
     # And displaying the outputs  
-    cmnd = [f'ffprobe', '-loglevel', 'quiet', '-show_entries', 'format:stream=index,stream,codec_type,codec_name', '-of', 'json', file_full_path]
+    cmnd = [f'ffprobe', '-loglevel', 'quiet', '-show_entries', 'format:stream=index,stream,codec_type,codec_name,channel_layout', '-of', 'json', file_full_path]
     print ("ffprobe's command on " + file_name + ":")
     print (cmnd)
     p = subprocess.run(cmnd, capture_output=True).stdout
