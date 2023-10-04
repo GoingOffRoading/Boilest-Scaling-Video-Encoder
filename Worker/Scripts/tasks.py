@@ -156,6 +156,10 @@ def fprober(ffinder_json):
     # FFprobe JSON output organizes attributes of streams into a list of stream IDs
     # We need to loop through the streams to find the first instance of the relevant stream (audio), then get it's codec
 
+    # Going to need to revisit this, as there's a bug/feature shortfall for converting audio:
+    # https://trac.ffmpeg.org/ticket/5718
+    # https://www.reddit.com/r/ffmpeg/comments/16zscpu/comment/k3gizu8/?context=3
+
     original_audio_codec = ('no_audio_stream')
      # Get the video codec from the first audio stream
     for stream in d['streams']:
