@@ -126,59 +126,91 @@ def fprober(ffinder_json):
         print (file_name + ' is already: ' + (ffinder_json["ffmpeg_container_string"]))
     
     
-    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Stream <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Video Stream <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    # FFprobe JSON output organizes attributes of streams into a list of stream IDs
+    # We need to loop through the streams to find the first instance of the relevant stream (video), then get it's codec
+    original_video_codec = ('no_video_stream')
+    for stream in d['streams']:
+        if stream['codec_type']=="video":
+            original_video_codec = stream['codec_name']
+            break
+    print (file_name + "'s video codec is: " + original_video_codec)
 
-    streams_count = d['format']['nb_streams']
-    print ('there are ' + str(streams_count) + ' streams:')
-    for i in range (0,streams_count):
-        codec_name = d['streams'][i]['codec_name'] 
-        if d['streams'][i]['codec_type'] == 'video':
-            if codec_name == 'av1':
-                encode_string = encode_string + ' -map 0:' + str(i) + ' -c:v copy'
-                print ('Stream ' + str(i) + ' is already ' + codec_name + ', copying stream')
-            elif codec_name != 'av1':
-                encode_decision = 'yes'
-                encode_string = encode_string + ' -map 0:' + str(i) + ' -vcodec libsvtav1 -crf 25 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0'
-                print ('Stream ' + str(i) + ' is ' + codec_name + ', encoding stream')
-            else:
-                print ('Something is broken with stream ' + str(i))
-            
-        elif d['streams'][i]['codec_type'] == 'audio':
-            if codec_name == 'opus':
-                encode_string = encode_string + ' -map 0:' + str(i) + ' -c:a copy'
-                print ('Stream ' + str(i) + ' is already ' + codec_name + ': nothing to encode')
-            elif codec_name != 'opus' and d['streams'][i]['channel_layout'] == '5.1(side)':
-                encode_string = encode_string + ' -map 0:' + str(i) + ' -acodec opus -af aformat=channel_layouts="7.1|5.1|stereo"'
-                encode_decision = 'yes'
-                print ('Stream ' + str(i) + ' is ' + codec_name + ' and, using ' + d['streams'][i]['channel_layout'] +', filtering, then encoding stream')
-            elif codec_name != 'opus':
-                encode_string = encode_string + ' -map 0:' + str(i) + ' -acodec libopus' 
-                encode_decision = 'yes'
-                print ('Stream ' + str(i) + ' is ' + codec_name + ', encoding stream')
-            else:
-                print ('Something is broken with stream ' + str(i))
-            
-        elif d['streams'][i]['codec_type'] == 'subtitle':
-            if codec_name == 'subrip':
-                encode_string = encode_string + ' -map 0:' + str(i) + ' -c:s copy'
-                print ('Stream ' + str(i) + ' is already ' + codec_name + ': nothing to encode')
-            elif codec_name != 'subrip' and d['streams'][i]['codec_name'] == 'hdmv_pgs_subtitle':
-                # These are image based subtitles, and can't be converted to text type
-                encode_string = encode_string + ' -map 0:' + str(i) + ' -c:s copy' 
-                encode_decision = 'yes'
-                print ('Stream ' + str(i) + ' is ' + codec_name + ': a pain in the dick, and nothing we can do but encode')
-            elif codec_name != 'subrip':
-                encode_string = encode_string + ' -map 0:' + str(i) + ' -scodec subrip' 
-                encode_decision = 'yes'
-                print ('Stream ' + str(i) + ' is ' + codec_name + ', encoding stream')
-            else:
-                print ('Something is broken with stream ' + str(i))
-            
-        else:
-            print ('fuck')
-            
-    print ('encode_string is: ' + encode_string)
-    print ('encode_decision is: ' + encode_decision)
+
+    # Ok this is messy...  We have three possibilities:
+    # 1) There is no video stream.  In this case, we do not want ffmpeg to encode anything
+    # 2) There is a video stream, and it's the wrong codec.  In that case we want to append the ffmpeg commands to the encode string, and set encode_decision to yes
+    # 3) The video stream is the correct codec, in which case we just want to copy the stream if we end up running ffmpeg on the file
+    if original_video_codec == 'no_video_stream':
+        print (file_name + ' does not have a video stream')
+    elif original_video_codec != (ffinder_json["ffmpeg_video_codec"]):
+        print (file_name + ' is using ' + original_video_codec + ', not ' + (ffinder_json["ffmpeg_video_codec"]))
+        encode_decision = 'yes'
+        encode_string = encode_string + ' ' + (ffinder_json["ffmpeg_video_string"])
+    else:
+        print ('The video stream does not need to be encoded')
+        encode_string = encode_string + ' -c:v copy'
+
+
+    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Audio Stream <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    # FFprobe JSON output organizes attributes of streams into a list of stream IDs
+    # We need to loop through the streams to find the first instance of the relevant stream (audio), then get it's codec
+
+    # Going to need to revisit this, as there's a bug/feature shortfall for converting audio:
+    # https://trac.ffmpeg.org/ticket/5718
+    # https://www.reddit.com/r/ffmpeg/comments/16zscpu/comment/k3gizu8/?context=3
+
+    original_audio_codec = ('no_audio_stream')
+     # Get the video codec from the first audio stream
+    for stream in d['streams']:
+        if stream['codec_type']=="audio":
+            original_audio_codec = stream['codec_name']
+            break
+    print ('original_audio_codec is: ' + original_audio_codec)
+
+    # Ok this is messy...  We have three possibilities:
+    # 1) There is no audio stream.  In this case, we do not want ffmpeg to encode anything
+    # 2) There is an audio stream, and it's the wrong codec.  In that case we want to append the ffmpeg commands to the encode string, and set encode_decision to yes
+    # 3) The audio stream is the correct codec, in which case we just want to copy the stream if we end up running ffmpeg on the file
+
+    if original_audio_codec == 'no_audio_stream':
+        print (file_name + ' does not have a video stream')
+    elif original_audio_codec != (ffinder_json["ffmpeg_audio_codec"]):
+        print (file_name + ' is using ' + original_audio_codec + ', not ' + (ffinder_json["ffmpeg_audio_codec"]))
+        encode_decision = 'yes'
+        encode_string = encode_string + ' ' + (ffinder_json["ffmpeg_audio_string"])
+    else:
+        print ('The audio stream does not need to be encoded')
+        encode_string = encode_string + ' -c:a copy'
+    
+
+    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Subtitle Stream Contaiener <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    # FFprobe JSON output organizes attributes of streams into a list of stream IDs
+    # We need to loop through the streams to find the first instance of the relevant stream (subtitle), then get it's format
+
+    original_subtitle_format = ('no_subtitle_stream')
+    for stream in d['streams']:
+        if stream['codec_type']=="subtitle":
+            original_subtitle_format = stream['codec_name']
+            break
+    print ('original_subtitle_format is: ' + original_subtitle_format)
+
+    # Ok this is messy...  We have three possibilities:
+    # 1) There is no audio stream.  In this case, we do not want ffmpeg to encode anything
+    # 2) There is an audio stream, and it's the wrong codec.  In that case we want to append the ffmpeg commands to the encode string, and set encode_decision to yes
+    # 3) The audio stream is the correct codec, in which case we just want to copy the stream if we end up running ffmpeg on the file
+    if original_subtitle_format == 'no_subtitle_stream':
+        print (file_name + ' does not have subtitles')
+    elif original_subtitle_format == 'hdmv_pgs_subtitle':
+        print (file_name + ' is using hdmv_pgs_subtitle, which is imaged based subtitles, can not be converted, and that sucks')
+        encode_string = encode_string +  ' -c:s copy'           
+    elif original_subtitle_format != (ffinder_json["ffmpeg_subtitle_format"]):
+        print (file_name + ' is using ' + original_subtitle_format + ', not ' + (ffinder_json["ffmpeg_subtitle_format"]))
+        encode_decision = 'yes'
+        encode_string = encode_string + ' ' + (ffinder_json["ffmpeg_subtitle_string"])    
+    else:
+        print ('The subtitle format does not need to be changed')
+        encode_string = encode_string +  ' -c:s copy' 
     
     print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Passing FFMpeg String for <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
     print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ' + file_name + ' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<') 
