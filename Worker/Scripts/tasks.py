@@ -22,7 +22,9 @@ def ffconfigs(arg):
     worker_queue_messages_unacknowledged = (worker_queue["messages_unacknowledged"])
     manager_queue = json.loads((requests.get('http://192.168.1.110:32311/api/queues/celery/manager', auth=('test', 'test'))).text)
     manager_queue_messages_unacknowledged = (manager_queue["messages_unacknowledged"])    
-    tasks = worker_queue_messages_unacknowledged + manager_queue_messages_unacknowledged
+    prober_queue = json.loads((requests.get('http://192.168.1.110:32311/api/queues/celery/prober', auth=('test', 'test'))).text)
+    prober_queue_messages_unacknowledged = (prober_queue["messages_unacknowledged"])    
+    tasks = worker_queue_messages_unacknowledged + manager_queue_messages_unacknowledged + prober_queue_messages_unacknowledged
     print ('Tasks in queue:')
     print(tasks)
 
@@ -76,7 +78,7 @@ def ffinder(json_template):
                     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
                 fprober.delay(ffinder_json)
 
-@app.task(queue='worker')
+@app.task(queue='prober')
 def fprober(ffinder_json):
     # This function is kicked off from the individual file results from the ffinder function
     # fprober's functions are three:
