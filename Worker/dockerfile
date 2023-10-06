@@ -11,7 +11,6 @@ RUN apk upgrade
 ARG UID=1000
 ARG GID=1000
 
-
 RUN mkdir -p /boil_hold
 RUN mkdir -p /Boilest
 RUN mkdir -p /Boilest/DB
@@ -30,7 +29,8 @@ COPY /Scripts /Scripts
 COPY /Scripts/DB /Boilest/DB
 WORKDIR "/Scripts"
 
-ENV Manager no
+ENV Manager No
+ENV Worker Yes
 
 # Add a user that is the same user group as the data being read
 # Is this clean?  Not really...  Will need to revisit this later
@@ -42,7 +42,6 @@ USER boil
 
 EXPOSE 5000
 EXPOSE 5555
-
 
 ENTRYPOINT [ "/bin/sh"]
 CMD ["/Scripts/Celery.sh"]

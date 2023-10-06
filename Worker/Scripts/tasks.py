@@ -190,7 +190,7 @@ def fprober(ffinder_json):
         print (file_name + ' does not need encoding')
     else:
         print (file_name + ' needs encoding')
-        fprober_json = {'ffmpeg_encoding_string':encode_string, 'original_container':original_container, 'original_video_codec':original_video_codec, 'original_audio_codec':original_audio_codec, 'original_subtitle_format':original_subtitle_format, 'ffmpeg_output_file':ffmpeg_output_file, 'file_full_path':file_full_path}
+        fprober_json = {'ffmpeg_encoding_string':encode_string, 'ffmpeg_output_file':ffmpeg_output_file}
         fprober_json.update(ffinder_json) 
         print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fprober_json output <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
         print(json.dumps(fprober_json, indent=3, sort_keys=True))
@@ -293,29 +293,13 @@ def fencoder(fprober_json):
 def fresults(fencoder_json):
     print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fresults <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
     config_name = (fencoder_json["config_name"])
-    ffmpeg_audio_codec = (fencoder_json["ffmpeg_audio_codec"])
-    ffmpeg_audio_string = (fencoder_json["ffmpeg_audio_string"])
-    ffmpeg_container = (fencoder_json["ffmpeg_container"])
-    ffmpeg_container_string = (fencoder_json["ffmpeg_container_string"])
     ffmpeg_encoding_string = (fencoder_json["ffmpeg_encoding_string"])
-    ffmpeg_output_file = (fencoder_json["ffmpeg_output_file"])
-    ffmpeg_subtitle_format = (fencoder_json["ffmpeg_subtitle_format"])
-    ffmpeg_subtitle_string = (fencoder_json["ffmpeg_subtitle_string"])
-    ffmpeg_video_codec = (fencoder_json["ffmpeg_video_codec"])
     file_name = (fencoder_json["file_name"])
     file_path = (fencoder_json["file_path"])
     new_file_size = (fencoder_json["new_file_size"])
     new_file_size_difference = (fencoder_json["new_file_size_difference"])
     old_file_size = (fencoder_json["old_file_size"])
-    original_audio_codec = (fencoder_json["original_audio_codec"])
-    original_container = (fencoder_json["original_container"])
-    original_subtitle_format = (fencoder_json["original_subtitle_format"])
-    original_video_codec = (fencoder_json["original_video_codec"])
     watch_folder = (fencoder_json["watch_folder"])
-    ffmpeg_container_extension = fencoder_json["ffmpeg_container_extension"]
-    ffmpeg_settings = fencoder_json["ffmpeg_settings"]
-    ffmpeg_video_string = fencoder_json["ffmpeg_video_string"]
-
 
     recorded_date = datetime.now()
     print (recorded_date)
@@ -341,46 +325,7 @@ def fresults(fencoder_json):
             new_file_size_difference, 
             old_file_size,
             watch_folder,
-        )
-    )
-    c.execute(
-        "INSERT INTO ffencode_config"
-        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-        (
-            unique_identifier,
-            recorded_date,
-            file_name, 
-            file_path, 
-            config_name,
-            ffmpeg_audio_codec, 
-            ffmpeg_audio_string, 
-            ffmpeg_container,
-            ffmpeg_container_extension,
-            ffmpeg_container_string,
             ffmpeg_encoding_string,
-            ffmpeg_output_file,
-            ffmpeg_settings,
-            ffmpeg_subtitle_format,
-            ffmpeg_subtitle_string,
-            ffmpeg_video_codec,
-            ffmpeg_video_string,
-            watch_folder,
-        )
-    )
-    c.execute(
-        "INSERT INTO ffencode_source"
-        " VALUES (?,?,?,?,?,?,?,?,?,?)",
-        (
-            unique_identifier,
-            recorded_date,
-            file_name, 
-            file_path, 
-            config_name,
-            original_audio_codec, 
-            original_container, 
-            original_subtitle_format,
-            original_video_codec,
-            watch_folder,
         )
     )
     conn.commit()
