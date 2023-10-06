@@ -150,7 +150,7 @@ def fprober(ffinder_json):
                 encode_string = encode_string + ' -map 0:' + str(i) + ' -c:a copy'
                 print ('Stream ' + str(i) + ' is already ' + codec_name + ': nothing to encode')
             elif codec_name != 'opus' and d['streams'][i]['channel_layout'] == '5.1(side)':
-                encode_string = encode_string + ' -map 0:' + str(i) + ' -acodec opus -af aformat=channel_layouts="7.1|5.1|stereo"'
+                encode_string = encode_string + ' -map 0:' + str(i) + ' -acodec libopus -af aformat=channel_layouts="7.1|5.1|stereo"'
                 encode_decision = 'yes'
                 print ('Stream ' + str(i) + ' is ' + codec_name + ' and, using ' + d['streams'][i]['channel_layout'] +', filtering, then encoding stream')
             elif codec_name != 'opus':
