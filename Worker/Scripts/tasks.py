@@ -309,12 +309,12 @@ def fresults(fencoder_json):
 
     print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fresults db part <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
 
-    database = r"/Boilest/DB/ffencode_results.db"
+    database = r"/Boilest/DB/boilest.db"
     conn = sqlite3.connect(database)
     c = conn.cursor()
     c.execute(
         "INSERT INTO ffencode_results"
-        " VALUES (?,?,?,?,?,?,?,?,?)",
+        " VALUES (?,?,?,?,?,?,?,?,?,?)",
         (
             unique_identifier,
             recorded_date,

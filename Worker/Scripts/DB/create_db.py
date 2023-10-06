@@ -31,7 +31,7 @@ def create_table(conn, create_table_sql):
 
 
 def main():
-    database = r".\ffencode_results.db"
+    database = r".\boilest.db"
 
     sql_create_results_table = """ CREATE TABLE IF NOT EXISTS ffencode_results (
                                         unique_identifier TEXT PRIMARY KEY,
@@ -40,7 +40,7 @@ def main():
                                         file_path TEXT,
                                         config_name TEXT,
                                         new_file_size REAL,
-                                        new_file_sizeifference REAL, 
+                                        new_file_size_difference REAL, 
                                         old_file_size REAL,
                                         watch_folder TEXT,
                                         ffmpeg_encoding_string TEXT

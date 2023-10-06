@@ -38,3 +38,5 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] Add python scripts to the DB folder to get stats
 - [x] Resolve issues with OPUS compatibility
 - [x] Resolve issues where output = 0.0 but tries to get moved anyway
+- [ ] In each step, if we no longer need components of the JSON, delete them
+- [ ] Rewrite the ffprobe codec check loop to use variables from the config again
