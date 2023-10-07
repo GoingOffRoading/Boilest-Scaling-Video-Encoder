@@ -3,7 +3,7 @@ from pathlib import Path
 from datetime import datetime
 import json, subprocess, os, shutil, sqlite3, requests
 
-app = Celery('tasks', backend = 'rpc://test:test@192.168.1.110:31672/celery', broker = 'amqp://test:test@192.168.1.110:31672/celery')
+app = Celery('tasks', backend = 'rpc://celery:celery@192.168.1.110:31672/celery', broker = 'amqp://celery:celery@192.168.1.110:31672/celery')
 
 
 # Schedule, kicks off a scan for configs ever 15 minutes (15 x 60 = 900 seconds)
@@ -18,11 +18,11 @@ def setup_periodic_tasks(sender, **kwargs):
 @app.task(queue='manager')
 def ffconfigs(arg):
     print (arg)
-    worker_queue = json.loads((requests.get('http://192.168.1.110:32311/api/queues/celery/worker', auth=('test', 'test'))).text)
+    worker_queue = json.loads((requests.get('http://192.168.1.110:32311/api/queues/celery/worker', auth=('celery', 'celery'))).text)
     worker_queue_messages_unacknowledged = (worker_queue["messages_unacknowledged"])
-    manager_queue = json.loads((requests.get('http://192.168.1.110:32311/api/queues/celery/manager', auth=('test', 'test'))).text)
+    manager_queue = json.loads((requests.get('http://192.168.1.110:32311/api/queues/celery/manager', auth=('celery', 'celery'))).text)
     manager_queue_messages_unacknowledged = (manager_queue["messages_unacknowledged"])    
-    prober_queue = json.loads((requests.get('http://192.168.1.110:32311/api/queues/celery/prober', auth=('test', 'test'))).text)
+    prober_queue = json.loads((requests.get('http://192.168.1.110:32311/api/queues/celery/prober', auth=('celery', 'celery'))).text)
     prober_queue_messages_unacknowledged = (prober_queue["messages_unacknowledged"])    
     tasks = worker_queue_messages_unacknowledged + manager_queue_messages_unacknowledged + prober_queue_messages_unacknowledged
     print ('Tasks in queue:')
