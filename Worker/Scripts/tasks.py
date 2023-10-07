@@ -137,9 +137,11 @@ def fprober(ffinder_json):
         if d['streams'][i]['codec_type'] == 'video':
             if codec_name == 'av1':
                 encode_string = encode_string + ' -map 0:' + str(i) + ' -c:v copy'
+                # No need to change encode_decision as the video codec is in the desired format
                 print ('Stream ' + str(i) + ' is already ' + codec_name + ', copying stream')
             elif codec_name != 'av1':
                 encode_decision = 'yes'
+                # encode_decision = yes as the video codec is not in the desired format
                 encode_string = encode_string + ' -map 0:' + str(i) + ' -vcodec libsvtav1 -crf 25 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0'
                 print ('Stream ' + str(i) + ' is ' + codec_name + ', encoding stream')
             else:
