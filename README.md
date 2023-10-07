@@ -44,3 +44,10 @@ Little bits of code that work, and me struggling with the basics to glue it all 
 # How to deploy
 
 https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/
+
+
+
+## RabbitMQ
+
+* Go into the Admin pannel, and create a vhost 'celery'
+* Then go into user pannel, and create a user 'celery', with password 'celery', access to the 'celery' vhost, and admin
