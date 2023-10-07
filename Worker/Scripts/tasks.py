@@ -163,11 +163,12 @@ def fprober(ffinder_json):
         elif d['streams'][i]['codec_type'] == 'subtitle':
             if codec_name == 'subrip':
                 encode_string = encode_string + ' -map 0:' + str(i) + ' -c:s copy'
+                # No need to change encode_decision as the subtitles are in the desired format
                 print ('Stream ' + str(i) + ' is already ' + codec_name + ': nothing to encode')
             elif codec_name != 'subrip' and d['streams'][i]['codec_name'] == 'hdmv_pgs_subtitle':
                 # These are image based subtitles, and can't be converted to text type
                 encode_string = encode_string + ' -map 0:' + str(i) + ' -c:s copy' 
-                encode_decision = 'yes'
+                # No need to change encode_decision as we can't change picture subtitles into text subtitles
                 print ('Stream ' + str(i) + ' is ' + codec_name + ': a pain in the dick, and nothing we can do but encode')
             elif codec_name != 'subrip':
                 encode_string = encode_string + ' -map 0:' + str(i) + ' -scodec subrip' 
