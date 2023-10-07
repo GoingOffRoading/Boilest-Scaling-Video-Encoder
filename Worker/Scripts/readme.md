@@ -41,4 +41,4 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] In each step, if we no longer need components of the JSON, delete them
 - [ ] Rewrite the ffprobe codec check loop to use variables from the config again
 - [ ] Need to configure for AMPQ retries against RabbitMQ if RabbitMQ restarts
-- [ ] Need to figure out how to configure RabbitMQ for celery if RabbitMQ restarts
+- [x] Need to figure out how to configure RabbitMQ for celery if RabbitMQ restarts
