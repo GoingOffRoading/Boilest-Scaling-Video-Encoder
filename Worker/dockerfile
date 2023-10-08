@@ -13,8 +13,9 @@ ARG GID=1000
 
 RUN mkdir -p /boil_hold
 RUN mkdir -p /Boilest
-RUN mkdir -p /Boilest/DB
-RUN mkdir -p /Boilest/Configurations
+#RUN mkdir -p /Boilest
+#RUN mkdir -p /Boilest/DB
+#RUN mkdir -p /Boilest/Configurations
 RUN mkdir -p /Scripts
 
 RUN mkdir -p /Media
@@ -26,7 +27,7 @@ RUN mkdir -p /Animated_TV
 RUN mkdir -p /Animated_Movies
 
 COPY /Scripts /Scripts
-COPY /Scripts/DB /Boilest/DB
+#COPY /Scripts/DB /Boilest/DB
 WORKDIR "/Scripts"
 
 ENV Manager No
@@ -37,7 +38,7 @@ ENV Worker Yes
 
 RUN addgroup -g 1000 boil 
 RUN adduser -D boil -G boil -u 1000
-RUN chown -R boil:boil /boil_hold /Boilest /Scripts
+RUN chown -R boil:boil /boil_hold /Scripts /Boilest
 USER boil
 
 EXPOSE 5000

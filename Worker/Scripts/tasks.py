@@ -312,7 +312,7 @@ def fresults(fencoder_json):
 
     print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fresults db part <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
 
-    database = r"/Boilest/DB/boilest.db"
+    database = r"/Boilest/DB/Boilest.db"
     conn = sqlite3.connect(database)
     c = conn.cursor()
     c.execute(
