@@ -28,7 +28,7 @@ def ffconfigs(arg):
     print ('Tasks in queue:')
     print(tasks)
 
-    directory = '/Scripts/Configurations'
+    directory = '/Boilest/Configurations'
     # traverse whole directory
     if tasks == 0:
         for root, dirs, files in os.walk(directory):
