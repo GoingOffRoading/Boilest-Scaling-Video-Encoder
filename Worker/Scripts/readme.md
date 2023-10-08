@@ -44,3 +44,4 @@ This is the Boilest workflow, and work that is currently outstanding
 - [x] Need to figure out how to configure RabbitMQ for celery if RabbitMQ restarts
 - [ ] Figure out the correct permission level of the celery rabbitmq user to create/read/etc queues
 - [x] Rewrite how Boilest starts, so that configs, and the DB, can be persisted
+- [x] Change up flower so that it has authenticated API access (so that tasks can be deleted)
