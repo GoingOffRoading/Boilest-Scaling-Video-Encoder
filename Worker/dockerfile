@@ -30,8 +30,17 @@ COPY /Scripts /Scripts
 #COPY /Scripts/DB /Boilest/DB
 WORKDIR "/Scripts"
 
+# Used in Celery.sh
 ENV Manager No
 ENV Worker Yes
+
+# User in Flower: https://flower.readthedocs.io/en/latest/config.html
+ENV FLOWER_FLOWER_BASIC_AUTH celery:celery
+ENV FLOWER_persistent true
+ENV FLOWER_db /Boilest/flower_db
+ENV FLOWER_purge_offline_workers 60
+ENV FLOWER_UNAUTHENTICATED_API true
+
 
 # Add a user that is the same user group as the data being read
 # Is this clean?  Not really...  Will need to revisit this later
