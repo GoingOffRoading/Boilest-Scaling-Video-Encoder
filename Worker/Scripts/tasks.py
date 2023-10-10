@@ -11,7 +11,7 @@ app = Celery('tasks', backend = 'rpc://celery:celery@192.168.1.110:31672/celery'
 @app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
     # Calls ffconfigs('hello') every 10 seconds.
-    sender.add_periodic_task(300.0, ffconfigs.s('hit it'))
+    sender.add_periodic_task(3600.0, ffconfigs.s('hit it'))
 
 
 # Scan for condigurations, and post the to the next step
