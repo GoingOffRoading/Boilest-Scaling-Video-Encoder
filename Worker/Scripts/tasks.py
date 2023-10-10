@@ -132,13 +132,16 @@ def fprober(ffinder_json):
 
     streams_count = d['format']['nb_streams']
     print ('there are ' + str(streams_count) + ' streams:')
+    
     for i in range (0,streams_count):
-        codec_name = d['streams'][i]['codec_name'] 
         if d['streams'][i]['codec_type'] == 'video':
+            codec_name = d['streams'][i]['codec_name'] 
             if codec_name == 'av1':
                 encode_string = encode_string + ' -map 0:' + str(i) + ' -c:v copy'
                 # No need to change encode_decision as the video codec is in the desired format
                 print ('Stream ' + str(i) + ' is already ' + codec_name + ', copying stream')
+            elif codec_name == 'mjpeg':
+                print ('Garbage mjpeg stream, ignoring')    
             elif codec_name != 'av1':
                 encode_decision = 'yes'
                 # encode_decision = yes as the video codec is not in the desired format
@@ -146,8 +149,8 @@ def fprober(ffinder_json):
                 print ('Stream ' + str(i) + ' is ' + codec_name + ', encoding stream')
             else:
                 print ('Something is broken with stream ' + str(i))
-            
         elif d['streams'][i]['codec_type'] == 'audio':
+            codec_name = d['streams'][i]['codec_name'] 
             if codec_name == 'opus':
                 encode_string = encode_string + ' -map 0:' + str(i) + ' -c:a copy'
                 print ('Stream ' + str(i) + ' is already ' + codec_name + ': nothing to encode')
@@ -161,8 +164,8 @@ def fprober(ffinder_json):
                 print ('Stream ' + str(i) + ' is ' + codec_name + ', encoding stream')
             else:
                 print ('Something is broken with stream ' + str(i))
-            
         elif d['streams'][i]['codec_type'] == 'subtitle':
+            codec_name = d['streams'][i]['codec_name'] 
             if codec_name == 'subrip':
                 encode_string = encode_string + ' -map 0:' + str(i) + ' -c:s copy'
                 # No need to change encode_decision as the subtitles are in the desired format
@@ -178,6 +181,10 @@ def fprober(ffinder_json):
                 print ('Stream ' + str(i) + ' is ' + codec_name + ', encoding stream')
             else:
                 print ('Something is broken with stream ' + str(i))
+
+        # No idea if attachments provide any value.  Sr far: no
+        elif d['streams'][i]['codec_type'] == 'attachment':
+            print ('Stream is attachment, ignore')
             
         else:
             print ('fuck')
@@ -242,7 +249,10 @@ def fencoder(fprober_json):
     # We need to determine if this is a production run and run the function like normal
     if (fprober_json["production_run"]) == 'yes':
         print ('Please hold')
-        os.system(ffmpeg_command)
+        #os.system(ffmpeg_command)
+        process = subprocess.Popen(ffmpeg_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,universal_newlines=True)
+        for line in process.stdout:
+            print(line)
     else:
         print ('This is a test run, so lets maybe not polute production')
         input_file_stats = float(31.44148)
