@@ -42,8 +42,11 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] Rewrite the ffprobe codec check loop to use variables from the config again
 - [ ] Need to configure for AMPQ retries against RabbitMQ if RabbitMQ restarts
 - [x] Need to figure out how to configure RabbitMQ for celery if RabbitMQ restarts
-- [ ] Figure out the correct permission level of the celery rabbitmq user to create/read/etc queues
+- [x] Figure out the correct permission level of the celery rabbitmq user to create/read/etc queues
 - [x] Rewrite how Boilest starts, so that configs, and the DB, can be persisted
 - [x] Change up flower so that it has authenticated API access (so that tasks can be deleted)
 - [x] See if we can get ffmpeg to stream it's output to print or logs
 - [ ] Reorganize the container startup so it's not such a mess
+- [ ] Determine if it would be better to copy the file being encoded to the encoding machine to deal with NFS errors
+- [ ] Determine if we should keep attachments from ffprobe
+- [ ] Determine if we could slow down the number of status messages from ffmpeg
