@@ -308,7 +308,8 @@ def fencoder(fprober_json):
 
 @app.task(queue='manager')
 def fresults(fencoder_json):
-    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fresults <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+
+    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fresults ' + (fencoder_json["file_name"]) + '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
     config_name = (fencoder_json["config_name"])
     ffmpeg_encoding_string = (fencoder_json["ffmpeg_encoding_string"])
     file_name = (fencoder_json["file_name"])
