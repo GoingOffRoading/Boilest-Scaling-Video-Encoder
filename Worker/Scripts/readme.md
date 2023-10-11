@@ -47,3 +47,4 @@ This is the Boilest workflow, and work that is currently outstanding
 - [x] Change up flower so that it has authenticated API access (so that tasks can be deleted)
 - [x] See if we can get ffmpeg to stream it's output to print or logs
 - [ ] Reorganize the container startup so it's not such a mess
+- [ ] Find a more elegant solution to overflowing the buffer than sys.stdout.flush().  Likely moot if I write to a log
