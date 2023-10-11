@@ -11,6 +11,6 @@
   "ffmpeg_audio_string": "-c:a libopus",
   "ffmpeg_subtitle_format": "subrip",
   "ffmpeg_subtitle_string": "-c:s srt",
-  "ffmpeg_settings": "-hide_banner -loglevel 16 -stats",
+  "ffmpeg_settings": "-hide_banner -loglevel 16 -stats -stats_period 10",
   "show_diagnostic_messages": "yes"
 }

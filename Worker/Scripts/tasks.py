@@ -1,7 +1,7 @@
 from celery import Celery
 from pathlib import Path
 from datetime import datetime
-import json, subprocess, os, shutil, sqlite3, requests
+import json, subprocess, os, shutil, sqlite3, requests, sys
 
 app = Celery('tasks', backend = 'rpc://celery:celery@192.168.1.110:31672/celery', broker = 'amqp://celery:celery@192.168.1.110:31672/celery')
 
@@ -48,6 +48,7 @@ def ffconfigs(arg):
                     print('Did not find Configurations')
     else:
         print ('Tasks in the queue.  Not adding more at this time')
+    sys.stdout.flush()
 
 
 @app.task(queue='worker')
@@ -77,6 +78,7 @@ def ffinder(json_template):
                     print(json.dumps(ffinder_json, indent=3, sort_keys=True))
                     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
                 fprober.delay(ffinder_json)
+                sys.stdout.flush()
 
 @app.task(queue='prober')
 def fprober(ffinder_json):
@@ -209,6 +211,7 @@ def fprober(ffinder_json):
         print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ' + file_name + ' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<') 
         print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
         fencoder.delay(fprober_json)
+    sys.stdout.flush()
 
 
 @app.task(queue='worker')
@@ -300,11 +303,13 @@ def fencoder(fprober_json):
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
     print('>>>>>>>>>>>>>>>>>>DONE<<<<<<<<<<<<<')
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    sys.stdout.flush()
 
 
 @app.task(queue='manager')
 def fresults(fencoder_json):
-    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fresults <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+
+    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fresults ' + (fencoder_json["file_name"]) + '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
     config_name = (fencoder_json["config_name"])
     ffmpeg_encoding_string = (fencoder_json["ffmpeg_encoding_string"])
     file_name = (fencoder_json["file_name"])
@@ -349,3 +354,4 @@ def fresults(fencoder_json):
 
     conn.close()
     print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fresults db part done <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    sys.stdout.flush()

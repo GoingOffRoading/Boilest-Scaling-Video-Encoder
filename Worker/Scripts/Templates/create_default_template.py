@@ -6,7 +6,7 @@ dir = os.listdir(path)
   
 # Checking if the list is empty or not 
 if len(dir) == 0: 
-    print("No COnfigurations, adding Defualt")
+    print("No Configurations, adding Defualt")
     shutil.copyfile('/Scripts/Templates/AV1_CRF20Preset4.json', '/Boilest/Configurations/AV1_CRF20Preset4.json') 
 else: 
     print("Configurations detected, no action to take") 
