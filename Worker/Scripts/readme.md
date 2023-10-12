@@ -49,6 +49,8 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] Reorganize the container startup so it's not such a mess
 - [ ] Determine if it would be better to copy the file being encoded to the encoding machine to deal with NFS errors
 - [ ] Determine if we should keep attachments from ffprobe
-- [ ] Determine if we could slow down the number of status messages from ffmpeg
+- [x] Determine if we could slow down the number of status messages from ffmpeg
 - [ ] Find a more elegant solution to overflowing the buffer than sys.stdout.flush().  Likely moot if I write to a log
+- [ ] Investigate the db lock issue
+- [ ] Fix the logic for calling ffresults
 
