@@ -68,7 +68,7 @@ def ffinder(json_template):
         # select file name
         for file in files:
             # check the extension of files
-            if file.endswith('.mkv') or file.endswith('.mp4'):
+            if file.endswith('.mkv') or file.endswith('.mp4') or file.endswith('.avi'):
                 # append the desired fields to the original json
                 print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> media file located <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
                 ffinder_json = {'file_path':root, 'file_name':file}
@@ -284,22 +284,18 @@ def fencoder(fprober_json):
             shutil.move(ffmpeg_output_file, ffmeg_input_file)
             print ('Done')
             fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats, 'new_file_size_difference':new_file_size_difference}
+            fencoder_json.update(fprober_json) 
+            print(json.dumps(fencoder_json, indent=3, sort_keys=True))
+            fresults.delay(fencoder_json)
         elif output_file_stats == 0.0:
             print ('Something went wrong, and the output file size is 0.0 KB')
             print ('Deleting: ' + ffmpeg_output_file)
             os.remove(ffmpeg_output_file) 
         else:
             print ('Something went wrong, and neither source nor encoded were deleted ')
-
     else:
-        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
         print("Either source or encoding is missing, so exiting")
-        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
 
-    fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats, 'new_file_size_difference':new_file_size_difference} 
-    fencoder_json.update(fprober_json) 
-    print(json.dumps(fencoder_json, indent=3, sort_keys=True))
-    fresults.delay(fencoder_json)
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
     print('>>>>>>>>>>>>>>>>>>DONE<<<<<<<<<<<<<')
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DIAGNOSTICS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
