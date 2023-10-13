@@ -1,7 +1,7 @@
 from celery import Celery
 from pathlib import Path
 from datetime import datetime
-import json, subprocess, os, shutil, sqlite3, requests, sys
+import json, subprocess, os, shutil, sqlite3, requests, sys, pathlib
 
 app = Celery('tasks', backend = 'rpc://celery:celery@192.168.1.110:31672/celery', broker = 'amqp://celery:celery@192.168.1.110:31672/celery')
 
@@ -109,7 +109,9 @@ def fprober(ffinder_json):
     # Determine if the container needs to be changed
     print ('Original Video container is: ' + original_container)
 
-    if original_container != 'matroska,webm':
+
+
+    if original_container != 'matroska,webm' or pathlib.Path(ffinder_json["file_name"]).suffix != '.mkv':
         file_name = (ffinder_json["file_name"])
         file_name = Path(file_name).stem 
         ffmpeg_output_file = file_name + '.mkv'
@@ -261,8 +263,9 @@ def fencoder(fprober_json):
         # 2) Don't delete sourec if the ffmpeg encode failed
         if (fprober_json["production_run"]) == 'yes' and output_file_stats != 0.0:
             os.remove(ffmeg_input_file) 
-            print('Moving ' + ffmpeg_output_file + ' to ' + ffmeg_input_file)
-            shutil.move(ffmpeg_output_file, ffmeg_input_file)
+            ffmpeg_destination = fprober_json["file_path"] + '/' + fprober_json["ffmpeg_output_file"]
+            print('Moving ' + ffmpeg_output_file + ' to ' + ffmpeg_destination)
+            shutil.move(ffmpeg_output_file, ffmpeg_destination)
             print ('Done')
             fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats, 'new_file_size_difference':new_file_size_difference}
             fencoder_json.update(fprober_json) 
