@@ -53,4 +53,6 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] Find a more elegant solution to overflowing the buffer than sys.stdout.flush().  Likely moot if I write to a log
 - [x] Investigate the db lock issue
 - [x] Fix the logic for calling ffresults
+- [ ] Clear queue cron: https://stackoverflow.com/questions/70971478/how-to-delete-celery-task-logs-in-flower
+- [ ] Send failed queue to log file
 
