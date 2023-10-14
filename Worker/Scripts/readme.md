@@ -55,4 +55,7 @@ This is the Boilest workflow, and work that is currently outstanding
 - [x] Fix the logic for calling ffresults
 - [ ] Clear queue cron: https://stackoverflow.com/questions/70971478/how-to-delete-celery-task-logs-in-flower
 - [ ] Send failed queue to log file
+- [ ] When printing results, or the hold because of queue, print a timestamp
+- [ ] When printing results, print the size delta on the encoded file
+- [ ] Add timestamps to when tasks start and stop, or a duration on how long something has taken, tbd
 
