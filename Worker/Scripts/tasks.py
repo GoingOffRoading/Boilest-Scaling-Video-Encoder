@@ -324,8 +324,9 @@ def fresults(fencoder_json):
     conn.commit()
 
     c.execute("select round(sum(new_file_size_difference)) from ffencode_results")
-    print ("We have saved so far:")
-    print (c.fetchone())
+    print ('The space delta on ' + fencoder_json["file_name"] + ' was: ' + str(fencoder_json["new_file_size_difference"]))
+    print ('We have saved so far: ' + str(c.fetchone()))
+     
 
     conn.close()
     print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fresults ' + (fencoder_json["file_name"]) + ' done <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
