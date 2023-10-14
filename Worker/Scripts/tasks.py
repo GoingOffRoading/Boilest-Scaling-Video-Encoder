@@ -17,7 +17,8 @@ def setup_periodic_tasks(sender, **kwargs):
 # Scan for condigurations, and post the to the next step
 @app.task(queue='manager')
 def ffconfigs(arg):
-    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ffconfigs with the arg: ' + arg + ' starting <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    ffconfig_start_time = datetime.now()
+    print ('>>>>>>>>>>>>>>>> ffconfigs with the arg: ' + arg + ' starting at ' + str(ffconfig_start_time) + '<<<<<<<<<<<<<<<<<<<')
     worker_queue = json.loads((requests.get('http://192.168.1.110:32311/api/queues/celery/worker', auth=('celery', 'celery'))).text)
     worker_queue_messages_unacknowledged = (worker_queue["messages_unacknowledged"])
     manager_queue = json.loads((requests.get('http://192.168.1.110:32311/api/queues/celery/manager', auth=('celery', 'celery'))).text)
@@ -49,7 +50,8 @@ def ffconfigs(arg):
         print ('Tasks in queue: ' + str(tasks) + ', not starting config scan')
     else:
         print ('Tasks in queue returned with an error')
-    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ffconfigs with the arg: ' + arg + ' done <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    minutes_diff = (datetime.now() - ffconfig_start_time).total_seconds() / 60.0
+    print ('>>>>>>>>>>>>>>>> ffconfigs with the arg: ' + arg + ' starting at ' + str(minutes_diff) + '<<<<<<<<<<<<<<<<<<<')
 
 @app.task(queue='worker')
 def ffinder(json_template):
@@ -57,7 +59,8 @@ def ffinder(json_template):
     # Configurations are stored in the /Templates directory
     # The future state is that this is triggered as a Bloom/cron function, and configured in a UI
     # The purpose of this function of to search a directory for files, filter for specific formats, and send those filtered results to the next function
-    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ffinder for' + (json_template["config_name"]) + ' starting <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+
+    print('>>>>>>>>>>>>>>>> ffinder for' + (json_template["config_name"]) + ' starting '<<<<<<<<<<<<<<<<<<<')
     print (json.dumps(json_template, indent=3, sort_keys=True))
     # Get the folder to scan
     directory = (json_template['watch_folder'])
@@ -302,12 +305,15 @@ def fresults(fencoder_json):
     unique_identifier = file_name + str(recorded_date.microsecond)
     print ('Primary key saved as: ' + unique_identifier)
 
+    #Placeholder
+    encode_duration = 0
+
     database = r"/Boilest/DB/Boilest.db"
     conn = sqlite3.connect(database)
     c = conn.cursor()
     c.execute(
         "INSERT INTO ffencode_results"
-        " VALUES (?,?,?,?,?,?,?,?,?,?)",
+        " VALUES (?,?,?,?,?,?,?,?,?,?,?)",
         (
             unique_identifier,
             recorded_date,
@@ -319,6 +325,7 @@ def fresults(fencoder_json):
             old_file_size,
             watch_folder,
             ffmpeg_encoding_string,
+            encode_duration
         )
     )
     conn.commit()
