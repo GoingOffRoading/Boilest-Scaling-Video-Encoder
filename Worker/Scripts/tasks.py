@@ -6,19 +6,23 @@ import json, subprocess, os, shutil, sqlite3, requests, sys, pathlib
 app = Celery('tasks', backend = 'rpc://celery:celery@192.168.1.110:31672/celery', broker = 'amqp://celery:celery@192.168.1.110:31672/celery')
 
 
-# Schedule, kicks off a scan for configs ever 15 minutes (15 x 60 = 900 seconds)
-# https://docs.celeryq.dev/en/stable/userguide/periodic-tasks.html#entries
 @app.on_after_configure.connect
+# Celery's scheduler.  Kicks off ffconfigs every hour
+# https://docs.celeryq.dev/en/stable/userguide/periodic-tasks.html#entries
 def setup_periodic_tasks(sender, **kwargs):
     # Calls ffconfigs('hello') every 10 seconds.
     sender.add_periodic_task(3600.0, ffconfigs.s('hit it'))
 
 
-# Scan for condigurations, and post the to the next step
+
 @app.task(queue='manager')
+# Scan for condigurations, and post the to the next step
+# Kicked off by the scheduler above, but started manually with start.py in /scripts
 def ffconfigs(arg):
     ffconfig_start_time = datetime.now()
     print ('>>>>>>>>>>>>>>>> ffconfigs with the arg: ' + arg + ' starting at ' + str(ffconfig_start_time) + '<<<<<<<<<<<<<<<<<<<')
+
+    # First, we need to check the queue depth.  We don't want to add to queue, or add duplicate tasks, if there are already tasks in the queue 
     worker_queue = json.loads((requests.get('http://192.168.1.110:32311/api/queues/celery/worker', auth=('celery', 'celery'))).text)
     worker_queue_messages_unacknowledged = (worker_queue["messages_unacknowledged"])
     manager_queue = json.loads((requests.get('http://192.168.1.110:32311/api/queues/celery/manager', auth=('celery', 'celery'))).text)
@@ -28,7 +32,7 @@ def ffconfigs(arg):
     tasks = worker_queue_messages_unacknowledged + manager_queue_messages_unacknowledged + prober_queue_messages_unacknowledged
     
     directory = '/Boilest/Configurations'
-    # traverse whole directory
+    # Searching for configurations
     if tasks == 0:
         print ('No tasks in sque, starting search for configs')
         for root, dirs, files in os.walk(directory):
@@ -50,21 +54,24 @@ def ffconfigs(arg):
         print ('Tasks in queue: ' + str(tasks) + ', not starting config scan')
     else:
         print ('Tasks in queue returned with an error')
-    minutes_diff = (datetime.now() - ffconfig_start_time).total_seconds() / 60.0
-    print ('>>>>>>>>>>>>>>>> ffconfigs with the arg: ' + arg + ' starting at ' + str(minutes_diff) + '<<<<<<<<<<<<<<<<<<<')
+    ffconfig_duration = (datetime.now() - ffconfig_start_time).total_seconds() / 60.0
+    print ('>>>>>>>>>>>>>>>> ffconfigs ' + arg + ' complete, executed for ' + str(ffconfig_duration) + ' minutes <<<<<<<<<<<<<<<<<<<')
+
+
 
 @app.task(queue='worker')
 def ffinder(json_template):
-    # We feed this function a JSON string of configurations
-    # Configurations are stored in the /Templates directory
-    # The future state is that this is triggered as a Bloom/cron function, and configured in a UI
     # The purpose of this function of to search a directory for files, filter for specific formats, and send those filtered results to the next function
+    ffinder_start_time = datetime.now()
+    print ('>>>>>>>>>>>>>>>> ffinder executing with config: ' + json_template["config_name"] + ' starting at ' + str(ffinder_start_time) + '<<<<<<<<<<<<<<<<<<<')
 
-    print('>>>>>>>>>>>>>>>> ffinder for' + (json_template["config_name"]) + ' starting '<<<<<<<<<<<<<<<<<<<')
+    # For fun/diagnostics
     print (json.dumps(json_template, indent=3, sort_keys=True))
+
     # Get the folder to scan
     directory = (json_template['watch_folder'])
     print ('Will now search the directory ' + directory + ' and provide the relevant config flags:')
+
     # traverse whole directory
     for root, dirs, files in os.walk(directory):
         # select file name
@@ -72,29 +79,30 @@ def ffinder(json_template):
             # check the extension of files
             if file.endswith('.mkv') or file.endswith('.mp4') or file.endswith('.avi'):
                 # append the desired fields to the original json
-
                 ffinder_json = {'file_path':root, 'file_name':file}
                 ffinder_json.update(json_template)      
-                if (json_template["show_diagnostic_messages"]) == 'yes':
-                    print(json.dumps(ffinder_json, indent=3, sort_keys=True))
+                print(json.dumps(ffinder_json, indent=3, sort_keys=True))
                 fprober.delay(ffinder_json)
-    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ffinder for' + (json_template["config_name"]) + ' done <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+
+    ffinder_duration = (datetime.now() - ffconfig_start_time).total_seconds() / 60.0
+    print ('>>>>>>>>>>>>>>>> ffinder config: ' + json_template["config_name"] + ' complete, executed for ' + str(ffinder_duration) + '<<<<<<<<<<<<<<<<<<<')
+
+
 
 @app.task(queue='prober')
 def fprober(ffinder_json):
-    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fprober for ' + ffinder_json["file_name"] + ' starting <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
-    # This function is kicked off from the individual file results from the ffinder function
-    # fprober's functions are three:
+    # This function is kicked off from the individual file results from the ffinder function, and then do three functions:
     # 1) For each file, run ffprobe to get details on the file
     # 2) Loop through those the ffprobe results to determine if any changes need to be made to the video container or it's video, audio, or subtitle streams 
     # 3) Determine if the file needs to be encoded, and if yes, pass the changes to the fencoder function
 
+    fprober_start_time = datetime.now()
+    print ('>>>>>>>>>>>>>>>> fprober for ' + ffinder_json["file_name"] + ' starting at ' + str(fprober_start_time) + '<<<<<<<<<<<<<<<<<<<')
+
+    # Using subprocess to call FFprobe, get JSON back on the video's container, and streams, then display the outputs  
     file_path = (ffinder_json["file_path"])
     file_name = (ffinder_json["file_name"])
-    file_full_path = os.path.join(file_path,file_name)
-    
-    # Using subprocess to call FFprobe, get JSON back on the video's container, and streams  
-    # And displaying the outputs  
+    file_full_path = os.path.join(file_path,file_name)    
     cmnd = [f'ffprobe', '-loglevel', 'quiet', '-show_entries', 'format:stream=index,stream,codec_type,codec_name,channel_layout', '-of', 'json', file_full_path]
     print ("ffprobe's command on " + file_name + ":")
     print (cmnd)
@@ -105,15 +113,14 @@ def fprober(ffinder_json):
      
     # Now that we have FFProbe's output, we want to evaluate the container, video stream, audio stream, and subtitle formats
     # If those values don't match the input templte, then we flip encode_decision to yes, and transmit the results to fencoder
+
+    # Setting starter variables.  These are revisited throughout the loop.
     encode_string = str()
     encode_decision = 'no'
     
-    original_container = (d['format']['format_name'])
     # Determine if the container needs to be changed
+    original_container = (d['format']['format_name'])
     print ('Original Video container is: ' + original_container)
-
-
-
     if original_container != 'matroska,webm' or pathlib.Path(ffinder_json["file_name"]).suffix != '.mkv':
         file_name = (ffinder_json["file_name"])
         file_name = Path(file_name).stem 
@@ -125,10 +132,8 @@ def fprober(ffinder_json):
         print (file_name + ' is already .mkv, no need to change container')
     
     # Stream Loop: We need to loop through each of the streams, and make decisions based on the codec in the stream
-
     streams_count = d['format']['nb_streams']
     print ('there are ' + str(streams_count) + ' streams:')
-    
     for i in range (0,streams_count):
         if d['streams'][i]['codec_type'] == 'video':
             codec_name = d['streams'][i]['codec_name'] 
@@ -138,28 +143,34 @@ def fprober(ffinder_json):
                 print ('Stream ' + str(i) + ' is already ' + codec_name + ', copying stream')
             elif codec_name == 'mjpeg':
                 print ('Garbage mjpeg stream, ignoring')    
+                # No use for this for now
             elif codec_name != 'av1':
                 encode_decision = 'yes'
-                # encode_decision = yes as the video codec is not in the desired format
                 encode_string = encode_string + ' -map 0:' + str(i) + ' ' + (ffinder_json["ffmpeg_video_string"])
                 print ('Stream ' + str(i) + ' is ' + codec_name + ', encoding stream')
+                # encode_decision = yes as the video codec is not in the desired format
             else:
                 print ('Something is broken with stream ' + str(i))
+                # Catch all error state
         elif d['streams'][i]['codec_type'] == 'audio':
             codec_name = d['streams'][i]['codec_name'] 
             if codec_name == 'opus':
                 encode_string = encode_string + ' -map 0:' + str(i) + ' -c:a copy'
                 print ('Stream ' + str(i) + ' is already ' + codec_name + ': nothing to encode')
+                # No need to change encode_decision as the audio codec is in the desired format
             elif codec_name != 'opus' and d['streams'][i]['channel_layout'] == '5.1(side)':
                 encode_string = encode_string + ' -map 0:' + str(i) + ' -acodec libopus -af aformat=channel_layouts="7.1|5.1|stereo"'
                 encode_decision = 'yes'
                 print ('Stream ' + str(i) + ' is ' + codec_name + ' and, using ' + d['streams'][i]['channel_layout'] +', filtering, then encoding stream')
+                # encode_decision = yes as the audio codec is not in the desired format... libopus has problems with 5.1(side) channel layout in ffmpeg so we catch it here.  Unclear if we can combine this step with the next one
             elif codec_name != 'opus':
                 encode_string = encode_string + ' -map 0:' + str(i) + ' -acodec libopus' 
                 encode_decision = 'yes'
                 print ('Stream ' + str(i) + ' is ' + codec_name + ', encoding stream')
+                # encode_decision = yes as the audio codec is not in the desired format
             else:
                 print ('Something is broken with stream ' + str(i))
+                # Catch all error state
         elif d['streams'][i]['codec_type'] == 'subtitle':
             codec_name = d['streams'][i]['codec_name'] 
             if codec_name == 'subrip':
@@ -181,12 +192,14 @@ def fprober(ffinder_json):
         # No idea if attachments provide any value.  Sr far: no
         elif d['streams'][i]['codec_type'] == 'attachment':
             print ('Stream is attachment, ignore')
-            
+            # Progably not a great idea to ditch these, but whatever.  So far in discovery, the attachments have been font files.         
         else:
             print ('fuck')
             
     print ('encode_string is: ' + encode_string)
     print ('encode_decision is: ' + encode_decision)
+
+    
        
     # Part 2 determines if the string is needed
     if encode_decision == 'no': 
@@ -197,15 +210,18 @@ def fprober(ffinder_json):
         fprober_json.update(ffinder_json) 
 
         print(json.dumps(fprober_json, indent=3, sort_keys=True))
-        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ' + ffinder_json["file_name"] + ' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<') 
         fencoder.delay(fprober_json)
+    fprober_duration = (datetime.now() - fprober_start_time).total_seconds() / 60.0
+    print ('>>>>>>>>>>>>>>>> fprober ' + ffinder_json["file_name"] + ' complete, executed for ' + str(fprober_duration) + '<<<<<<<<<<<<<<<<<<<')
 
 
 @app.task(queue='worker')
 def fencoder(fprober_json):
-    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fencoder for' + (fprober_json["file_name"]) + ' starting <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
-    print (json.dumps(fprober_json, indent=3, sort_keys=True))
+    # This is the step where we do the actual video encoding
+    fencoder_start_time = datetime.now()
+    print ('>>>>>>>>>>>>>>>> fencoder for ' + fprober_json["file_name"] + ' starting at ' + str(fencoder_start_time) + '<<<<<<<<<<<<<<<<<<<')
 
+    print (json.dumps(fprober_json, indent=3, sort_keys=True))
 
     # Need to get the ffmpeg settings
     ffmpeg_settings = (fprober_json["ffmpeg_settings"])
@@ -264,13 +280,16 @@ def fencoder(fprober_json):
         # We're checking for to things:
         # 1) If this is a production run, and we intend to delete source
         # 2) Don't delete sourec if the ffmpeg encode failed
+
+        fencoder_duration = (datetime.now() - fencoder_start_time).total_seconds() / 60.0
+
         if (fprober_json["production_run"]) == 'yes' and output_file_stats != 0.0:
             os.remove(ffmeg_input_file) 
             ffmpeg_destination = fprober_json["file_path"] + '/' + fprober_json["ffmpeg_output_file"]
             print('Moving ' + ffmpeg_output_file + ' to ' + ffmpeg_destination)
             shutil.move(ffmpeg_output_file, ffmpeg_destination)
             print ('Done')
-            fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats, 'new_file_size_difference':new_file_size_difference}
+            fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats, 'new_file_size_difference':new_file_size_difference, 'fencoder_duration':fencoder_duration}
             fencoder_json.update(fprober_json) 
             print(json.dumps(fencoder_json, indent=3, sort_keys=True))
             fresults.delay(fencoder_json)
@@ -282,15 +301,15 @@ def fencoder(fprober_json):
             print ('Something went wrong, and neither source nor encoded were deleted ')
     else:
         print("Either source or encoding is missing, so exiting")
-
-    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fencoder for' + (fprober_json["file_name"]) + ' done <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
-
+    
+    print ('>>>>>>>>>>>>>>>> fencoder ' + fprober_json["file_name"] + ' complete, executed for ' + str(fencoder_duration) + '<<<<<<<<<<<<<<<<<<<')
 
 
 @app.task(queue='manager')
 def fresults(fencoder_json):
-
-    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fresults ' + (fencoder_json["file_name"]) + ' starting <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    # Last but not least, record the results of ffencode
+    fresults_start_time = datetime.now()
+    print ('>>>>>>>>>>>>>>>> fresults for ' + fencoder_json["file_name"] + ' starting at ' + str(fresults_start_time) + '<<<<<<<<<<<<<<<<<<<')
     config_name = (fencoder_json["config_name"])
     ffmpeg_encoding_string = (fencoder_json["ffmpeg_encoding_string"])
     file_name = (fencoder_json["file_name"])
@@ -299,14 +318,12 @@ def fresults(fencoder_json):
     new_file_size_difference = (fencoder_json["new_file_size_difference"])
     old_file_size = (fencoder_json["old_file_size"])
     watch_folder = (fencoder_json["watch_folder"])
+    fencoder_duration = ((fencoder_json["fencoder_duration"]))
 
     recorded_date = datetime.now()
     print ("File encoding recorded: " + str(recorded_date))
     unique_identifier = file_name + str(recorded_date.microsecond)
     print ('Primary key saved as: ' + unique_identifier)
-
-    #Placeholder
-    encode_duration = 0
 
     database = r"/Boilest/DB/Boilest.db"
     conn = sqlite3.connect(database)
@@ -325,15 +342,19 @@ def fresults(fencoder_json):
             old_file_size,
             watch_folder,
             ffmpeg_encoding_string,
-            encode_duration
+            fencoder_duration
         )
     )
     conn.commit()
 
     c.execute("select round(sum(new_file_size_difference)) from ffencode_results")
-    print ('The space delta on ' + fencoder_json["file_name"] + ' was: ' + str(fencoder_json["new_file_size_difference"]))
-    print ('We have saved so far: ' + str(c.fetchone()))
-     
-
+    total_space_saved = c.fetchone()
+    c.execute("select round(sum(fencoder_duration)) from ffencode_results")
+    total_processing_time = c.fetchone()
     conn.close()
-    print ('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fresults ' + (fencoder_json["file_name"]) + ' done <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+
+    print ('The space delta on ' + file_name + ' was: ' + str(new_file_size_difference) + ' and required ' + str(fencoder_duration) + ' minutes of encoding')
+    print ('We have saved so far: ' + str(total_space_saved) + ', which required a total processing time of ' + str(total_processing_time) + ' minutes')
+      
+    fresults_duration = (datetime.now() - fresults_start_time).total_seconds() / 60.0   
+    print ('>>>>>>>>>>>>>>>> fencoder ' + fencoder_json["file_name"] + ' complete, executed for ' + str(fresults_duration) + '<<<<<<<<<<<<<<<<<<<')

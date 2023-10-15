@@ -46,7 +46,7 @@ else:
                                         old_file_size REAL,
                                         watch_folder TEXT,
                                         ffmpeg_encoding_string TEXT,
-                                        encode_duration REAL
+                                        fencoder_duration REAL
                                     ); """
 
     # create a database connection
