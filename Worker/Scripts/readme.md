@@ -21,7 +21,7 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] UI
 - [x] When establishing the codecs, we check for keywords like 'video' (see line 91 in Taks.py), which may return a false positive because ffprobe could use the keyworld 'video' in objects not related to defining the stream type.  Will need to figure out how to work around this.
 - [ ] Stopping the script does not stop the ffmpeg terminal/os command.  There should be a way to interupt ffmpeg from the script
-- [ ] Add more inline documentation
+- [x] Add more inline documentation
 - [ ] Add additional fields so different file attributes can get different ffmpeg commands
 - [x] Celery queues: https://stackoverflow.com/questions/51631455/how-to-route-tasks-to-different-queues-with-celery-and-django
 - [X] Celery starts queues based on docker env variables

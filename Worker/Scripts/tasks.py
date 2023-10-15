@@ -84,7 +84,7 @@ def ffinder(json_template):
                 print(json.dumps(ffinder_json, indent=3, sort_keys=True))
                 fprober.delay(ffinder_json)
 
-    ffinder_duration = (datetime.now() - ffconfig_start_time).total_seconds() / 60.0
+    ffinder_duration = (datetime.now() - ffinder_start_time).total_seconds() / 60.0
     print ('>>>>>>>>>>>>>>>> ffinder config: ' + json_template["config_name"] + ' complete, executed for ' + str(ffinder_duration) + ' minutes <<<<<<<<<<<<<<<<<<<')
 
 
