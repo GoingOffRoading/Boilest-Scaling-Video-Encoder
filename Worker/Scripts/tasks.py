@@ -85,7 +85,7 @@ def ffinder(json_template):
                 fprober.delay(ffinder_json)
 
     ffinder_duration = (datetime.now() - ffconfig_start_time).total_seconds() / 60.0
-    print ('>>>>>>>>>>>>>>>> ffinder config: ' + json_template["config_name"] + ' complete, executed for ' + str(ffinder_duration) + '<<<<<<<<<<<<<<<<<<<')
+    print ('>>>>>>>>>>>>>>>> ffinder config: ' + json_template["config_name"] + ' complete, executed for ' + str(ffinder_duration) + ' minutes <<<<<<<<<<<<<<<<<<<')
 
 
 
@@ -198,8 +198,6 @@ def fprober(ffinder_json):
             
     print ('encode_string is: ' + encode_string)
     print ('encode_decision is: ' + encode_decision)
-
-    
        
     # Part 2 determines if the string is needed
     if encode_decision == 'no': 
@@ -212,7 +210,7 @@ def fprober(ffinder_json):
         print(json.dumps(fprober_json, indent=3, sort_keys=True))
         fencoder.delay(fprober_json)
     fprober_duration = (datetime.now() - fprober_start_time).total_seconds() / 60.0
-    print ('>>>>>>>>>>>>>>>> fprober ' + ffinder_json["file_name"] + ' complete, executed for ' + str(fprober_duration) + '<<<<<<<<<<<<<<<<<<<')
+    print ('>>>>>>>>>>>>>>>> fprober ' + ffinder_json["file_name"] + ' complete, executed for ' + str(fprober_duration) + ' minutes <<<<<<<<<<<<<<<<<<<')
 
 
 @app.task(queue='worker')
@@ -302,7 +300,7 @@ def fencoder(fprober_json):
     else:
         print("Either source or encoding is missing, so exiting")
     
-    print ('>>>>>>>>>>>>>>>> fencoder ' + fprober_json["file_name"] + ' complete, executed for ' + str(fencoder_duration) + '<<<<<<<<<<<<<<<<<<<')
+    print ('>>>>>>>>>>>>>>>> fencoder ' + fprober_json["file_name"] + ' complete, executed for ' + str(fencoder_duration) + ' minutes <<<<<<<<<<<<<<<<<<<')
 
 
 @app.task(queue='manager')
@@ -353,8 +351,8 @@ def fresults(fencoder_json):
     total_processing_time = c.fetchone()
     conn.close()
 
-    print ('The space delta on ' + file_name + ' was: ' + str(new_file_size_difference) + ' and required ' + str(fencoder_duration) + ' minutes of encoding')
-    print ('We have saved so far: ' + str(total_space_saved) + ', which required a total processing time of ' + str(total_processing_time) + ' minutes')
+    print ('The space delta on ' + file_name + ' was: ' + str(new_file_size_difference) + ' MB and required ' + str(fencoder_duration) + ' minutes of encoding')
+    print ('We have saved so far: ' + str(total_space_saved) + ' MB, which required a total processing time of ' + str(total_processing_time) + ' minutes')
       
     fresults_duration = (datetime.now() - fresults_start_time).total_seconds() / 60.0   
-    print ('>>>>>>>>>>>>>>>> fencoder ' + fencoder_json["file_name"] + ' complete, executed for ' + str(fresults_duration) + '<<<<<<<<<<<<<<<<<<<')
+    print ('>>>>>>>>>>>>>>>> fencoder ' + fencoder_json["file_name"] + ' complete, executed for ' + str(fresults_duration) + ' minutes <<<<<<<<<<<<<<<<<<<')
