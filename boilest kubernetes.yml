@@ -32,8 +32,6 @@ spec:
           volumeMounts:
             - name: boilestmedia
               mountPath: "/boil_watch"
-      nodeSelector:
-        boilest: manager
       imagePullSecrets:
       - name: azureacr
       nodeName: node101-desktop

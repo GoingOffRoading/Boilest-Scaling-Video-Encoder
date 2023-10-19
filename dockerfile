@@ -41,6 +41,11 @@ ENV FLOWER_db /Boilest/flower_db
 ENV FLOWER_purge_offline_workers 60
 ENV FLOWER_UNAUTHENTICATED_API true
 
+# Used in celery and rabbitmq
+ENV Celery_User celery
+ENV Celery_PW celery
+ENV RabbitMQ_Server 192.168.1.110
+ENV RabbitMQ_Port 31672
 
 # Add a user that is the same user group as the data being read
 # Is this clean?  Not really...  Will need to revisit this later
