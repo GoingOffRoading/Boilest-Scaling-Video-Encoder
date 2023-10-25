@@ -59,4 +59,5 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] When printing results, print the size delta on the encoded file
 - [x] Add timestamps to when tasks start and stop, or a duration on how long something has taken, tbd
 - [ ] Consider adding additional logic on the DB check to check for the DB, then table, then fields
+- [ ] Break up the tasks into worker and manager, including queue changes
 
