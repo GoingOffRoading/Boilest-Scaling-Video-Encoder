@@ -1,7 +1,6 @@
 {
   "config_name": "AV1_Test",
   "watch_folder": "/boil_watch",
-  "production_run": "no",
   "ffmpeg_video_codec": "av1",
   "ffmpeg_video_string": "-c:v libsvtav1 -crf 20 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0",
   "ffmpeg_audio_codec": "opus",
@@ -9,5 +8,6 @@
   "ffmpeg_subtitle_format": "subrip",
   "ffmpeg_subtitle_string": "-c:s srt",
   "ffmpeg_settings": "-hide_banner -loglevel 16 -stats -stats_period 10",
-  "show_diagnostic_messages": "yes"
+  "task": "encode",
+  "notes":"n/a"
 }

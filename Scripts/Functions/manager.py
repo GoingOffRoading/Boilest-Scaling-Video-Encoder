@@ -6,7 +6,6 @@ from worker import fencoder
 
 app = Celery('tasks', backend = 'rpc://celery:celery@192.168.1.110:31672/celery', broker = 'amqp://celery:celery@192.168.1.110:31672/celery')
 
-
 @app.task(queue='manager')
 # Scan for condigurations, and post the to the next step
 # Kicked off by the scheduler above, but started manually with start.py in /scripts

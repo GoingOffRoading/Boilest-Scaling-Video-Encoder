@@ -2,42 +2,12 @@ from celery import Celery
 from pathlib import Path
 from datetime import datetime
 import json, subprocess, os, shutil, sqlite3, requests, sys, pathlib
-import Functions
 
 app = Celery('tasks', backend = 'rpc://celery:celery@192.168.1.110:31672/celery', broker = 'amqp://celery:celery@192.168.1.110:31672/celery')
 
-
-@app.on_after_configure.connect
-# Celery's scheduler.  Kicks off encoder every hour
-# https://docs.celeryq.dev/en/stable/userguide/periodic-tasks.html#entries
-def setup_periodic_tasks(sender, **kwargs):
-    # Calls ffconfigs('hello') every 10 seconds.
-    sender.add_periodic_task(3600.0, encoder.s('hit it'))
-
-
-@app.task(queue='manager')
-# Scan for condigurations, and post the to the next step
-# Kicked off by the scheduler above, but started manually with start.py in /scripts
-def start(arg):
-    ffconfig_start_time = datetime.now()
-    print ('>>>>>>>>>>>>>>>> ffconfigs with the arg: ' + arg + ' starting at ' + str(ffconfig_start_time) + '<<<<<<<<<<<<<<<<<<<')
-    json_template = ffconfigs.delay('hit it')
-    ffinder.delay(json_template)
-
-
-
-
-    print ('>>>>>>>>>>>>>>>> ffconfigs ' + arg + ' complete, executed for ' + str(ffconfig_duration) + ' minutes <<<<<<<<<<<<<<<<<<<')
-
-
-
-@app.task(queue='manager')
-def fprober(ffinder_json):
-    # This function is kicked off from the individual file results from the ffinder function, and then do three functions:
-    # 1) For each file, run ffprobe to get details on the file
-    # 2) Loop through those the ffprobe results to determine if any changes need to be made to the video container or it's video, audio, or subtitle streams 
-    # 3) Determine if the file needs to be encoded, and if yes, pass the changes to the fencoder function
-
+@app.task(queue='worker')
+def fencoder(ffinder_json):
+    
     fprober_start_time = datetime.now()
     print ('>>>>>>>>>>>>>>>> fprober for ' + ffinder_json["file_name"] + ' starting at ' + str(fprober_start_time) + '<<<<<<<<<<<<<<<<<<<')
 
@@ -52,9 +22,6 @@ def fprober(ffinder_json):
     d = json.loads(p)
     print ("ffprobe's results on " + file_name + ":")
     print(json.dumps(d, indent=3, sort_keys=True))
-     
-    # Now that we have FFProbe's output, we want to evaluate the container, video stream, audio stream, and subtitle formats
-    # If those values don't match the input templte, then we flip encode_decision to yes, and transmit the results to fencoder
 
     # Setting starter variables.  These are revisited throughout the loop.
     encode_string = str()
@@ -137,82 +104,61 @@ def fprober(ffinder_json):
             # Progably not a great idea to ditch these, but whatever.  So far in discovery, the attachments have been font files.         
         else:
             print ('fuck')
-            
-    print ('encode_string is: ' + encode_string)
-    print ('encode_decision is: ' + encode_decision)
-       
-    # Part 2 determines if the string is needed
-    if encode_decision == 'no': 
-        print (file_name + ' does not need encoding')
+
+
+    # Need to get the ffmpeg settings
+    ffmpeg_settings = (fprober_json["ffmpeg_settings"])
+    #print ('ffmpeg settings are: ' + ffmpeg_settings)
+        
+    # Need to get the input filepath
+    file_full_path = os.path.join(file_path,file_name)
+    #print ('input file is: ' + ffmeg_input_file)
+    
+   
+    ffmpeg_output_file = '/boil_hold/' + ffmpeg_output_file
+    
+    # All together now
+    ffmpeg_command = 'ffmpeg ' + ffmpeg_settings + ' -i "' + file_full_path + '"' + encode_string + ' "' + ffmpeg_output_file + '"'
+    print ('ffmpeg command:')
+    print (ffmpeg_command)    
+
+
+    process = subprocess.Popen(ffmpeg_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,universal_newlines=True)
+    for line in process.stdout:
+        print(line)
+    
+    if os.path.exists(file_full_path and ffmpeg_output_file):
+        print (file_full_path + ' and ' + ffmpeg_output_file + ' Files Exists')
+        input_file_stats = os.stat(file_full_path)
+        input_file_stats = round(input_file_stats.st_size / (1024 * 1024))
+        print (f'Original file Size in MegaBytes is: ' + str(input_file_stats)) 
+        output_file_stats = (os.stat(ffmpeg_output_file))
+        output_file_stats = round(output_file_stats.st_size / (1024 * 1024))
+        print (f'Encoded file Size in MegaBytes is: ' + str(output_file_stats)) 
+        new_file_size_difference = input_file_stats - output_file_stats
+        print (f'Total Space savings is:' + str(new_file_size_difference))
+        print ('Removing ' + file_full_path)
+
+        fencoder_duration = (datetime.now() - fprober_start_time).total_seconds() / 60.0
+
+        if output_file_stats != 0.0:
+            os.remove(file_full_path) 
+            ffmpeg_destination = file_path + '/' + ffmpeg_output_file
+            print('Moving ' + ffmpeg_output_file + ' to ' + ffmpeg_destination)
+            shutil.move(ffmpeg_output_file, ffmpeg_destination)
+            print ('Done')
+            fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats, 'new_file_size_difference':new_file_size_difference, 'fencoder_duration':fencoder_duration}
+            fencoder_json.update(fprober_json) 
+            print(json.dumps(fencoder_json, indent=3, sort_keys=True))
+            return results_json
+        elif output_file_stats == 0.0:
+            print ('Something went wrong, and the output file size is 0.0 KB')
+            print ('Deleting: ' + ffmpeg_output_file)
+            os.remove(ffmpeg_output_file) 
+        else:
+            print ('Something went wrong, and neither source nor encoded were deleted ')
     else:
-        print (file_name + ' needs encoding')
-        fprober_json = {'ffmpeg_encoding_string':encode_string, 'ffmpeg_output_file':ffmpeg_output_file}
-        fprober_json.update(ffinder_json) 
-
-        print(json.dumps(fprober_json, indent=3, sort_keys=True))
-        fencoder.delay(fprober_json)
-    fprober_duration = (datetime.now() - fprober_start_time).total_seconds() / 60.0
-    print ('>>>>>>>>>>>>>>>> fprober ' + ffinder_json["file_name"] + ' complete, executed for ' + str(fprober_duration) + ' minutes <<<<<<<<<<<<<<<<<<<')
-
-
-@app.task(queue='manager')
-def fencoder(fprober_json)
+        print("Either source or encoding is missing, so exiting")
     
-    
+    print ('>>>>>>>>>>>>>>>> fencoder ' + fprober_json["file_name"] + ' complete, executed for ' + str(fencoder_duration) + ' minutes <<<<<<<<<<<<<<<<<<<')
 
-
-
-
-@app.task(queue='manager')
-def fresults(fencoder_json):
-    # Last but not least, record the results of ffencode
-    fresults_start_time = datetime.now()
-    print ('>>>>>>>>>>>>>>>> fresults for ' + fencoder_json["file_name"] + ' starting at ' + str(fresults_start_time) + '<<<<<<<<<<<<<<<<<<<')
-    config_name = (fencoder_json["config_name"])
-    ffmpeg_encoding_string = (fencoder_json["ffmpeg_encoding_string"])
-    file_name = (fencoder_json["file_name"])
-    file_path = (fencoder_json["file_path"])
-    new_file_size = (fencoder_json["new_file_size"])
-    new_file_size_difference = (fencoder_json["new_file_size_difference"])
-    old_file_size = (fencoder_json["old_file_size"])
-    watch_folder = (fencoder_json["watch_folder"])
-    fencoder_duration = ((fencoder_json["fencoder_duration"]))
-
-    recorded_date = datetime.now()
-    print ("File encoding recorded: " + str(recorded_date))
-    unique_identifier = file_name + str(recorded_date.microsecond)
-    print ('Primary key saved as: ' + unique_identifier)
-
-    database = r"/Boilest/DB/Boilest.db"
-    conn = sqlite3.connect(database)
-    c = conn.cursor()
-    c.execute(
-        "INSERT INTO ffencode_results"
-        " VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-        (
-            unique_identifier,
-            recorded_date,
-            file_name, 
-            file_path, 
-            config_name,
-            new_file_size, 
-            new_file_size_difference, 
-            old_file_size,
-            watch_folder,
-            ffmpeg_encoding_string,
-            fencoder_duration
-        )
-    )
-    conn.commit()
-
-    c.execute("select round(sum(new_file_size_difference)) from ffencode_results")
-    total_space_saved = c.fetchone()
-    c.execute("select round(sum(fencoder_duration)) from ffencode_results")
-    total_processing_time = c.fetchone()
-    conn.close()
-
-    print ('The space delta on ' + file_name + ' was: ' + str(new_file_size_difference) + ' MB and required ' + str(fencoder_duration) + ' minutes of encoding')
-    print ('We have saved so far: ' + str(total_space_saved) + ' MB, which required a total processing time of ' + str(total_processing_time) + ' minutes')
-      
-    fresults_duration = (datetime.now() - fresults_start_time).total_seconds() / 60.0   
-    print ('>>>>>>>>>>>>>>>> fencoder ' + fencoder_json["file_name"] + ' complete, executed for ' + str(fresults_duration) + ' minutes <<<<<<<<<<<<<<<<<<<')
