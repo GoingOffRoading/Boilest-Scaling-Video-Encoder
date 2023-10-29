@@ -13,15 +13,16 @@ echo "Starting Celery"
 
 if [ $Manager = "Yes" -a $Worker = "No" ]; then
     echo "Running Manager" 
-    celery -A tasks worker -B -l WARNING -c 1 -Q manager,prober -n manager@%n -S /Boilest/worker.state -f /Boilest/Logs/celery.logs &
-    celery -A tasks flower -l WARNING
-elif [ $Manager = "Yes" -a $Worker = "Yes" ]; then
-    echo "Running Worker & Manager" 
-    celery -A tasks worker -B -l WARNING -c 1 -Q manager,worker,prober -n manager@%n -S /Boilest/worker.state  -f /Boilest/Logs/celery.logs &
-    celery -A tasks flower -l WARNING
+    celery -A celery_manager worker -B -l INFO -c 1 -Q manager -n manager@%n -S /Boilest/worker.state -f /Boilest/Logs/celery.logs &
+    celery -A celery_manager flower -l INFO
 elif [ $Manager = "No" -a $Worker = "Yes" ]; then
     echo "Running Worker" 
-    celery -A tasks worker -B -l WARNING -c 1 -Q worker,prober -n worker@%n
+    celery -A celery_worker worker -B -l INFO -c 1 -Q worker -n encoder@%n 
+elif [ $Manager = "Yes" -a $Worker = "Yes" ]; then
+    echo "Running Manager & Worker" 
+    celery -A celery_manager worker -B -l INFO -c 1 -Q manager -n manager@%n -S /Boilest/worker.state &
+    celery -A celery_manager flower -l INFO
+    celery -A celery_worker worker -B -l INFO -c 1 -Q worker -n encoder@%n 
 else
     echo "Everything is fucked"
 fi

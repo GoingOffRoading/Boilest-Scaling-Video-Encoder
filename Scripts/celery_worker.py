@@ -1,15 +1,15 @@
 from celery import Celery
 from pathlib import Path
 from datetime import datetime
-import json, subprocess, os, shutil, sqlite3, requests, sys, pathlib
+import json, subprocess, os, shutil, pathlib
 
 app = Celery('tasks', backend = 'rpc://celery:celery@192.168.1.110:31672/celery', broker = 'amqp://celery:celery@192.168.1.110:31672/celery')
 
 @app.task(queue='worker')
 def fencoder(ffinder_json):
     
-    fprober_start_time = datetime.now()
-    print ('>>>>>>>>>>>>>>>> fprober for ' + ffinder_json["file_name"] + ' starting at ' + str(fprober_start_time) + '<<<<<<<<<<<<<<<<<<<')
+    fencoder_start_time = datetime.now()
+    print ('>>>>>>>>>>>>>>>> fprober for ' + ffinder_json["file_name"] + ' starting at ' + str(fencoder_start_time) + '<<<<<<<<<<<<<<<<<<<')
 
     # Using subprocess to call FFprobe, get JSON back on the video's container, and streams, then display the outputs  
     file_path = (ffinder_json["file_path"])
@@ -105,52 +105,51 @@ def fencoder(ffinder_json):
         else:
             print ('fuck')
 
-
     # Need to get the ffmpeg settings
-    ffmpeg_settings = (fprober_json["ffmpeg_settings"])
+    ffmpeg_settings = (ffinder_json["ffmpeg_settings"])
     #print ('ffmpeg settings are: ' + ffmpeg_settings)
-        
     # Need to get the input filepath
     file_full_path = os.path.join(file_path,file_name)
     #print ('input file is: ' + ffmeg_input_file)
-    
-   
-    ffmpeg_output_file = '/boil_hold/' + ffmpeg_output_file
-    
-    # All together now
-    ffmpeg_command = 'ffmpeg ' + ffmpeg_settings + ' -i "' + file_full_path + '"' + encode_string + ' "' + ffmpeg_output_file + '"'
-    print ('ffmpeg command:')
-    print (ffmpeg_command)    
+    ffmpeg_output_file_path = '/boil_hold/' + ffmpeg_output_file    
+
+    if encode_decision == 'yes':
+        # All together now
+        ffmpeg_command = 'ffmpeg ' + ffmpeg_settings + ' -i "' + file_full_path + '"' + encode_string + ' "' + ffmpeg_output_file_path + '"'
+        print ('ffmpeg command:')
+        print (ffmpeg_command)    
 
 
-    process = subprocess.Popen(ffmpeg_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,universal_newlines=True)
-    for line in process.stdout:
-        print(line)
-    
-    if os.path.exists(file_full_path and ffmpeg_output_file):
-        print (file_full_path + ' and ' + ffmpeg_output_file + ' Files Exists')
+        process = subprocess.Popen(ffmpeg_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,universal_newlines=True)
+        for line in process.stdout:
+            print(line)
+    elif encode_decision == 'no':
+        print ('Encode Decision was no')
+    else:
+        print ('Something went wrong')
+        
+    if os.path.exists(file_full_path and ffmpeg_output_file_path):
+        print (file_full_path + ' and ' + ffmpeg_output_file_path + ' Files Exists')
         input_file_stats = os.stat(file_full_path)
         input_file_stats = round(input_file_stats.st_size / (1024 * 1024))
         print (f'Original file Size in MegaBytes is: ' + str(input_file_stats)) 
-        output_file_stats = (os.stat(ffmpeg_output_file))
+        output_file_stats = (os.stat(ffmpeg_output_file_path))
         output_file_stats = round(output_file_stats.st_size / (1024 * 1024))
         print (f'Encoded file Size in MegaBytes is: ' + str(output_file_stats)) 
         new_file_size_difference = input_file_stats - output_file_stats
         print (f'Total Space savings is:' + str(new_file_size_difference))
         print ('Removing ' + file_full_path)
-
-        fencoder_duration = (datetime.now() - fprober_start_time).total_seconds() / 60.0
-
         if output_file_stats != 0.0:
             os.remove(file_full_path) 
             ffmpeg_destination = file_path + '/' + ffmpeg_output_file
-            print('Moving ' + ffmpeg_output_file + ' to ' + ffmpeg_destination)
-            shutil.move(ffmpeg_output_file, ffmpeg_destination)
+            print('Moving ' + ffmpeg_output_file_path + ' to ' + ffmpeg_destination)
+            shutil.move(ffmpeg_output_file_path, ffmpeg_destination)
             print ('Done')
-            fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats, 'new_file_size_difference':new_file_size_difference, 'fencoder_duration':fencoder_duration}
-            fencoder_json.update(fprober_json) 
+            fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats, 'new_file_size_difference':new_file_size_difference}
+            #, 'fencoder_duration':fencoder_duration}
+            fencoder_json.update(ffinder_json) 
             print(json.dumps(fencoder_json, indent=3, sort_keys=True))
-            return results_json
+            return fencoder_json
         elif output_file_stats == 0.0:
             print ('Something went wrong, and the output file size is 0.0 KB')
             print ('Deleting: ' + ffmpeg_output_file)
@@ -159,6 +158,7 @@ def fencoder(ffinder_json):
             print ('Something went wrong, and neither source nor encoded were deleted ')
     else:
         print("Either source or encoding is missing, so exiting")
-    
-    print ('>>>>>>>>>>>>>>>> fencoder ' + fprober_json["file_name"] + ' complete, executed for ' + str(fencoder_duration) + ' minutes <<<<<<<<<<<<<<<<<<<')
+
+    fencoder_duration = (datetime.now() - fencoder_start_time).total_seconds() / 60.0
+    print ('>>>>>>>>>>>>>>>> fencoder ' + ffinder_json["file_name"] + ' complete, executed for ' + str(fencoder_duration) + ' minutes <<<<<<<<<<<<<<<<<<<')
 

@@ -1,3 +1,3 @@
-from tasks import ffconfigs
+from celery_manager import ffconfigs
 
 ffconfigs('farts')

@@ -1,10 +1,18 @@
 from celery import Celery
-from pathlib import Path
 from datetime import datetime
-import json, subprocess, os, shutil, sqlite3, requests, sys, pathlib
-from worker import fencoder
+import json, os, sqlite3, requests
+from celery_worker import fencoder
 
 app = Celery('tasks', backend = 'rpc://celery:celery@192.168.1.110:31672/celery', broker = 'amqp://celery:celery@192.168.1.110:31672/celery')
+
+
+@app.on_after_configure.connect
+# Celery's scheduler.  Kicks off ffconfigs every hour
+# https://docs.celeryq.dev/en/stable/userguide/periodic-tasks.html#entries
+def setup_periodic_tasks(sender, **kwargs):
+    # Calls ffconfigs('hello') every 10 seconds.
+    sender.add_periodic_task(3600.0, ffconfigs.s('hit it'))
+
 
 @app.task(queue='manager')
 # Scan for condigurations, and post the to the next step
@@ -17,15 +25,13 @@ def ffconfigs(arg):
     worker_queue = json.loads((requests.get('http://192.168.1.110:32311/api/queues/celery/worker', auth=('celery', 'celery'))).text)
     worker_queue_messages_unacknowledged = (worker_queue["messages_unacknowledged"])
     manager_queue = json.loads((requests.get('http://192.168.1.110:32311/api/queues/celery/manager', auth=('celery', 'celery'))).text)
-    manager_queue_messages_unacknowledged = (manager_queue["messages_unacknowledged"])    
-    prober_queue = json.loads((requests.get('http://192.168.1.110:32311/api/queues/celery/prober', auth=('celery', 'celery'))).text)
-    prober_queue_messages_unacknowledged = (prober_queue["messages_unacknowledged"])    
-    tasks = worker_queue_messages_unacknowledged + manager_queue_messages_unacknowledged + prober_queue_messages_unacknowledged
+    manager_queue_messages_unacknowledged = (manager_queue["messages_unacknowledged"])     
+    tasks = worker_queue_messages_unacknowledged + manager_queue_messages_unacknowledged
     
     directory = '/Boilest/Configurations'
     # Searching for configurations
     if tasks == 0:
-        print ('No tasks in sque, starting search for configs')
+        print ('No tasks in queue, starting search for configs')
         for root, dirs, files in os.walk(directory):
             # select file name
             for file in files:
@@ -38,7 +44,7 @@ def ffconfigs(arg):
                     json_template = json.load(f)
                     print (json.dumps(json_template, indent=3, sort_keys=True))
                     print ('sending ' + json_template["config_name"] + ' to ffinder')
-                    return(json_template)
+                    ffinder.delay(json_template)
                 else:
                     print('Did not find Configurations')
     elif tasks != 0:
@@ -72,12 +78,13 @@ def ffinder(json_template):
                 ffinder_json = {'file_path':root, 'file_name':file}
                 ffinder_json.update(json_template)      
                 print(json.dumps(ffinder_json, indent=3, sort_keys=True))
-                fprober.delay(ffinder_json)
-
+                fencoder.delay(ffinder_json)
+                if (json_template["task"]) == 'encode':
+                    print ('send task to encode thing this is a placeholder')
+                else:
+                    print ('placeholder')
     ffinder_duration = (datetime.now() - ffinder_start_time).total_seconds() / 60.0
     print ('>>>>>>>>>>>>>>>> ffinder config: ' + json_template["config_name"] + ' complete, executed for ' + str(ffinder_duration) + ' minutes <<<<<<<<<<<<<<<<<<<')
-
-
 
 
 
