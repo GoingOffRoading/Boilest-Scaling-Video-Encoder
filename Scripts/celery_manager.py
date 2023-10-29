@@ -1,7 +1,7 @@
 from celery import Celery
 from datetime import datetime
 import json, os, sqlite3, requests
-from celery_worker import fencoder
+from celery_worker import fencoderworker
 
 app = Celery('tasks', backend = 'rpc://celery:celery@192.168.1.110:31672/celery', broker = 'amqp://celery:celery@192.168.1.110:31672/celery')
 
@@ -85,6 +85,23 @@ def ffinder(json_template):
                     print ('placeholder')
     ffinder_duration = (datetime.now() - ffinder_start_time).total_seconds() / 60.0
     print ('>>>>>>>>>>>>>>>> ffinder config: ' + json_template["config_name"] + ' complete, executed for ' + str(ffinder_duration) + ' minutes <<<<<<<<<<<<<<<<<<<')
+
+@app.task(queue='manager')
+def fencoder(ffinder_json):
+    fencoder_start_time = datetime.now()
+    print ('>>>>>>>>>>>>>>>> fencoder executing with config: ' + ffinder_json["config_name"] + ' starting at ' + str(fencoder_start_time) + '<<<<<<<<<<<<<<<<<<<')
+
+    fencoder_json = fencoderworker.delay(ffinder_json)
+ 
+    if fencoder_json["encoded"] == 'no':
+        print (fencoder_json["file_name"] + ' was not encoded ')
+    elif fencoder_json["encoded"] == 'yes':
+        print('Sending task to be recordered in fresults')
+        fresults.delay(fencoder_json)
+    else:
+        print('fencoder failed')
+    fencoder_duration = (datetime.now() - fencoder_start_time).total_seconds() / 60.0
+    print ('>>>>>>>>>>>>>>>> fencoder config: ' + ffinder_json["config_name"] + ' complete, executed for ' + str(fencoder_duration) + ' minutes <<<<<<<<<<<<<<<<<<<')
 
 
 
