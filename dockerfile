@@ -42,10 +42,13 @@ ENV FLOWER_purge_offline_workers 60
 ENV FLOWER_UNAUTHENTICATED_API true
 
 # Used in celery and rabbitmq
-ENV Celery_User celery
-ENV Celery_PW celery
-ENV RabbitMQ_Server 192.168.1.110
-ENV RabbitMQ_Port 31672
+ENV User celery
+ENV Password celery
+ENV Celery_Server http://192.168.1.110
+ENV Celery_Port 31672
+ENV RabbitMQ_Server http://192.168.1.110
+ENV RabbitMQ_Port 32311
+
 
 # Add a user that is the same user group as the data being read
 # Is this clean?  Not really...  Will need to revisit this later

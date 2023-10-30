@@ -61,3 +61,7 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] Consider adding additional logic on the DB check to check for the DB, then table, then fields
 - [ ] Break up the tasks into worker and manager, including queue changes
 
+
+
+
+https://ranvir.xyz/blog/using-celery-to-run-long-running-task-asynchronously/
