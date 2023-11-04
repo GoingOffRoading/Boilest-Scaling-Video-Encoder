@@ -22,24 +22,24 @@ This is the Boilest workflow, and work that is currently outstanding
 - [x] When establishing the codecs, we check for keywords like 'video' (see line 91 in Taks.py), which may return a false positive because ffprobe could use the keyworld 'video' in objects not related to defining the stream type.  Will need to figure out how to work around this.
 - [ ] Stopping the script does not stop the ffmpeg terminal/os command.  There should be a way to interupt ffmpeg from the script
 - [x] Add more inline documentation
-- [ ] Add additional fields so different file attributes can get different ffmpeg commands
+- [x] Add additional fields so different file attributes can get different ffmpeg commands
 - [x] Celery queues: https://stackoverflow.com/questions/51631455/how-to-route-tasks-to-different-queues-with-celery-and-django
 - [X] Celery starts queues based on docker env variables
 - [x] Around line 150 in tasks...  The function to check if ffmpeg should run checks for a variable like subtitle, without establishing if the subtitle stream exists.  This casues all media missing the stream to encode.  Need to fix.
 - [ ] Repo Documentation
 - [x] Add the other two SQL insert statements to fresults
-- [ ] Rearrange git repo/directory structure
+- [x] Rearrange git repo/directory structure
 - [ ] Experiment with the Ubuntu FFMpeg image for SVT-AV! latest and greatest
 - [ ] Create and integrate a secrets/config file/template, or maybe use container evars
 - [ ] See if we can create a test pipeline using open source video clip
-- [ ] Sort through the test scrips, and start deleting duplicates
+- [x] Sort through the test scrips, and start deleting duplicates
 - [ ] Rewrite the function that checks the queues as that is spagetti
 - [ ] Replace the print statements with logging: https://docs.python.org/3/howto/logging.html
 - [ ] Add python scripts to the DB folder to get stats
 - [x] Resolve issues with OPUS compatibility
 - [x] Resolve issues where output = 0.0 but tries to get moved anyway
 - [ ] In each step, if we no longer need components of the JSON, delete them
-- [ ] Rewrite the ffprobe codec check loop to use variables from the config again
+- [x] Rewrite the ffprobe codec check loop to use variables from the config again
 - [ ] Need to configure for AMPQ retries against RabbitMQ if RabbitMQ restarts
 - [x] Need to figure out how to configure RabbitMQ for celery if RabbitMQ restarts
 - [x] Figure out the correct permission level of the celery rabbitmq user to create/read/etc queues
@@ -50,16 +50,16 @@ This is the Boilest workflow, and work that is currently outstanding
 - [x] Determine if it would be better to copy the file being encoded to the encoding machine to deal with NFS errors
 - [ ] Determine if we should keep attachments from ffprobe
 - [x] Determine if we could slow down the number of status messages from ffmpeg
-- [ ] Find a more elegant solution to overflowing the buffer than sys.stdout.flush().  Likely moot if I write to a log
+- [x] Find a more elegant solution to overflowing the buffer than sys.stdout.flush().  Likely moot if I write to a log
 - [x] Investigate the db lock issue
 - [x] Fix the logic for calling ffresults
 - [ ] Clear queue cron: https://stackoverflow.com/questions/70971478/how-to-delete-celery-task-logs-in-flower
 - [ ] Send failed queue to log file
-- [ ] When printing results, or the hold because of queue, print a timestamp
-- [ ] When printing results, print the size delta on the encoded file
+- [x] When printing results, or the hold because of queue, print a timestamp
+- [x] When printing results, print the size delta on the encoded file
 - [x] Add timestamps to when tasks start and stop, or a duration on how long something has taken, tbd
 - [ ] Consider adding additional logic on the DB check to check for the DB, then table, then fields
-- [ ] Break up the tasks into worker and manager, including queue changes
+- [x] Break up the tasks into worker and manager, including queue changes
 
 
 
