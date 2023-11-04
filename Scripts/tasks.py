@@ -26,10 +26,8 @@ def ffconfigs(arg):
     worker_queue = json.loads((requests.get('http://192.168.1.110:32311/api/queues/celery/worker', auth=('celery', 'celery'))).text)
     worker_queue_messages_unacknowledged = (worker_queue["messages_unacknowledged"])
     manager_queue = json.loads((requests.get('http://192.168.1.110:32311/api/queues/celery/manager', auth=('celery', 'celery'))).text)
-    manager_queue_messages_unacknowledged = (manager_queue["messages_unacknowledged"])    
-    prober_queue = json.loads((requests.get('http://192.168.1.110:32311/api/queues/celery/prober', auth=('celery', 'celery'))).text)
-    prober_queue_messages_unacknowledged = (prober_queue["messages_unacknowledged"])    
-    tasks = worker_queue_messages_unacknowledged + manager_queue_messages_unacknowledged + prober_queue_messages_unacknowledged
+    manager_queue_messages_unacknowledged = (manager_queue["messages_unacknowledged"])      
+    tasks = worker_queue_messages_unacknowledged + manager_queue_messages_unacknowledged
     
     directory = '/Boilest/Configurations'
     # Searching for configurations
@@ -59,7 +57,7 @@ def ffconfigs(arg):
 
 
 
-@app.task(queue='worker')
+@app.task(queue='manager')
 def ffinder(json_template):
     # The purpose of this function of to search a directory for files, filter for specific formats, and send those filtered results to the next function
     ffinder_start_time = datetime.now()
@@ -89,7 +87,7 @@ def ffinder(json_template):
 
 
 
-@app.task(queue='prober')
+@app.task(queue='manager')
 def fprober(ffinder_json):
     # This function is kicked off from the individual file results from the ffinder function, and then do three functions:
     # 1) For each file, run ffprobe to get details on the file
@@ -117,6 +115,7 @@ def fprober(ffinder_json):
     # Setting starter variables.  These are revisited throughout the loop.
     encode_string = str()
     encode_decision = 'no'
+    original_string = str()
     
     # Determine if the container needs to be changed
     original_container = (d['format']['format_name'])
@@ -137,6 +136,7 @@ def fprober(ffinder_json):
     for i in range (0,streams_count):
         if d['streams'][i]['codec_type'] == 'video':
             codec_name = d['streams'][i]['codec_name'] 
+            original_string = original_string + '{' + str(i) + d['streams'][i]['codec_type'] + '=' + codec_name + '}'
             if codec_name == 'av1':
                 encode_string = encode_string + ' -map 0:' + str(i) + ' -c:v copy'
                 # No need to change encode_decision as the video codec is in the desired format
@@ -154,6 +154,7 @@ def fprober(ffinder_json):
                 # Catch all error state
         elif d['streams'][i]['codec_type'] == 'audio':
             codec_name = d['streams'][i]['codec_name'] 
+            original_string = original_string + '{' + str(i) + d['streams'][i]['codec_type'] + '=' + codec_name + '}'
             if codec_name == 'opus':
                 encode_string = encode_string + ' -map 0:' + str(i) + ' -c:a copy'
                 print ('Stream ' + str(i) + ' is already ' + codec_name + ': nothing to encode')
@@ -164,7 +165,8 @@ def fprober(ffinder_json):
                 print ('Stream ' + str(i) + ' is ' + codec_name + ' and, using ' + d['streams'][i]['channel_layout'] +', filtering, then encoding stream')
                 # encode_decision = yes as the audio codec is not in the desired format... libopus has problems with 5.1(side) channel layout in ffmpeg so we catch it here.  Unclear if we can combine this step with the next one
             elif codec_name != 'opus':
-                encode_string = encode_string + ' -map 0:' + str(i) + ' -acodec libopus' 
+                #encode_string = encode_string + ' -map 0:' + str(i) + ' -acodec libopus' 
+                encode_string = encode_string + ' -map 0:' + str(i) + ' ' + (ffinder_json["ffmpeg_audio_string"])
                 encode_decision = 'yes'
                 print ('Stream ' + str(i) + ' is ' + codec_name + ', encoding stream')
                 # encode_decision = yes as the audio codec is not in the desired format
@@ -173,6 +175,7 @@ def fprober(ffinder_json):
                 # Catch all error state
         elif d['streams'][i]['codec_type'] == 'subtitle':
             codec_name = d['streams'][i]['codec_name'] 
+            original_string = original_string + '{' + str(i) + d['streams'][i]['codec_type'] + '=' + codec_name + '}'
             if codec_name == 'subrip':
                 encode_string = encode_string + ' -map 0:' + str(i) + ' -c:s copy'
                 # No need to change encode_decision as the subtitles are in the desired format
@@ -183,7 +186,8 @@ def fprober(ffinder_json):
                 # No need to change encode_decision as we can't change picture subtitles into text subtitles
                 print ('Stream ' + str(i) + ' is ' + codec_name + ': a pain in the dick, and nothing we can do but copy the stream')
             elif codec_name != 'subrip':
-                encode_string = encode_string + ' -map 0:' + str(i) + ' -scodec subrip' 
+                #encode_string = encode_string + ' -map 0:' + str(i) + ' -scodec subrip' 
+                encode_string = encode_string + ' -map 0:' + str(i) + ' ' + (ffinder_json["ffmpeg_subtitle_string"]) 
                 encode_decision = 'yes'
                 print ('Stream ' + str(i) + ' is ' + codec_name + ', encoding stream')
             else:
@@ -191,6 +195,7 @@ def fprober(ffinder_json):
 
         # No idea if attachments provide any value.  Sr far: no
         elif d['streams'][i]['codec_type'] == 'attachment':
+            original_string = original_string + '{' + str(i) + d['streams'][i]['codec_type']
             print ('Stream is attachment, ignore')
             # Progably not a great idea to ditch these, but whatever.  So far in discovery, the attachments have been font files.         
         else:
@@ -198,13 +203,14 @@ def fprober(ffinder_json):
             
     print ('encode_string is: ' + encode_string)
     print ('encode_decision is: ' + encode_decision)
+    print ('original_string is: ' + original_string)
        
     # Part 2 determines if the string is needed
     if encode_decision == 'no': 
         print (file_name + ' does not need encoding')
     else:
         print (file_name + ' needs encoding')
-        fprober_json = {'ffmpeg_encoding_string':encode_string, 'ffmpeg_output_file':ffmpeg_output_file}
+        fprober_json = {'ffmpeg_encoding_string':encode_string, 'ffmpeg_output_file':ffmpeg_output_file, 'original_string':original_string}
         fprober_json.update(ffinder_json) 
 
         print(json.dumps(fprober_json, indent=3, sort_keys=True))
@@ -249,20 +255,11 @@ def fencoder(fprober_json):
     print ('ffmpeg command:')
     print (ffmpeg_command)    
 
-    # We need to determine if this is a production run and run the function like normal
-    if (fprober_json["production_run"]) == 'yes':
-        print ('Please hold')
+    print ('Please hold')
         #os.system(ffmpeg_command)
-        process = subprocess.Popen(ffmpeg_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,universal_newlines=True)
-        for line in process.stdout:
-            print(line)
-    elif (fprober_json["production_run"]) == 'no':
-        print ('This is a test run, so lets maybe not polute production')
-        input_file_stats = float(31.44148)
-        output_file_stats = float(34.31477626)
-        new_file_size_difference = float(2.873836)
-    else:
-        print ('Production flag missing from config')
+    process = subprocess.Popen(ffmpeg_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,universal_newlines=True)
+    for line in process.stdout:
+        print(line)
     
     if os.path.exists(ffmeg_input_file and ffmpeg_output_file):
         print (ffmeg_input_file + ' and ' + ffmpeg_output_file + ' Files Exists')
@@ -281,7 +278,7 @@ def fencoder(fprober_json):
 
         fencoder_duration = (datetime.now() - fencoder_start_time).total_seconds() / 60.0
 
-        if (fprober_json["production_run"]) == 'yes' and output_file_stats != 0.0:
+        if output_file_stats != 0.0:
             os.remove(ffmeg_input_file) 
             ffmpeg_destination = fprober_json["file_path"] + '/' + fprober_json["ffmpeg_output_file"]
             print('Moving ' + ffmpeg_output_file + ' to ' + ffmpeg_destination)
@@ -317,6 +314,8 @@ def fresults(fencoder_json):
     old_file_size = (fencoder_json["old_file_size"])
     watch_folder = (fencoder_json["watch_folder"])
     fencoder_duration = ((fencoder_json["fencoder_duration"]))
+    original_string = (fencoder_json["original_string"])
+    notes = ((fencoder_json["notes"]))
 
     recorded_date = datetime.now()
     print ("File encoding recorded: " + str(recorded_date))
@@ -328,7 +327,7 @@ def fresults(fencoder_json):
     c = conn.cursor()
     c.execute(
         "INSERT INTO ffencode_results"
-        " VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (
             unique_identifier,
             recorded_date,
@@ -340,7 +339,9 @@ def fresults(fencoder_json):
             old_file_size,
             watch_folder,
             ffmpeg_encoding_string,
-            fencoder_duration
+            fencoder_duration,
+            original_string,
+            notes
         )
     )
     conn.commit()

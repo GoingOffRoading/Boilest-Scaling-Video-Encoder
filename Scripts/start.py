@@ -1,11 +1,3 @@
-import celery_worker
-import celery_manager
+from tasks import ffconfigs
 
-
-
-
-
-def check_queue(queue):
-     = os.environ['MY_USER']
-    password = os.environ['MY_PASS']
-
+ffconfigs('farts')

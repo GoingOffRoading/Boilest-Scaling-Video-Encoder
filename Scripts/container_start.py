@@ -5,6 +5,7 @@ import os, shutil
 if os.path.isdir('/Boilest/DB') == False:
     print ('/Boilest/DB directory does not exist, creating')
     os.mkdir('/Boilest/DB')
+    os.system("python /Scripts/DB/create_boilest_db.py")  
 else:
     print ('/Boilest/DB exists, no action needed')
 
