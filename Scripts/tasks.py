@@ -270,7 +270,7 @@ def fencoder(fprober_json):
         output_file_stats = round(output_file_stats.st_size / (1024 * 1024))
         print (f'Encoded file Size in MegaBytes is: ' + str(output_file_stats)) 
         new_file_size_difference = input_file_stats - output_file_stats
-        print (f'Total Space savings is:' + str(new_file_size_difference))
+        print (f'Total Space savings is: ' + str(new_file_size_difference))
         print ('Removing ' + ffmeg_input_file)
         # We're checking for to things:
         # 1) If this is a production run, and we intend to delete source
