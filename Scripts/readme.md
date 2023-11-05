@@ -60,6 +60,8 @@ This is the Boilest workflow, and work that is currently outstanding
 - [x] Add timestamps to when tasks start and stop, or a duration on how long something has taken, tbd
 - [ ] Consider adding additional logic on the DB check to check for the DB, then table, then fields
 - [x] Break up the tasks into worker and manager, including queue changes
+- [ ] Put together a Kubernetes PV, PVC for the shared media
+- [ ] Make the log level a container variabe
 
 
 
