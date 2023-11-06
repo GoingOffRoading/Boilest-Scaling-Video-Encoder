@@ -61,7 +61,8 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] Consider adding additional logic on the DB check to check for the DB, then table, then fields
 - [x] Break up the tasks into worker and manager, including queue changes
 - [ ] Put together a Kubernetes PV, PVC for the shared media
-- [ ] Make the log level a container variabe
+- [ ] Make the log level a container variable
+- [ ] Adjust the ffresults to use the end file name, not the start file name, and add the start container to original string
 
 
 
