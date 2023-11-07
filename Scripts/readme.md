@@ -63,7 +63,7 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] Put together a Kubernetes PV, PVC for the shared media
 - [ ] Make the log level a container variable
 - [ ] Adjust the ffresults to use the end file name, not the start file name, and add the start container to original string
-
+- [ ] Update the ffencode print statement to remove the ( )
 
 
 
