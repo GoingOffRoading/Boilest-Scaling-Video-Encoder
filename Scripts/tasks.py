@@ -14,7 +14,6 @@ def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(3600.0, ffconfigs.s('hit it'))
 
 
-
 @app.task(queue='manager')
 # Scan for condigurations, and post the to the next step
 # Kicked off by the scheduler above, but started manually with start.py in /scripts
@@ -278,22 +277,33 @@ def fencoder(fprober_json):
 
         fencoder_duration = (datetime.now() - fencoder_start_time).total_seconds() / 60.0
 
-        if output_file_stats != 0.0:
+        if output_file_stats != 0.0 and (new_file_size_difference > 0 or fprober_json["override"] == 'true'):
+            # This is the use-case where the newly encoded file is small than the old file, which is what we want
             os.remove(ffmeg_input_file) 
             ffmpeg_destination = fprober_json["file_path"] + '/' + fprober_json["ffmpeg_output_file"]
             print('Moving ' + ffmpeg_output_file + ' to ' + ffmpeg_destination)
             shutil.move(ffmpeg_output_file, ffmpeg_destination)
             print ('Done')
-            fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats, 'new_file_size_difference':new_file_size_difference, 'fencoder_duration':fencoder_duration}
-            fencoder_json.update(fprober_json) 
-            print(json.dumps(fencoder_json, indent=3, sort_keys=True))
-            fresults.delay(fencoder_json)
+            encode_outcome = 'success'
+        elif output_file_stats != 0.0 and new_file_size_difference < 0:
+            # This is the use-case where the newly encoded file is larger than the old file
+            # Usually this means that the ffmpeg command requires tweaking
+            print ('New file not compressed, removing')
+            os.remove(ffmpeg_output_file)
+            print ('Output file deleted')
+            encode_outcome = 'failed'
         elif output_file_stats == 0.0:
+            # Sometimes FFMPEG can fail, and the output file exists, but it's 0 kb
             print ('Something went wrong, and the output file size is 0.0 KB')
             print ('Deleting: ' + ffmpeg_output_file)
             os.remove(ffmpeg_output_file) 
         else:
-            print ('Something went wrong, and neither source nor encoded were deleted ')
+            print ('Something else went wrong, and neither source nor encoded were deleted ')
+
+        fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats, 'new_file_size_difference':new_file_size_difference, 'fencoder_duration':fencoder_duration, 'encode_outcome':encode_outcome}
+        fencoder_json.update(fprober_json) 
+        print(json.dumps(fencoder_json, indent=3, sort_keys=True))
+        fresults.delay(fencoder_json)
     else:
         print("Either source or encoding is missing, so exiting")
     
@@ -305,19 +315,22 @@ def fresults(fencoder_json):
     # Last but not least, record the results of ffencode
     fresults_start_time = datetime.now()
     print ('>>>>>>>>>>>>>>>> fresults for ' + fencoder_json["file_name"] + ' starting at ' + str(fresults_start_time) + '<<<<<<<<<<<<<<<<<<<')
-    config_name = (fencoder_json["config_name"])
-    ffmpeg_encoding_string = (fencoder_json["ffmpeg_encoding_string"])
-    file_name = (fencoder_json["file_name"])
-    file_path = (fencoder_json["file_path"])
-    new_file_size = (fencoder_json["new_file_size"])
-    new_file_size_difference = (fencoder_json["new_file_size_difference"])
-    old_file_size = (fencoder_json["old_file_size"])
-    watch_folder = (fencoder_json["watch_folder"])
-    fencoder_duration = ((fencoder_json["fencoder_duration"]))
-    original_string = (fencoder_json["original_string"])
-    notes = ((fencoder_json["notes"]))
+    config_name = fencoder_json["config_name"]
+    ffmpeg_encoding_string = fencoder_json["ffmpeg_encoding_string"]
+    file_name = fencoder_json["file_name"]
+    file_path = fencoder_json["file_path"]
+    new_file_size = fencoder_json["new_file_size"]
+    new_file_size_difference = fencoder_json["new_file_size_difference"]
+    old_file_size = fencoder_json["old_file_size"]
+    watch_folder = fencoder_json["watch_folder"]
+    fencoder_duration = fencoder_json["fencoder_duration"]
+    original_string = fencoder_json["original_string"]
+    notes = fencoder_json["notes"]
+    override = fencoder_json["override"]
+    encode_outcome = fencoder_json["encode_outcome"]
 
     recorded_date = datetime.now()
+
     print ("File encoding recorded: " + str(recorded_date))
     unique_identifier = file_name + str(recorded_date.microsecond)
     print ('Primary key saved as: ' + unique_identifier)
@@ -341,7 +354,9 @@ def fresults(fencoder_json):
             ffmpeg_encoding_string,
             fencoder_duration,
             original_string,
-            notes
+            notes,
+            override,
+            encode_outcome
         )
     )
     conn.commit()

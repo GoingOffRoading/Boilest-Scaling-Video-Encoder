@@ -48,7 +48,9 @@ else:
                                         ffmpeg_encoding_string TEXT,
                                         fencoder_duration REAL,
                                         original_string TEXT,
-                                        notes TEXT
+                                        notes TEXT,
+                                        override TEXT,
+                                        encode_outcome TEXT
 
                                     ); """
 

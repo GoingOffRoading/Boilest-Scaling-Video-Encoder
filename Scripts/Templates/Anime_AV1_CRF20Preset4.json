@@ -9,5 +9,6 @@
   "ffmpeg_subtitle_string": "-c:s srt",
   "ffmpeg_settings": "-hide_banner -loglevel 16 -stats -stats_period 10",
   "task": "encode",
-  "notes":"Based on SVT Pinned Comment https://discord.gg/yvwztBnRaD"
+  "notes":"Based on SVT Pinned Comment https://discord.gg/yvwztBnRaD",
+  "override":"false"
 }
