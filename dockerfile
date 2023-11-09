@@ -13,18 +13,12 @@ ARG GID=1000
 
 RUN mkdir -p /boil_hold
 RUN mkdir -p /Boilest
-#RUN mkdir -p /Boilest
-#RUN mkdir -p /Boilest/DB
-#RUN mkdir -p /Boilest/Configurations
 RUN mkdir -p /Scripts
 
 RUN mkdir -p /Media
-RUN mkdir -p /Anime_TV
-RUN mkdir -p /Aime_Movies
-RUN mkdir -p /Live_Action_TV
-RUN mkdir -p /Live_Action_Movies
-RUN mkdir -p /Animated_TV
-RUN mkdir -p /Animated_Movies
+RUN mkdir -p /Anime
+RUN mkdir -p /TV
+RUN mkdir -p /Movies
 
 COPY /Scripts /Scripts
 #COPY /Scripts/DB /Boilest/DB
