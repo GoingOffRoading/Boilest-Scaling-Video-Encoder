@@ -260,6 +260,8 @@ def fencoder(fprober_json):
     for line in process.stdout:
         print(line)
     
+    fencoder_duration = (datetime.now() - fencoder_start_time).total_seconds() / 60.0
+    
     if os.path.exists(ffmeg_input_file and ffmpeg_output_file):
         print (ffmeg_input_file + ' and ' + ffmpeg_output_file + ' Files Exists')
         input_file_stats = os.stat(ffmeg_input_file)
@@ -274,8 +276,6 @@ def fencoder(fprober_json):
         # We're checking for to things:
         # 1) If this is a production run, and we intend to delete source
         # 2) Don't delete sourec if the ffmpeg encode failed
-
-        fencoder_duration = (datetime.now() - fencoder_start_time).total_seconds() / 60.0
 
         if output_file_stats != 0.0 and (new_file_size_difference > 0 or fprober_json["override"] == 'true'):
             # This is the use-case where the newly encoded file is small than the old file, which is what we want

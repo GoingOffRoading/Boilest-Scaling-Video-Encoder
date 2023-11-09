@@ -1,10 +1,10 @@
 #!/bin/sh
-
+echo "starting"
 echo "Getting this party started"
-python /Scripts/container_start.py
+python container_start.py
 
 echo "Checking to see if Boilest DB Exists"
-python /Scripts/DB/create_boilest_db.py
+python ./DB/create_boilest_db.py
 
 echo "Checking Variables"
 echo "Manager is set to:" $Manager

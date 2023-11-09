@@ -55,5 +55,5 @@ USER boil
 EXPOSE 5000
 EXPOSE 5555
 
-ENTRYPOINT [ "/bin/sh"]
+ENTRYPOINT ["/bin/sh"]
 CMD ["/Scripts/Celery.sh"]
