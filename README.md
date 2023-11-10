@@ -76,3 +76,11 @@ https://stackoverflow.com/questions/16691161/getting-number-of-messages-in-a-rab
 
 
 https://stackoverflow.com/questions/5844672/delete-an-element-from-a-dictionary
+
+
+select 
+COUNT(DISTINCT unique_identifier) as files_processed, 
+sum(new_file_size_difference) as difference,
+(SUM(new_file_size_difference)/sum(old_file_size)) as difference2,
+sum(new_file_size_difference)/COUNT(DISTINCT unique_identifier) as space_per_file
+FROM ffencode_results;

@@ -261,6 +261,7 @@ def fencoder(fprober_json):
         print(line)
     
     fencoder_duration = (datetime.now() - fencoder_start_time).total_seconds() / 60.0
+    encode_outcome = 'unset'
     
     if os.path.exists(ffmeg_input_file and ffmpeg_output_file):
         print (ffmeg_input_file + ' and ' + ffmpeg_output_file + ' Files Exists')
@@ -277,7 +278,7 @@ def fencoder(fprober_json):
         # 1) If this is a production run, and we intend to delete source
         # 2) Don't delete sourec if the ffmpeg encode failed
 
-        if output_file_stats != 0.0 and (new_file_size_difference > 0 or fprober_json["override"] == 'true'):
+        if output_file_stats != 0.0 and (new_file_size_difference >= 0 or fprober_json["override"] == 'true'):
             # This is the use-case where the newly encoded file is small than the old file, which is what we want
             os.remove(ffmeg_input_file) 
             ffmpeg_destination = fprober_json["file_path"] + '/' + fprober_json["ffmpeg_output_file"]
@@ -291,14 +292,16 @@ def fencoder(fprober_json):
             print ('New file not compressed, removing')
             os.remove(ffmpeg_output_file)
             print ('Output file deleted')
-            encode_outcome = 'failed'
+            encode_outcome = 'file_size_failed'
         elif output_file_stats == 0.0:
             # Sometimes FFMPEG can fail, and the output file exists, but it's 0 kb
             print ('Something went wrong, and the output file size is 0.0 KB')
             print ('Deleting: ' + ffmpeg_output_file)
+            encode_outcome = 'failed_encode'
             os.remove(ffmpeg_output_file) 
         else:
             print ('Something else went wrong, and neither source nor encoded were deleted ')
+            encode_outcome = 'error'
 
         fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats, 'new_file_size_difference':new_file_size_difference, 'fencoder_duration':fencoder_duration, 'encode_outcome':encode_outcome}
         fencoder_json.update(fprober_json) 
@@ -340,7 +343,7 @@ def fresults(fencoder_json):
     c = conn.cursor()
     c.execute(
         "INSERT INTO ffencode_results"
-        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (
             unique_identifier,
             recorded_date,
