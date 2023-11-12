@@ -289,9 +289,9 @@ def fencoder(fprober_json):
         elif output_file_stats != 0.0 and new_file_size_difference < 0:
             # This is the use-case where the newly encoded file is larger than the old file
             # Usually this means that the ffmpeg command requires tweaking
-            print ('New file not compressed, removing')
+            print ('New file not compressed, removing ' + ffmpeg_output_file)
             os.remove(ffmpeg_output_file)
-            print ('Output file deleted')
+            print (ffmpeg_output_file + ' file deleted')
             encode_outcome = 'file_size_failed'
         elif output_file_stats == 0.0:
             # Sometimes FFMPEG can fail, and the output file exists, but it's 0 kb
