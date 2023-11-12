@@ -1,0 +1,10 @@
+{
+  "config_name": "TV_AV1_Starter",
+  "watch_folder": "/tv",
+  "ffmpeg_codec_name": "av1",
+  "ffmpeg_string": "-c:v libsvtav1 -crf 25 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0",
+  "ffmpeg_codec_type": "video",
+  "notes":"n/a",
+  "override":"false",
+  "enabled":"true"
+}

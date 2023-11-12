@@ -6,6 +6,20 @@ from task_03_ffinder import ffinder
 
 app = Celery('tasks', backend = 'rpc://celery:celery@192.168.1.110:31672/celery', broker = 'amqp://celery:celery@192.168.1.110:31672/celery')
 
+
+# We're going to break up the workflow based on the nature of the task
+# I.E. vido, audio, subtitle, etc
+
+# What we probably want here is:
+# A seperate function that checks the queue given a queue name
+# a seperate function that checks the directory related to the function
+
+
+
+
+
+
+
 @app.task(queue='manager')
 # Scan for condigurations, and post the to the next step
 # Kicked off by the scheduler above, but started manually with start.py in /scripts
