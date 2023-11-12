@@ -43,6 +43,9 @@ ENV Celery_Port 31672
 ENV RabbitMQ_Server http://192.168.1.110
 ENV RabbitMQ_Port 32311
 
+# USed in FFmpeg
+ENV FFmpeg_settings -hide_banner -loglevel 16 -stats -stats_period 10
+
 
 # Add a user that is the same user group as the data being read
 # Is this clean?  Not really...  Will need to revisit this later

@@ -1,0 +1,10 @@
+{
+  "config_name": "TV_OPUS_Starter",
+  "watch_folder": "/tv",
+  "ffmpeg_codec_name": "opus",
+  "ffmpeg_string": "-c:a libopus",
+  "ffmpeg_codec_type": "audio",
+  "notes":"n/a",
+  "override":"false",
+  "enabled":"false"
+}

@@ -1,0 +1,10 @@
+{
+  "config_name": "Anime_AV1_Starter",
+  "watch_folder": "/anime",
+  "ffmpeg_codec_name": "av1",
+  "ffmpeg_string": "-c:v libsvtav1 -crf 20 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0:enable-qm=1:qm-min=0:qm-max=15",
+  "ffmpeg_codec_type": "video",
+  "notes":"Based on SVT Pinned Comment https://discord.gg/yvwztBnRaD",
+  "override":"false",
+  "enabled":"true"
+}
