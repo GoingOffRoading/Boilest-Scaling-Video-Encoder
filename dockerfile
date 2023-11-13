@@ -36,12 +36,12 @@ ENV FLOWER_purge_offline_workers 60
 ENV FLOWER_UNAUTHENTICATED_API true
 
 # Used in celery and rabbitmq
-ENV User celery
-ENV Password celery
-ENV Celery_Server http://192.168.1.110
-ENV Celery_Port 31672
-ENV RabbitMQ_Server http://192.168.1.110
-ENV RabbitMQ_Port 32311
+ENV user celery
+ENV password celery
+ENV celery_host http://192.168.1.110
+ENV celery_port 31672
+ENV rabbitmq_host http://192.168.1.110
+ENV rabbitmq_port 32311
 
 # USed in FFmpeg
 ENV FFmpeg_settings -hide_banner -loglevel 16 -stats -stats_period 10

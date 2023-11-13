@@ -8,4 +8,4 @@ app = Celery('tasks', backend = 'rpc://celery:celery@192.168.1.110:31672/celery'
 # https://docs.celeryq.dev/en/stable/userguide/periodic-tasks.html#entries
 def setup_periodic_tasks(sender, **kwargs):
     # Calls ffconfigs('hello') every 10 seconds.
-    sender.add_periodic_task(3600.0, ffconfigs.s('hit it'))
+    sender.add_periodic_task(86400.0, ffconfigs.s('hit it'))
