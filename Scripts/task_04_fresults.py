@@ -1,6 +1,7 @@
 from celery import Celery
 from datetime import datetime
 import sqlite3
+import task_shared_services
 
 app = Celery('tasks', backend = 'rpc://celery:celery@192.168.1.110:31672/celery', broker = 'amqp://celery:celery@192.168.1.110:31672/celery')
 

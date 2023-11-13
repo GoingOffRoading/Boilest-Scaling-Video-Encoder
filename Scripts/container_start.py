@@ -9,11 +9,11 @@ if os.path.isdir('/Boilest/DB') == False:
 else:
     print ('/Boilest/DB exists, no action needed')
 
-if os.path.isdir('/Boilest/Configurations') == False:
-    print ('/Boilest/Configurations directory does not exist, creating')
-    os.mkdir('/Boilest/Configurations')
-else:
-    print ('/Boilest/Configurations exists, no action needed')
+#if os.path.isdir('/Boilest/Configurations') == False:
+#    print ('/Boilest/Configurations directory does not exist, creating')
+#    os.mkdir('/Boilest/Configurations')
+#else:
+#    print ('/Boilest/Configurations exists, no action needed')
 
 if os.path.isdir('/Boilest/Logs') == False:
     print ('/Boilest/Logs directory does not exist, creating')
@@ -29,8 +29,8 @@ print ('Checking to see if /Boilest/Configurations is empty')
 dir = os.listdir('/Boilest/Configurations') 
   
 # Checking if the list is empty or not 
-if len(dir) == 0: 
-    print("No Configurations, adding Defualt")
-    shutil.copyfile('/Scripts/Templates/AV1_CRF20Preset4.json', '/Boilest/Configurations/AV1_CRF20Preset4.json') 
+if os.path.isdir('/Boilest/Configurations') == False:
+    print("No Configurations, adding Defualts")
+    shutil.copytree('/Scripts/Configurations', '/Boilest') 
 else: 
     print("Configurations detected, no action to take") 

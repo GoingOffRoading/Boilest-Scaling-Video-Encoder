@@ -1,0 +1,10 @@
+{
+  "config_name": "Movies_MKV_Starter",
+  "watch_folder": "/movies",
+  "format_name": "matroska,webm",
+  "ffmpeg_string": ".mkv",
+  "ffmpeg_codec_type": "container",
+  "notes":"n/a",
+  "override":"true",
+  "enabled":"true"
+}
