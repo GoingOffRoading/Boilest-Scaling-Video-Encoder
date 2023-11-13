@@ -26,7 +26,6 @@ WORKDIR "/Scripts"
 
 # Used in Celery.sh
 ENV Manager No
-ENV Worker Yes
 
 # User in Flower: https://flower.readthedocs.io/en/latest/config.html
 ENV FLOWER_FLOWER_BASIC_AUTH celery:celery
@@ -60,3 +59,5 @@ EXPOSE 5555
 
 ENTRYPOINT ["/bin/sh"]
 CMD ["/Scripts/Celery.sh"]
+
+

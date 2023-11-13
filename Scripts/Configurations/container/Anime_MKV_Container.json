@@ -1,0 +1,10 @@
+{
+  "config_name": "Anime_MKV_Starter",
+  "watch_folder": "/anime",
+  "format_name": "matroska,webm",
+  "ffmpeg_string": ".mkv",
+  "ffmpeg_codec_type": "container",
+  "notes":"Based on SVT Pinned Comment https://discord.gg/yvwztBnRaD",
+  "override":"true",
+  "enabled":"true"
+}
