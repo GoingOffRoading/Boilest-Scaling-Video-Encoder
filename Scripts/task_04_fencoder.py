@@ -94,7 +94,7 @@ def fencoder(fprober_json):
         fencoder_json = {'old_file_size':input_file_stats, 'new_file_size':output_file_stats, 'new_file_size_difference':new_file_size_difference, 'fencoder_duration':fencoder_duration, 'encode_outcome':encode_outcome}
         fencoder_json.update(fprober_json) 
         print(json.dumps(fencoder_json, indent=3, sort_keys=True))
-        fresults.delay(fencoder_json)
+        #fresults.delay(fencoder_json)
     else:
         print("Either source or encoding is missing, so exiting")
     

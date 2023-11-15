@@ -2,19 +2,17 @@ from celery import Celery
 from pathlib import Path
 from datetime import datetime
 import json, subprocess, os, shutil, sqlite3, requests, sys, pathlib
-from task_03_fencoder import fencoder
 
-app = Celery('tasks', backend = 'rpc://celery:celery@192.168.1.110:31672/celery', broker = 'amqp://celery:celery@192.168.1.110:31672/celery')
 
-@app.task(queue='manager')
-def fprober(ffinder_json):
+
+
+
+def ffprobe(ffinder_json):
     # This function is kicked off from the individual file results from the ffinder function, and then do three functions:
     # 1) For each file, run ffprobe to get details on the file
     # 2) Loop through those the ffprobe results to determine if any changes need to be made to the video container or it's video, audio, or subtitle streams 
     # 3) Determine if the file needs to be encoded, and if yes, pass the changes to the fencoder function
 
-    fprober_start_time = datetime.now()
-    print ('>>>>>>>>>>>>>>>> fprober for ' + ffinder_json["file_name"] + ' starting at ' + str(fprober_start_time) + '<<<<<<<<<<<<<<<<<<<')
 
     # Using subprocess to call FFprobe, get JSON back on the video's container, and streams, then display the outputs  
     file_path = (ffinder_json["file_path"])
@@ -131,8 +129,6 @@ def fprober(ffinder_json):
         print (file_name + ' needs encoding')
         fprober_json = {'ffmpeg_encoding_string':encode_string, 'ffmpeg_output_file':ffmpeg_output_file, 'original_string':original_string}
         fprober_json.update(ffinder_json) 
-
+        return(fprober_json)
         print(json.dumps(fprober_json, indent=3, sort_keys=True))
-        fencoder.delay(fprober_json)
-    fprober_duration = (datetime.now() - fprober_start_time).total_seconds() / 60.0
-    print ('>>>>>>>>>>>>>>>> fprober ' + ffinder_json["file_name"] + ' complete, executed for ' + str(fprober_duration) + ' minutes <<<<<<<<<<<<<<<<<<<')
+
