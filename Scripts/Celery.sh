@@ -3,20 +3,18 @@ echo "starting"
 echo "Getting this party started"
 python container_start.py
 
-echo "Checking to see if Boilest DB Exists"
-python ./DB/create_boilest_db.py
-
 echo "Checking Variables"
 echo "Manager is set to:" $Manager
 echo "Starting Celery"
 
 if [ $Manager = "Yes" ]; then
     echo "Running Manager" 
-    celery -A task_01_manager worker -B -l INFO -c 1 -Q manager -n manager@%n -S /Boilest/worker.state &
-    celery -A task_01_manager flower -l INFO
+    celery -A tasks_manager worker -B -l INFO -c 1 -Q manager -n manager@%n -S /Boilest/worker.state &
+    #celery -A tasks_manager flower -l INFO
+    celery --broker=amqp://celery:celery@192.168.1.110:31672/celery flower
 elif [ $Manager = "No" ]; then
     echo "Running Worker" 
-    celery -A task_03_fencoder worker -l INFO -c 1 -Q worker -n worker@%n 
+    celery -A tasks_worker worker -l INFO -c 1 -Q worker -n worker@%n 
 else
     echo "Everything is fucked"
 fi
