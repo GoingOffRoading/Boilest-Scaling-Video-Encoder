@@ -39,6 +39,7 @@ ENV user celery
 ENV password celery
 ENV celery_host http://192.168.1.110
 ENV celery_port 31672
+ENV celery_vhost celery
 ENV rabbitmq_host http://192.168.1.110
 ENV rabbitmq_port 32311
 

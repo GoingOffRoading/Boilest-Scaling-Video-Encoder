@@ -2,11 +2,15 @@ from celery import Celery
 from pathlib import Path
 from datetime import datetime
 import json, subprocess, os, shutil, sqlite3, requests, sys, pathlib
-from task_shared_services import task_start_time, task_duration_time, check_queue, find_files
+from task_shared_services import task_start_time, task_duration_time, check_queue, find_files, celery_url_path
 
-backend_path = 'rpc://' + os.environ['user'] + ':' + os.environ['password'] + '@' + celery_host + ':' + celery_port + '/celery'
-broker_path = 'amqp://' + os.environ['user'] + ':' + os.environ['password'] + '@' + celery_host + ':' + celery_port + '/celery'
-app = Celery('tasks', backend = backend_path, broker = broker_path)
+#backend_path = celery_url_path('rpc://') 
+#print (backend_path)
+#broker_path = celery_url_path('amqp://') 
+#print (broker_path)
+#app = Celery('tasks', backend = backend_path, broker = broker_path)
+
+app = Celery('tasks', backend = 'rpc://celery:celery@192.168.1.110:31672/celery', broker = 'amqp://celery:celery@192.168.1.110:31672/celery')
 
 @app.on_after_configure.connect
 # Celery's scheduler.  Kicks off ffconfigs every hour
@@ -19,8 +23,7 @@ def setup_periodic_tasks(sender, **kwargs):
 # Scan for condigurations, and post the to the next step
 # Kicked off by the scheduler above, but started manually with start.py in /scripts
 def ffconfigs(arg):
-    ffconfig_start_time = datetime.now()
-    print ('>>>>>>>>>>>>>>>> ffconfigs with the arg: ' + arg + ' starting at ' + str(ffconfig_start_time) + '<<<<<<<<<<<<<<<<<<<')
+    function_start_time = task_start_time('ffconfigs')
 
     queue_depth = check_queue('worker')
     # Searching for configurations
@@ -45,14 +48,12 @@ def ffconfigs(arg):
     else:
         print ('Tasks in queue returned with an error')
 
-    ffconfig_duration = (datetime.now() - ffconfig_start_time).total_seconds() / 60.0
-    print ('>>>>>>>>>>>>>>>> ffconfigs ' + arg + ' complete, executed for ' + str(ffconfig_duration) + ' minutes <<<<<<<<<<<<<<<<<<<')
+    task_duration_time('ffconfigs',function_start_time)
 
 @app.task(queue='manager')
 def ffinder(json_configuration):
     # The purpose of this function of to search a directory for files, filter for specific formats, and send those filtered results to the next function
-    ffinder_start_time = datetime.now()
-    print ('>>>>>>>>>>>>>>>> ffinder executing with config: ' + json_configuration["config_name"] + ' starting at ' + str(ffinder_start_time) + '<<<<<<<<<<<<<<<<<<<')
+    function_start_time = task_start_time('ffinder')
 
     # For fun/diagnostics
     print (json.dumps(json_configuration, indent=3, sort_keys=True))
@@ -70,8 +71,7 @@ def ffinder(json_configuration):
         print(json.dumps(ffinder_json, indent=3, sort_keys=True))
         fprober.delay(ffinder_json)
 
-    ffinder_duration = (datetime.now() - ffinder_start_time).total_seconds() / 60.0
-    print ('>>>>>>>>>>>>>>>> ffinder config: ' + json_configuration["config_name"] + ' complete, executed for ' + str(ffinder_duration) + ' minutes <<<<<<<<<<<<<<<<<<<')
+    task_duration_time('ffinder',function_start_time)
 
 
 
@@ -82,8 +82,7 @@ def fprober(ffinder_json):
     # 2) Loop through those the ffprobe results to determine if any changes need to be made to the video container or it's video, audio, or subtitle streams 
     # 3) Determine if the file needs to be encoded, and if yes, pass the changes to the fencoder function
 
-    fprober_start_time = datetime.now()
-    print ('>>>>>>>>>>>>>>>> fprober for ' + ffinder_json["file_name"] + ' starting at ' + str(fprober_start_time) + '<<<<<<<<<<<<<<<<<<<')
+    function_start_time = task_start_time('fprober')
 
     # Using subprocess to call FFprobe, get JSON back on the video's container, and streams, then display the outputs  
     file_full_path = (ffinder_json["file_path"])
@@ -203,7 +202,7 @@ def fprober(ffinder_json):
 
         print(json.dumps(fprober_json, indent=3, sort_keys=True))
         fencoder.delay(fprober_json)
-    fprober_duration = (datetime.now() - fprober_start_time).total_seconds() / 60.0
-    print ('>>>>>>>>>>>>>>>> fprober ' + ffinder_json["file_name"] + ' complete, executed for ' + str(fprober_duration) + ' minutes <<<<<<<<<<<<<<<<<<<')
+    
+    task_duration_time('fprober',function_start_time)
 
 

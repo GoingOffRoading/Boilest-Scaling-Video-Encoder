@@ -1,19 +1,5 @@
 import os, shutil
-
-# Checking to see if base directories exist
-
-if os.path.isdir('/Boilest/DB') == False:
-    print ('/Boilest/DB directory does not exist, creating')
-    os.mkdir('/Boilest/DB')
-    os.system("python /Scripts/DB/create_boilest_db.py")  
-else:
-    print ('/Boilest/DB exists, no action needed')
-
-#if os.path.isdir('/Boilest/Configurations') == False:
-#    print ('/Boilest/Configurations directory does not exist, creating')
-#    os.mkdir('/Boilest/Configurations')
-#else:
-#    print ('/Boilest/Configurations exists, no action needed')
+from task_shared_services import is_directory_empty_recursive, copy_directory_contents
 
 if os.path.isdir('/Boilest/Logs') == False:
     print ('/Boilest/Logs directory does not exist, creating')
@@ -24,13 +10,15 @@ else:
 # Checking for atleast the base configuration
 
 print ('Checking to see if /Boilest/Configurations is empty')
-
-# Getting the list of directories 
-dir = os.listdir('/Boilest/Configurations') 
   
-# Checking if the list is empty or not 
+# Checking to see if /Boilest/Configurations exists
 if os.path.isdir('/Boilest/Configurations') == False:
     print("No Configurations, adding Defualts")
-    shutil.copytree('/Scripts/Configurations', '/Boilest') 
+    os.mkdir('/Boilest/Configurations')
 else: 
-    print("Configurations detected, no action to take") 
+    print("/Configurations exists")
+
+#Check to see if Configurations exist in /Configurations
+if is_directory_empty_recursive('/Boilest/Configurations') == False:
+    copy_directory_contents('/Scripts/Configurations', 'Boilest/Configurations')
+
