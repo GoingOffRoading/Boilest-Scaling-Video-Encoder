@@ -2,7 +2,7 @@ from celery import Celery
 from pathlib import Path
 from datetime import datetime
 import json, subprocess, os, shutil, sqlite3, requests, sys, pathlib
-from task_shared_services import task_start_time, task_duration_time, check_queue
+
 
 
 

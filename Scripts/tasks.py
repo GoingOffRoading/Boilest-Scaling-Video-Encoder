@@ -65,7 +65,7 @@ def ffinder(json_configuration):
 
     for i in find_files(directory,extensions):
         print (i)
-        ffinder_json = {'file_path':root, 'file_name':file}
+        ffinder_json = {'file_path':i}
         ffinder_json.update(json_configuration)      
         print(json.dumps(ffinder_json, indent=3, sort_keys=True))
         fprober.delay(ffinder_json)
@@ -86,11 +86,9 @@ def fprober(ffinder_json):
     print ('>>>>>>>>>>>>>>>> fprober for ' + ffinder_json["file_name"] + ' starting at ' + str(fprober_start_time) + '<<<<<<<<<<<<<<<<<<<')
 
     # Using subprocess to call FFprobe, get JSON back on the video's container, and streams, then display the outputs  
-    file_path = (ffinder_json["file_path"])
-    file_name = (ffinder_json["file_name"])
-    file_full_path = os.path.join(file_path,file_name)    
+    file_full_path = (ffinder_json["file_path"])
     cmnd = [f'ffprobe', '-loglevel', 'quiet', '-show_entries', 'format:stream=index,stream,codec_type,codec_name,channel_layout', '-of', 'json', file_full_path]
-    print ("ffprobe's command on " + file_name + ":")
+    print ("ffprobe's command on " + file_full_path + ":")
     print (cmnd)
     p = subprocess.run(cmnd, capture_output=True).stdout
     d = json.loads(p)
@@ -108,8 +106,10 @@ def fprober(ffinder_json):
     # Determine if the container needs to be changed
     original_container = (d['format']['format_name'])
     print ('Original Video container is: ' + original_container)
+
+    # herheherhehrhre
     if original_container != 'matroska,webm' or pathlib.Path(ffinder_json["file_name"]).suffix != '.mkv':
-        file_name = (ffinder_json["file_name"])
+        file_path = root, extension = os.path.splitext(ffinder_json["file_path"])
         file_name = Path(file_name).stem 
         ffmpeg_output_file = file_name + '.mkv'
         encode_decision = 'yes'
