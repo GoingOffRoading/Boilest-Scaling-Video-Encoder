@@ -1,3 +1,3 @@
-from task_01_manager import ffconfigs
+from tasks_manager import queue_workers_if_queue_empty
 
-ffconfigs('farts')
+queue_workers_if_queue_empty('farts')
