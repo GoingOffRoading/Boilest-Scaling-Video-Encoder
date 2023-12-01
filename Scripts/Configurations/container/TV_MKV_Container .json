@@ -1,10 +1,12 @@
 {
-  "config_name": "TV_MKV_Starter",
+  "config_name": "TV_MKV_Container_Check",
   "watch_folder": "/tv",
   "format_name": "matroska,webm",
-  "ffmpeg_string": ".mkv",
+  "format_extension": ".mkv",
+  "ffmpeg_string": "-c copy",
   "ffmpeg_codec_type": "container",
-  "notes":"n/a",
+  "ffprobe_string":"ffprobe -loglevel quiet -show_entries format -of json",
+  "notes":"Convering all video containers to MKV",
   "override":"true",
   "enabled":"true"
 }

@@ -1,10 +1,12 @@
 {
-  "config_name": "Anime_MKV_Starter",
+  "config_name": "Anime_MKV_Container_Check",
   "watch_folder": "/anime",
   "format_name": "matroska,webm",
-  "ffmpeg_string": ".mkv",
+  "format_extension": ".mkv",
+  "ffmpeg_string": "-c copy",
   "ffmpeg_codec_type": "container",
-  "notes":"Based on SVT Pinned Comment https://discord.gg/yvwztBnRaD",
+  "ffprobe_string":"ffprobe -loglevel quiet -show_entries format -of json",
+  "notes":"Convering all video containers to MKV",
   "override":"true",
   "enabled":"true"
 }

@@ -1,7 +1,7 @@
 #!/bin/sh
 echo "starting"
 echo "Getting this party started"
-python container_start.py
+python /Scripts/container_start.py
 
 echo "Checking Variables"
 echo "Manager is set to:" $Manager
@@ -9,7 +9,7 @@ echo "Starting Celery"
 
 if [ $Manager = "Yes" ]; then
     echo "Running Manager" 
-    celery -A tasks_manager worker -B -l INFO -c 1 -Q manager -n manager@%n -S /Boilest/worker.state &
+    celery -A tasks_manager worker -B -l INFO -c 1 -Q manager -n manager@%n &
     #celery -A tasks_manager flower -l INFO
     celery --broker=amqp://celery:celery@192.168.1.110:31672/celery flower
 elif [ $Manager = "No" ]; then
