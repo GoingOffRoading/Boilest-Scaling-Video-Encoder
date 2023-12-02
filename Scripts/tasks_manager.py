@@ -2,7 +2,8 @@ from celery import Celery
 from pathlib import Path
 from datetime import datetime
 import json, subprocess, os, shutil, sqlite3, requests, sys, pathlib
-from task_shared_services import task_start_time, task_duration_time, check_queue, find_files, celery_url_path, check_queue, ffprober
+from task_shared_services import task_start_time, task_duration_time, check_queue, find_files, celery_url_path, check_queue, ffprober, ffprober2
+from tasks_worker import fencoder
 
 backend_path = celery_url_path('rpc://') 
 print (backend_path)
@@ -88,7 +89,9 @@ def ffprober_container(json_configuration):
 @app.task(queue='manager')
 def ffprober_video_stream(json_configuration):
 
-    output_filename = json_configuration["file_path"]
+    function_start_time = task_start_time('ffprober_video_stream')
+
+    output_filename = json_configuration["file"]
     ffmpeg_command = str()
     encode_decision = 'no'
     original_string = str()
@@ -96,15 +99,16 @@ def ffprober_video_stream(json_configuration):
     print ('json_configuration["ffprobe_string"] is: ' + json_configuration["ffprobe_string"])
     print ('json_configuration["file_path"] is: ' + json_configuration["file_path"])
 
-    ffprobe_results = ffprober(json_configuration["ffprobe_string"],json_configuration["file_path"]) 
+    ffprobe_results = ffprober2(json_configuration["ffprobe_string"],json_configuration["file_path"]) 
         
     # Stream Loop: We need to loop through each of the streams, and make decisions based on the codec in the stream
     streams_count = ffprobe_results['format']['nb_streams']
     print ('there are ' + str(streams_count) + ' streams:')
-    for i in range (0,streams_count):
-        if ffprobe_results['streams'][i]['codec_type'] == json_configuration["ffmpeg_codec_type"]:
+    for i in range (0,streams_count): 
+        codec_type = ffprobe_results['streams'][i]['codec_type']
+        if codec_type == json_configuration["ffmpeg_codec_type"]:
             codec_name = ffprobe_results['streams'][i]['codec_name'] 
-            ffmpeg_command = ffmpeg_command + '{' + str(i) + d['streams'][i]['codec_type'] + '=' + codec_name + '}'
+            original_string = original_string + '{stream ' + str(i) + ' ' + ffprobe_results['streams'][i]['codec_type'] + ' = ' + codec_name + '}'
             if codec_name == (json_configuration["ffmpeg_codec_name"]):
                 ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:v copy'
                 # No need to change encode_decision as the video codec is in the desired format
@@ -114,28 +118,46 @@ def ffprober_video_stream(json_configuration):
                 # No use for this for now
             elif codec_name != (json_configuration["ffmpeg_codec_name"]):
                 encode_decision = 'yes'
-                ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' ' + (json_configuration["ffmpeg_string"])
+                ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:v ' + (json_configuration["ffmpeg_string"])
                 print ('Stream ' + str(i) + ' is ' + codec_name + ', encoding stream')
                 # encode_decision = yes as the video codec is not in the desired format
             else:
                 print ('Something is broken with stream ' + str(i))
-                # Catch all error state
-        
+                # Catch all error state        
         else:
-            ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c copy'   
-       
+           if codec_type == 'video':
+               ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:v copy'
+           elif codec_type == 'audio':
+               ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:a copy'
+           elif codec_type == 'subtitle':
+               ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:s copy'
+           elif codec_type == 'attachment':
+               ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:t copy'
+           else:
+            print ('unexpected codec type')
+
+    del json_configuration['ffmpeg_codec_name']
+    del json_configuration['ffmpeg_codec_type']
+    del json_configuration['ffmpeg_string']
+    del json_configuration['ffprobe_string']
+    del json_configuration['format_extension']
+    del json_configuration['format_name']
+
     print ('ffmpeg_command is: ' + ffmpeg_command)
     print ('encode_decision is: ' + encode_decision)
     print ('original_string is: ' + original_string)
        
     # Part 2 determines if the string is needed
     if encode_decision == 'no': 
-        print (file_name + ' does not need encoding')
-    else:
-        print (file_name + ' needs encoding')
+        print (json_configuration["file"] + ' does not need encoding')
+    elif encode_decision == 'yes':
+        print (json_configuration["file"] + ' needs encoding')
         json_configuration.update({'ffmpeg_command':ffmpeg_command, 'output_filename':output_filename, 'original_string':original_string})
-        print(json.dumps(fprober_json, indent=3, sort_keys=True))
-        #fencoder.delay(fprober_json)
+        print(json.dumps(json_configuration, indent=3, sort_keys=True))
+        fencoder.delay(json_configuration)
+    else:
+        print('Something went wrong')
+
     
     task_duration_time('fprober',function_start_time)
 
