@@ -79,3 +79,12 @@ def ffprober(ffprobe_string,file_path):
     p = subprocess.run(subprocess_cmd, capture_output=True, text=True).stdout
     d = json.loads(p)
     return d
+
+def ffprober2(ffprobe_string,file_path):
+    try:
+        full_command = f'{ffprobe_string} "{file_path}"'
+        result = subprocess.run(full_command, capture_output=True, text=True, shell=True, check=True)
+        return json.loads(result.stdout)
+    except subprocess.CalledProcessError as e:
+        return {"error": f"Error running ffprobe: {e}"}
+

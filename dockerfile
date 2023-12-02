@@ -44,7 +44,7 @@ ENV rabbitmq_host 192.168.1.110
 ENV rabbitmq_port 32311
 
 # USed in FFmpeg
-ENV FFmpeg_settings -hide_banner -loglevel 16 -stats -stats_period 10
+ENV ffmpeg_settings "-hide_banner -loglevel 16 -stats -stats_period 10"
 
 
 # Add a user that is the same user group as the data being read
