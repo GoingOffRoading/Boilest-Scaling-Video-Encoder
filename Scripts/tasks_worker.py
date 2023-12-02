@@ -18,6 +18,7 @@ def fencoder(json_configuration):
     root = json_configuration["root"]
     temp_filepath = '/boil_hold/' +  output_file
     ffmpeg_command = json_configuration["ffmpeg_command"]
+    file = json_configuration["file"]
 
     
     ffmpeg_command = 'ffmpeg ' + ffmpeg_settings + ' -i "' + file_path + '" ' + ffmpeg_command + ' "' + temp_filepath + '"'
@@ -43,6 +44,9 @@ def fencoder(json_configuration):
             print('Moving ' + temp_filepath + ' to ' + destination_filepath)
             os.remove(file_path)
             shutil.move(temp_filepath, destination_filepath) 
+        elif temp_filepath_stats == 0.0:
+            print('Problem with the output')
+            os.remove(temp_filepath_stats)
 
     else:
         print('Something went wrong, a file is missing')
