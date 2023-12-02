@@ -1,14 +1,11 @@
 from celery import Celery
-from pathlib import Path
 from datetime import datetime
-import json, subprocess, os, shutil, sqlite3, requests, sys, pathlib
+import json, os, sqlite3
 from task_shared_services import task_start_time, task_duration_time, check_queue, find_files, celery_url_path, check_queue, ffprober, ffprober2
-from tasks_worker import fencoder
+
 
 backend_path = celery_url_path('rpc://') 
-print (backend_path)
 broker_path = celery_url_path('amqp://') 
-print (broker_path)
 app = Celery('tasks', backend = backend_path, broker = broker_path)
 
 #app = Celery('tasks', backend = 'rpc://celery:celery@192.168.1.110:31672/celery', broker = 'amqp://celery:celery@192.168.1.110:31672/celery')
@@ -81,13 +78,32 @@ def ffinder(json_configuration):
         else:
             ffprober_video_stream.delay(json_configuration)
 
+    task_duration_time('ffinder',function_start_time)
+
 @app.task(queue='manager')
 def ffprober_container(json_configuration):
+    import sys
+    sys.path.append("/Scripts")
+    from tasks_worker import fencoder
+
+    function_start_time = task_start_time('ffprober_container')
+
     output_filename = os.path.splitext(json_configuration["file"])[0] + json_configuration["format_extension"]
-    json_configuration.update({'output_filename':output_filename})
+
+    ffmpeg_command = '-c copy'
+    original_string = os.path.splitext(json_configuration["file"])[1]
+
+    json_configuration.update({'output_filename':output_filename,'ffmpeg_command':ffmpeg_command,'original_string':original_string})
+    fencoder.delay(json_configuration)
+    print ('fencoder called')
+
+    task_duration_time('ffprober_container',function_start_time)
 
 @app.task(queue='manager')
 def ffprober_video_stream(json_configuration):
+    import sys
+    sys.path.append("/Scripts")
+    from tasks_worker import fencoder
 
     function_start_time = task_start_time('ffprober_video_stream')
 
@@ -155,6 +171,7 @@ def ffprober_video_stream(json_configuration):
         json_configuration.update({'ffmpeg_command':ffmpeg_command, 'output_filename':output_filename, 'original_string':original_string})
         print(json.dumps(json_configuration, indent=3, sort_keys=True))
         fencoder.delay(json_configuration)
+        print ('fencoder called')
     else:
         print('Something went wrong')
 
@@ -162,3 +179,59 @@ def ffprober_video_stream(json_configuration):
     task_duration_time('fprober',function_start_time)
 
 
+@app.task(queue='manager')
+def ffresults(json_configuration):
+
+    function_start_time = task_start_time('ffresults')
+
+    config_name = json_configuration["config_name"]
+    ffmpeg_encoding_string = json_configuration["ffmpeg_command"]
+    file_name = json_configuration["file"]
+    file_path = json_configuration["root"]
+    new_file_size = json_configuration["new_file_size"]
+    new_file_size_difference = json_configuration["new_file_size_difference"]
+    old_file_size = json_configuration["old_file_size"]
+    original_string = json_configuration["original_string"]
+    notes = json_configuration["notes"]
+    override = json_configuration["override"]
+    encode_outcome = json_configuration["encode_outcome"]
+    
+
+    recorded_date = datetime.now()
+
+    print ("File encoding recorded: " + str(recorded_date))
+    unique_identifier = file_name + str(recorded_date.microsecond)
+    print ('Primary key saved as: ' + unique_identifier)
+
+    database = r"/Boilest/DB/Boilest.db"
+    conn = sqlite3.connect(database)
+    c = conn.cursor()
+    c.execute(
+        "INSERT INTO ffencode_results"
+        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        (
+            unique_identifier,
+            recorded_date,
+            file_name, 
+            file_path, 
+            config_name,
+            new_file_size, 
+            new_file_size_difference, 
+            old_file_size,
+            ffmpeg_encoding_string,
+            override,
+            encode_outcome,
+            notes,
+            original_string
+        )
+    )
+    conn.commit()
+
+    c.execute("select round(sum(new_file_size_difference)) from ffencode_results")
+    total_space_saved = c.fetchone()
+    conn.close()
+
+    print ('The space delta on ' + file_name + ' was: ' + str(new_file_size_difference) + ' MB')
+    print ('We have saved so far: ' + str(total_space_saved) + ' MB.')
+
+    task_duration_time('ffresults',function_start_time)
