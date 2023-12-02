@@ -8,6 +8,6 @@
   "ffmpeg_codec_type": "video",
   "ffprobe_string":"ffprobe -loglevel quiet -show_entries format:stream=index,stream,codec_type,codec_name,channel_layout -of json",
   "notes":"Based on SVT Pinned Comment https://discord.gg/yvwztBnRaD",
-  "override":"false",
+  "override":"true",
   "enabled":"true"
 }
