@@ -50,10 +50,12 @@ def fencoder(json_configuration):
         print ('New file size is: ' + str(new_file_size))
         print ('Space saved on this encode: ' + str(new_file_size_difference))
         stats = 'exist'
-        if new_file_size_difference >= 0:
+        if new_file_size_difference > 0:
             encode_outcome = 'success'
         elif new_file_size_difference < 0:
             encode_outcome = 'file_larger'
+        elif new_file_size_difference == 0:
+            encode_outcome = 'error'
         else:
             encode_outcome = 'unknown_outcome'
         print ('Encode Outcome: ' + encode_outcome)
@@ -68,7 +70,7 @@ def fencoder(json_configuration):
             print ('Move complete')
         elif new_file_size == 0.0:
             print('Problem with the output')
-            os.remove(new_file_size)
+            os.remove(temp_filepath)
         else:
             print ('Saving conditions were note met')
 
