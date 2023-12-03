@@ -88,3 +88,23 @@ def ffprober2(ffprobe_string,file_path):
     except subprocess.CalledProcessError as e:
         return {"error": f"Error running ffprobe: {e}"}
 
+def check_keys_and_values(input_dict, task):    
+    if task == 'ffresults':
+        expected_keys_set = {'config_name', 'ffmpeg_command', 'file', 'root', 'new_file_size', 'new_file_size_difference', 'old_file_size', 'original_string', 'notes', 'override','encode_outcome'}
+    elif task == 'fencoder':
+        expected_keys_set = {'b', 'c', 'd'}
+    elif task in ['ffprober_container', 'ffprober_video_stream']:
+        expected_keys_set = {'b', 'c', 'd'}
+    elif task == 'ffinder':
+        expected_keys_set = {'b', 'c', 'd'}
+    else:
+        print('Not a task to check against')
+    #Returns:
+    #- bool: True if all expected keys are present with non-None values, False otherwise.
+    return all(key in input_dict and input_dict[key] is not None for key in expected_keys)
+
+
+if check_keys_and_values(input_dict, task):
+    print("All keys are present with non-None values.")
+else:
+    print("Some keys are missing or have None values.")

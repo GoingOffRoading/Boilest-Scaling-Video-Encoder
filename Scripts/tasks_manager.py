@@ -61,15 +61,19 @@ def ffinder(json_configuration):
     # For fun/diagnostics
     print (json.dumps(json_configuration, indent=3, sort_keys=True))
 
+    extensions = []
+
     # Get the folder to scan
     directory = (json_configuration['watch_folder'])
+    print ('ffmpeg_codec_type is: ' + json_configuration["ffmpeg_codec_type"])
     if json_configuration["ffmpeg_codec_type"] == 'container':
         extensions = [".mp4", ".mkv", ".avi"]
-        extensions.remove(json_configuration['format_extension'])
+        extensions.remove(json_configuration['format_extension'])        
     else:
-        extensions = json_configuration["ffmpeg_codec_type"]
-
-    print ('Will now search the directory ' + directory + ' and provide the relevant config flags:')
+        extensions = json_configuration["format_extension"]
+    
+    
+    print('Searching ' + directory + ' for: ' + str(extensions) + ' extensions')
     
     for root, file, file_path in find_files(json_configuration["watch_folder"], extensions):
         json_configuration.update({'root':root,'file':file,'file_path':file_path})
@@ -88,14 +92,19 @@ def ffprober_container(json_configuration):
 
     function_start_time = task_start_time('ffprober_container')
 
+    print(file)
+    
     output_filename = os.path.splitext(json_configuration["file"])[0] + json_configuration["format_extension"]
+
+    print('Setting up: ' + json_configuration["file"] + ' as ' + output_filename)
 
     ffmpeg_command = '-c copy'
     original_string = os.path.splitext(json_configuration["file"])[1]
 
     json_configuration.update({'output_filename':output_filename,'ffmpeg_command':ffmpeg_command,'original_string':original_string})
     fencoder.delay(json_configuration)
-    print ('fencoder called')
+    print(json.dumps(json_configuration, indent=3, sort_keys=True))
+    print ('fencoder called for: ' + output_filename)
 
     task_duration_time('ffprober_container',function_start_time)
 
