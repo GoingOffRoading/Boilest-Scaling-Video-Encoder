@@ -21,13 +21,6 @@ def check_queue(queue_name):
     queue_depth = (worker_queue["messages_unacknowledged"])
     return queue_depth
 
-def find_files(directory, extensions):
-    for root, dirs, files in os.walk(directory):
-        for file in files:
-            if any(file.endswith(ext) for ext in extensions):
-                file_path = os.path.join(root, file)
-                yield root, file, file_path
-
 def celery_url_path(thing):
     # https://docs.celeryq.dev/en/stable/getting-started/first-steps-with-celery.html#keeping-results
     user = os.environ.get('user','celery') 
@@ -75,12 +68,6 @@ def is_directory_empty_recursive(directory_path):
     return True
 
 def ffprober(ffprobe_string,file_path):
-    subprocess_cmd = ffprobe_string + ' "' + file_path + '"'
-    p = subprocess.run(subprocess_cmd, capture_output=True, text=True).stdout
-    d = json.loads(p)
-    return d
-
-def ffprober2(ffprobe_string,file_path):
     try:
         full_command = f'{ffprobe_string} "{file_path}"'
         result = subprocess.run(full_command, capture_output=True, text=True, shell=True, check=True)
@@ -103,8 +90,31 @@ def check_keys_and_values(input_dict, task):
     #- bool: True if all expected keys are present with non-None values, False otherwise.
     return all(key in input_dict and input_dict[key] is not None for key in expected_keys)
 
+def find_files(directories, extensions):
+    for directory in directories:
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                for ext in extensions:
+                    if file.lower().endswith(ext.lower()):
+                        file_path = os.path.join(root, file)
+                        yield {
+                            'directory': directory,
+                            'root': root,
+                            'dirs': dirs,
+                            'file': file,
+                            'file_path': file_path,
+                            'extension': ext
+                        }
 
-if check_keys_and_values(input_dict, task):
-    print("All keys are present with non-None values.")
-else:
-    print("Some keys are missing or have None values.")
+def ffmpeg_output_file(file_path):
+    # Split the file path into the root and extension
+    root, extension = os.path.splitext(file_path)    
+    # Check if the existing extension is already ".mkv"
+    if extension.lower() != '.mkv':
+        # Create the new file path with .mkv extension
+        new_file_path = root + '.mkv'
+    else:
+        # If the extension is already ".mkv", return the original file path
+        new_file_path = file_path    
+    ffmpeg_temp_output = '/boil_hold/' + new_file_path    
+    return ffmpeg_temp_output

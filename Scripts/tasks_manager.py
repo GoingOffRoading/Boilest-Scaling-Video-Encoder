@@ -1,7 +1,7 @@
 from celery import Celery
 from datetime import datetime
 import json, os, sqlite3
-from task_shared_services import task_start_time, task_duration_time, check_queue, find_files, celery_url_path, check_queue, ffprober, ffprober2
+from task_shared_services import task_start_time, task_duration_time, check_queue, find_files, celery_url_path, check_queue, ffprober, ffmpeg_output_file
 
 
 backend_path = celery_url_path('rpc://') 
@@ -22,91 +22,96 @@ def queue_workers_if_queue_empty(arg):
     print ('Current Worker queue depth is: ' + str(queue_depth))
     if queue_depth == 0:
         print ('Starting Configurations Discovery')
-        ffconfigs.delay(arg)
+        locate_files.delay(arg)
     elif queue_depth != 0:
         print (str(queue_depth) + ' tasks in queue')
     else:
         print ('Something went wrong checking the Worker Queue')
 
+
 @app.task(queue='manager')
-def ffconfigs(arg):
-    function_start_time = task_start_time('ffconfigs')
-
-    print (arg)
-
-    directory = '/Boilest/Configurations' 
-    extensions = '.json'
-
-    for root, file, file_path in find_files(directory,extensions):
-        print (file_path)
-        f = open(file_path)
-        json_configuration = json.load(f)
-        if json_configuration["enabled"] == 'true':
-            print (json.dumps(json_configuration, indent=3, sort_keys=True))
-            del json_configuration['enabled']            
-            print ('sending ' + json_configuration["config_name"] + ' to ffinder')
-            ffinder.delay(json_configuration)
-        elif json_configuration["enabled"] == 'false':
-            print ('Not condsidering ' + json_configuration["config_name"] + ' at this time') 
+def locate_files(arg):
+    directories = ['/anime', '/tv', '/movies']
+    extensions = ['.mp4', '.mkv', '.avi']
+    for file_located in find_files(directories, extensions):
+        if file_located['extension'] in ['.avi','.mp4']:
+            print ('Send to AVI function')
+            ffprober_not_mkv.delay(file_located)
+        elif file_located['extension'] == '.mkv':
+            print ('Send to ffprobe function')
+            ffprober(file_located)
         else:
-            print ('Did not find Configurations')
-
-    task_duration_time('ffconfigs',function_start_time)
+            print ('No logic match for extension: ' + file_located['extension'])
 
 @app.task(queue='manager')
-def ffinder(json_configuration):
-    # The purpose of this function of to search a directory for files, filter for specific formats, and send those filtered results to the next function
-    function_start_time = task_start_time('ffinder')
-
-    # For fun/diagnostics
-    print (json.dumps(json_configuration, indent=3, sort_keys=True))
-
-    extensions = []
-
-    # Get the folder to scan
-    directory = (json_configuration['watch_folder'])
-    print ('ffmpeg_codec_type is: ' + json_configuration["ffmpeg_codec_type"])
-    if json_configuration["ffmpeg_codec_type"] == 'container':
-        extensions = [".mp4", ".mkv", ".avi"]
-        extensions.remove(json_configuration['format_extension'])        
-    else:
-        extensions = json_configuration["format_extension"]
-    
-    
-    print('Searching ' + directory + ' for: ' + str(extensions) + ' extensions')
-    
-    for root, file, file_path in find_files(json_configuration["watch_folder"], extensions):
-        json_configuration.update({'root':root,'file':file,'file_path':file_path})
-        if json_configuration["ffmpeg_codec_type"] == 'container':
-            ffprober_container.delay(json_configuration)
-        else:
-            ffprober_video_stream.delay(json_configuration)
-
-    task_duration_time('ffinder',function_start_time)
-
-@app.task(queue='manager')
-def ffprober_container(json_configuration):
+def ffprober_not_mkv(file_located):
     import sys
     sys.path.append("/Scripts")
     from tasks_worker import fencoder
 
-    function_start_time = task_start_time('ffprober_container')
+    function_start_time = task_start_time('ffprober_not_mkv')
 
-    print(file)
+    ffmpeg_command = "ffmpeg -hide_banner -loglevel 16 -stats -stats_period 10 -i " + file_located['file_path'] + ' ' + ffmpeg_output_file(file_located['file'])
+
+    ffmpeg_inputs = {
+        'directory':file_located['directory'], 
+        'job':'ffprober_not_mkv', 
+        'ffmpeg_command':ffmpeg_command,
+        'original_file':'not an MKV',
+        'root':file_located['root'], 
+        'dirs':file_located['dirs'], 
+        'file':file_located['file'], 
+        'file_path':file_located['file_path']
+        }
+
+    fencoder.delay(ffmpeg_inputs)
+    task_duration_time('ffprober_not_mkv',function_start_time)
+
+@app.task(queue='manager')
+def ffprober(file_located):
+    function_start_time = task_start_time('ffprober')
+
+    ffprobe_results = ffprober("ffprobe -loglevel quiet -show_entries format:stream=index,stream,codec_type,codec_name,channel_layout -of json",file_located["file_path"]) 
+    streams_count = ffprobe_results['format']['nb_streams']
+    print ('there are ' + str(streams_count) + ' streams:')
+
+    video_requires_encoding = 'no'
+    audio_requires_encoding = 'no'
+    subtitles_requires_encoding = 'no'
+    attachments_requires_encoding = 'no'
     
-    output_filename = os.path.splitext(json_configuration["file"])[0] + json_configuration["format_extension"]
+    for i in range (0,streams_count):         
+        if ffprobe_results['streams'][i]['codec_type'] == 'video':
+            if ffprobe_results['streams'][i]['codec_name'] != 'av1':
+                video_requires_encoding = 'yes'
+        elif ffprobe_results['streams'][i]['codec_type'] == 'audio':
+            if ffprobe_results['streams'][i]['codec_name'] != 'aac':
+                audio_requires_encoding = 'yes'
+        elif ffprobe_results['streams'][i]['codec_type'] == 'subtitles':
+            if ffprobe_results['streams'][i]['codec_name'] != 'subrip':
+                subtitles_requires_encoding = 'yes'
+        elif ffprobe_results['streams'][i]['codec_type'] == 'attachment':
+            attachments_requires_encoding = 'yes'
+        else:
+            print ('Unknown stream type')
 
-    print('Setting up: ' + json_configuration["file"] + ' as ' + output_filename)
 
-    ffmpeg_command = '-c copy'
-    original_string = os.path.splitext(json_configuration["file"])[1]
+    
+    if video_requires_encoding == 'yes':
+        ffprober_video_stream.delay(file_located)
+        break
+    elif audio_requires_encoding == 'yes':
+        print ('Placeholder for future state audio encoding')
+        break
+    elif subtitles_requires_encoding == 'yes':
+        print ('Placeholder for future state subtitles encoding')
+    elif attachments_requires_encoding == 'yes':
+        print ('Placeholder for future state attachment encoding')
+        
 
-    json_configuration.update({'output_filename':output_filename,'ffmpeg_command':ffmpeg_command,'original_string':original_string})
-    fencoder.delay(json_configuration)
-    print(json.dumps(json_configuration, indent=3, sort_keys=True))
-    print ('fencoder called for: ' + output_filename)
 
-    task_duration_time('ffprober_container',function_start_time)
+
+
 
 @app.task(queue='manager')
 def ffprober_video_stream(json_configuration):
@@ -124,7 +129,7 @@ def ffprober_video_stream(json_configuration):
     print ('json_configuration["ffprobe_string"] is: ' + json_configuration["ffprobe_string"])
     print ('json_configuration["file_path"] is: ' + json_configuration["file_path"])
 
-    ffprobe_results = ffprober2(json_configuration["ffprobe_string"],json_configuration["file_path"]) 
+    ffprobe_results = ffprober(json_configuration["ffprobe_string"],json_configuration["file_path"]) 
         
     # Stream Loop: We need to loop through each of the streams, and make decisions based on the codec in the stream
     streams_count = ffprobe_results['format']['nb_streams']
