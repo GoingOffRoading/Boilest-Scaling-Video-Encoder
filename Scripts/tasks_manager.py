@@ -8,8 +8,6 @@ backend_path = celery_url_path('rpc://')
 broker_path = celery_url_path('amqp://') 
 app = Celery('tasks', backend = backend_path, broker = broker_path)
 
-#app = Celery('tasks', backend = 'rpc://celery:celery@192.168.1.110:31672/celery', broker = 'amqp://celery:celery@192.168.1.110:31672/celery')
-
 @app.on_after_configure.connect
 # Celery's scheduler.  Kicks off ffconfigs every hour
 # https://docs.celeryq.dev/en/stable/userguide/periodic-tasks.html#entries
@@ -31,6 +29,7 @@ def queue_workers_if_queue_empty(arg):
 
 @app.task(queue='manager')
 def locate_files(arg):
+    function_start_time = task_start_time('ffprober')
     directories = ['/anime', '/tv', '/movies']
     extensions = ['.mp4', '.mkv', '.avi']
     for file_located in find_files(directories, extensions):
@@ -43,42 +42,53 @@ def locate_files(arg):
         else:
             print ('No logic match for extension: ' + file_located['extension'])
 
+
 @app.task(queue='manager')
-def ffprober_not_mkv(file_located):
+def ffprober(file_located):
+    function_start_time = task_start_time('ffprober')
+    ffprobe_results = ffprober("ffprobe -loglevel quiet -show_entries format:stream=index,stream,codec_type,codec_name,channel_layout -of json",file_located["file_path"]) 
+    container_check.delay(file_located,ffprobe_results)
+    task_duration_time('ffprober',function_start_time)
+
+
+@app.task(queue='manager')
+def container_check(file_located):
     import sys
     sys.path.append("/Scripts")
     from tasks_worker import fencoder
 
     function_start_time = task_start_time('ffprober_not_mkv')
 
-    ffmpeg_command = "ffmpeg -hide_banner -loglevel 16 -stats -stats_period 10 -i " + file_located['file_path'] + ' ' + ffmpeg_output_file(file_located['file'])
+    change_container = 'no'
+    if original_container != 'matroska,webm' or pathlib.Path(ffinder_json["file_name"]).suffix != '.mkv':
+        change_container = 'yes'        
 
-    ffmpeg_inputs = {
-        'directory':file_located['directory'], 
-        'job':'ffprober_not_mkv', 
-        'ffmpeg_command':ffmpeg_command,
-        'original_file':'not an MKV',
-        'root':file_located['root'], 
-        'dirs':file_located['dirs'], 
-        'file':file_located['file'], 
-        'file_path':file_located['file_path']
-        }
+    if change_container == 'yes':
+        ffmpeg_command = "ffmpeg -hide_banner -loglevel 16 -stats -stats_period 10 -i " + file_located['file_path'] + ' ' + ffmpeg_output_file(file_located['file'])
 
-    fencoder.delay(ffmpeg_inputs)
+        ffmpeg_inputs = {
+            'directory':file_located['directory'], 
+            'job':'ffprober_not_mkv', 
+            'ffmpeg_command':ffmpeg_command,
+            'original_file':'not an MKV',
+            'root':file_located['root'], 
+            'dirs':file_located['dirs'], 
+            'file':file_located['file'], 
+            'file_path':file_located['file_path']
+            }
+
+        fencoder.delay(ffmpeg_inputs)
+    else:
+        ffprober_video_stream.delay(ffmpeg_inputs)
+        
     task_duration_time('ffprober_not_mkv',function_start_time)
 
-@app.task(queue='manager')
-def ffprober(file_located):
-    function_start_time = task_start_time('ffprober')
 
-    ffprobe_results = ffprober("ffprobe -loglevel quiet -show_entries format:stream=index,stream,codec_type,codec_name,channel_layout -of json",file_located["file_path"]) 
+
+
     streams_count = ffprobe_results['format']['nb_streams']
     print ('there are ' + str(streams_count) + ' streams:')
 
-    video_requires_encoding = 'no'
-    audio_requires_encoding = 'no'
-    subtitles_requires_encoding = 'no'
-    attachments_requires_encoding = 'no'
     
     for i in range (0,streams_count):         
         if ffprobe_results['streams'][i]['codec_type'] == 'video':
@@ -279,3 +289,5 @@ def ffresults(json_configuration):
     print ('We have saved so far: ' + str(total_space_saved) + ' MB.')
 
     task_duration_time('ffresults',function_start_time)
+
+

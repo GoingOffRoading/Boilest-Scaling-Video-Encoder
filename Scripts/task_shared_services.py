@@ -118,3 +118,17 @@ def ffmpeg_output_file(file_path):
         new_file_path = file_path    
     ffmpeg_temp_output = '/boil_hold/' + new_file_path    
     return ffmpeg_temp_output
+
+
+
+def ffmpeg_string(file_located,job,ffmpeg_command)
+    ffmpeg_inputs = {
+        'directory':file_located['directory'], 
+        'job':job, 
+        'ffmpeg_command':ffmpeg_command,
+        'original_file':'something',
+        'root':file_located['root'], 
+        'dirs':file_located['dirs'], 
+        'file':file_located['file'], 
+        'file_path':file_located['file_path']
+        }
