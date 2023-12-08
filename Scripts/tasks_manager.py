@@ -29,7 +29,7 @@ def queue_workers_if_queue_empty(arg):
 
 @app.task(queue='manager')
 def locate_files(arg):
-    function_start_time = task_start_time('ffprober')
+    function_start_time = task_start_time('locate_files')
     directories = ['/anime', '/tv', '/movies']
     extensions = ['.mp4', '.mkv', '.avi']
     for file_located in find_files(directories, extensions):
@@ -41,6 +41,7 @@ def locate_files(arg):
             ffprober(file_located)
         else:
             print ('No logic match for extension: ' + file_located['extension'])
+    task_duration_time('locate_files',function_start_time)
 
 
 @app.task(queue='manager')
