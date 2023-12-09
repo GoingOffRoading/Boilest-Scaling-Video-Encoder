@@ -67,28 +67,15 @@ def is_directory_empty_recursive(directory_path):
     # If the loop completes without returning, the directory and its subdirectories are empty
     return True
 
-def ffprober(ffprobe_string,file_path):
+def ffprober(file_path):
     try:
+        ffprobe_string = "ffprobe -loglevel quiet -show_entries format:stream=index,stream,codec_type,codec_name,channel_layout -of json"
+        file_path = file_path["file_path"]
         full_command = f'{ffprobe_string} "{file_path}"'
         result = subprocess.run(full_command, capture_output=True, text=True, shell=True, check=True)
         return json.loads(result.stdout)
     except subprocess.CalledProcessError as e:
         return {"error": f"Error running ffprobe: {e}"}
-
-def check_keys_and_values(input_dict, task):    
-    if task == 'ffresults':
-        expected_keys_set = {'config_name', 'ffmpeg_command', 'file', 'root', 'new_file_size', 'new_file_size_difference', 'old_file_size', 'original_string', 'notes', 'override','encode_outcome'}
-    elif task == 'fencoder':
-        expected_keys_set = {'b', 'c', 'd'}
-    elif task in ['ffprober_container', 'ffprober_video_stream']:
-        expected_keys_set = {'b', 'c', 'd'}
-    elif task == 'ffinder':
-        expected_keys_set = {'b', 'c', 'd'}
-    else:
-        print('Not a task to check against')
-    #Returns:
-    #- bool: True if all expected keys are present with non-None values, False otherwise.
-    return all(key in input_dict and input_dict[key] is not None for key in expected_keys)
 
 def find_files(directories, extensions):
     for directory in directories:
@@ -97,14 +84,14 @@ def find_files(directories, extensions):
                 for ext in extensions:
                     if file.lower().endswith(ext.lower()):
                         file_path = os.path.join(root, file)
-                        yield {
+                        result_dict = {
                             'directory': directory,
                             'root': root,
-                            'dirs': dirs,
                             'file': file,
                             'file_path': file_path,
                             'extension': ext
                         }
+                        yield json.dumps(result_dict)
 
 def ffmpeg_output_file(file_path):
     # Split the file path into the root and extension
@@ -121,14 +108,3 @@ def ffmpeg_output_file(file_path):
 
 
 
-def ffmpeg_string(file_located,job,ffmpeg_command)
-    ffmpeg_inputs = {
-        'directory':file_located['directory'], 
-        'job':job, 
-        'ffmpeg_command':ffmpeg_command,
-        'original_file':'something',
-        'root':file_located['root'], 
-        'dirs':file_located['dirs'], 
-        'file':file_located['file'], 
-        'file_path':file_located['file_path']
-        }

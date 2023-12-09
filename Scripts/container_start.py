@@ -36,11 +36,6 @@ def copy_files_and_directories(source_dir, destination_dir):
             shutil.copy2(source_item, destination_item)
 
 
-source_directory = "/Scripts/Configurations"
-destination_directory = "/Boilest/Configurations"
-
-check_and_copy_directory(source_directory, destination_directory)
-
 source_directory = "/Scripts/DB"
 destination_directory = "/Boilest/DB"
 

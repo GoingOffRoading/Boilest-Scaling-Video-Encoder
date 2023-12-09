@@ -1,6 +1,6 @@
 FROM alpine
 RUN apk add --no-cache python3 py3-pip ffmpeg sqlite bash tzdata
-RUN pip install --no-cache-dir --root-user-action=ignore celery flower requests Flask
+RUN pip install --no-cache-dir --break-system-packages --root-user-action=ignore celery flower requests Flask
 
 ENV TZ=US/Pacific
 

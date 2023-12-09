@@ -7,24 +7,14 @@ broker_path = celery_url_path('amqp://')
 app = Celery('tasks', backend = backend_path, broker = broker_path)
 
 @app.task(queue='worker')
-def fencoder(json_configuration):
+def fencoder(ffmpeg_inputs):
     import sys
     sys.path.append("/Scripts")
     from tasks_manager import ffresults
 
     function_start_time = task_start_time('fencoder')
-
-    ffmpeg_settings = os.environ.get('ffmpeg_settings','-hide_banner -loglevel 16 -stats -stats_period 10')
-
-    file_path = json_configuration["file_path"]
-    output_file = json_configuration["output_filename"]
-    root = json_configuration["root"]
-    temp_filepath = '/boil_hold/' +  output_file
-    ffmpeg_command = json_configuration["ffmpeg_command"]
-
-    
-    ffmpeg_command = 'ffmpeg ' + ffmpeg_settings + ' -i "' + file_path + '" ' + ffmpeg_command + ' "' + temp_filepath + '"'
-    print (ffmpeg_command)
+  
+    ffmpeg_command = ffmpeg_inputs['ffmpeg_command']
 
     print ('Please hold')
     
@@ -36,11 +26,15 @@ def fencoder(json_configuration):
     encode_outcome = str()
     stats = str()
     move = str()
+    file_path = ffmpeg_inputs['file_path']
+    temp_filepath = ffmpeg_inputs['temp_filepath']
+    root = ffmpeg_inputs['root']
 
     if os.path.exists(file_path and temp_filepath):
         files_exist = 'yes'
     else:
         print('Something went wrong, a file is missing') 
+
     
     if files_exist == 'yes':
         old_file_size = file_size_mb(file_path)
@@ -61,22 +55,25 @@ def fencoder(json_configuration):
         print ('Encode Outcome: ' + encode_outcome)
 
     if stats == 'exist':
-        if new_file_size != 0.0 and (new_file_size_difference > 0 or json_configuration["override"] == 'true'):
-            destination_filepath = root + '/' + output_file
+        if encode_outcome == 'error':
+            os.remove(temp_filepath)
+        else:
+            destination_filepath = root + '/' + os.path.basename(temp_filepath)
             print('Moving ' + temp_filepath + ' to ' + destination_filepath)
             os.remove(file_path)
             shutil.move(temp_filepath, destination_filepath) 
             move = 'complete'
             print ('Move complete')
-        elif new_file_size == 0.0:
-            print('Problem with the output')
-            os.remove(temp_filepath)
-        else:
-            print ('Saving conditions were note met')
 
     if move == 'complete':
-        json_configuration.update({'new_file_size':new_file_size, 'old_file_size':old_file_size, 'new_file_size_difference':new_file_size_difference, 'encode_outcome':encode_outcome,'ffmpeg_command':ffmpeg_command})
-        ffresults.delay(json_configuration)
+        ffresults = ffmpeg_inputs
+        del ffmpeg_inputs['temp_filepath']
+        ffmpeg_inputs.update({'new_file_size':new_file_size})
+        ffmpeg_inputs.update({'old_file_size':old_file_size})
+        ffmpeg_inputs.update({'new_file_size_difference':new_file_size_difference})
+        ffmpeg_inputs.update({'encode_outcome':encode_outcome})
+        ffresults.delay(ffmpeg_inputs)
+
         print ('ffresults called')
 
     task_duration_time('fencoder',function_start_time)
