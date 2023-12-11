@@ -1,9 +1,7 @@
 from celery import Celery
 from datetime import datetime
 import json, os, sqlite3
-from task_shared_services import task_start_time, task_duration_time, check_queue, find_files, celery_url_path, check_queue, ffprober, ffmpeg_output_file
-
-
+from task_shared_services import task_start_time, task_duration_time, check_queue, find_files, celery_url_path, check_queue, ffmpeg_output_file, ffprober_function
 
 app = Celery('tasks', backend = celery_url_path('rpc://'), broker = celery_url_path('amqp://') )
 
@@ -35,16 +33,16 @@ def locate_files(arg):
     print ('For: ' + str(extensions))
     for file_located in find_files(directories, extensions):
             print ('Send to ffprobe function')
-            ffprober(file_located)
+            file_located = json.loads(file_located)
+            print(json.dumps(file_located, indent=3, sort_keys=True))
+            ffprober.delay(file_located)
     task_duration_time('locate_files',function_start_time)
 
 
 @app.task(queue='manager')
 def ffprober(file_located):
     function_start_time = task_start_time('ffprober')    
-    file_located_loaded_json = json.loads(file_located)
-    print (file_located_loaded_json)
-    ffprobe_results = ffprober(file_located_loaded_json) 
+    ffprobe_results = ffprober_function(file_located) 
     print(json.dumps(ffprobe_results, indent=3, sort_keys=True))
     container_check.delay(file_located,ffprobe_results)
     task_duration_time('ffprober',function_start_time)
@@ -56,35 +54,48 @@ def container_check(file_located, ffprobe_results):
     sys.path.append("/Scripts")
     from tasks_worker import fencoder
 
-    function_start_time = task_start_time('ffprober_not_mkv')
+    function_start_time = task_start_time('container_check')
+
+    print ('Checking contaienr type for: ' + file_located['file'])
+    print ('In: ' + file_located['root'])
 
     if ffprobe_results['format']['format_name'] != 'matroska,webm' or file_located['extension'] != '.mkv':
+        print (file_located['file'] + ' is not .MKV')
+        print ('Sending to FFmpeg:')
         
-        ffmpeg_command = "ffmpeg " + \
+        ffmpeg_command = 'ffmpeg ' + \
                         os.environ.get('ffmpeg_settings') + \
-                        " -i " + \
-                        file_located['file_path'] + \
-                        ' ' + \
-                        ffmpeg_output_file(file_located['file'])
+                        ' -i ' + \
+                        '"' + file_located['file_path'] + '" ' + \
+                        '"' + ffmpeg_output_file(file_located['file']) + '"'
+        
+        print (ffmpeg_command)
 
-        ffmpeg_inputs = file_located
-        del ffmpeg_inputs['extension']
+        ffmpeg_inputs = file_located        
         ffmpeg_inputs.update({'ffmpeg_command':ffmpeg_command})
         ffmpeg_inputs.update({'job':'container_check'})
         ffmpeg_inputs.update({'temp_filepath':ffmpeg_output_file(file_located['file'])})
-        ffmpeg_inputs.update({'original_string':file_located['extension']})
+        ffmpeg_inputs.update({'original_string':ffmpeg_inputs['extension']})
+        del ffmpeg_inputs['extension']
 
         fencoder.delay(ffmpeg_inputs)
     else:
-        ffprober_av1_check.delay(ffmpeg_inputs)
+        print (file_located['file'] + ' is .MKV')
+        print ('Sending ' + file_located['file'] + ' to the next step')
+        ffprober_av1_check.delay(file_located,ffprobe_results)
         
-    task_duration_time('ffprober_not_mkv',function_start_time)
+    task_duration_time('container_check',function_start_time)
 
-
+@app.task(queue='manager')
 def ffprober_av1_check(file_located,ffprobe_results):
     import sys
     sys.path.append("/Scripts")
     from tasks_worker import fencoder
+
+    function_start_time = task_start_time('ffprober_av1_check')
+
+    print ('Checking video codec in: ' + file_located['file'])
+    print ('In: ' + file_located['root'])
 
     if file_located['directory'] == '/anime':
         ffmpeg_string = "libsvtav1 -crf 20 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0:enable-qm=1:qm-min=0:qm-max=15"
@@ -92,10 +103,16 @@ def ffprober_av1_check(file_located,ffprobe_results):
         ffmpeg_string = "libsvtav1 -crf 20 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0:enable-qm=1:qm-min=0:qm-max=15"
     elif file_located['directory'] == '/movies':
         ffmpeg_string = "libsvtav1 -crf 20 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0:enable-qm=1:qm-min=0:qm-max=15"
+    else:
+        print ('Directory configuration does not exist')
 
+    ffmpeg_command = str()
+    encode_decision = 'no'
+    original_string = str()
 
     streams_count = ffprobe_results['format']['nb_streams']
     print ('there are ' + str(streams_count) + ' streams:')
+
     for i in range (0,streams_count): 
         codec_type = ffprobe_results['streams'][i]['codec_type']
         if codec_type == 'video':
@@ -126,22 +143,38 @@ def ffprober_av1_check(file_located,ffprobe_results):
            else:
             print ('unexpected codec type')
     
+    ffmpeg_command = 'ffmpeg ' + \
+                os.environ.get('ffmpeg_settings') + \
+                ' -i ' + \
+                '"' + file_located['file_path'] + '"' + \
+                ffmpeg_command + \
+                ' "' + ffmpeg_output_file(file_located['file']) + '"'
+    
     if encode_decision == 'yes':
-        ffmpeg_inputs = file_located
-        del ffmpeg_inputs['extension']
+        print ('Incoming FFMpeg command:')
+        print (ffmpeg_command)
+        ffmpeg_inputs = file_located        
         ffmpeg_inputs.update({'ffmpeg_command':ffmpeg_command})
         ffmpeg_inputs.update({'job':'ffprober_av1_check'})
         ffmpeg_inputs.update({'temp_filepath':ffmpeg_output_file(file_located['file'])})
         ffmpeg_inputs.update({'original_string':original_string})
+        del ffmpeg_inputs['extension']
 
         fencoder.delay(ffmpeg_inputs)
-    else:
+    elif encode_decision == 'no':
         print('Next task goes here')
+    else:
+        print ('Error state here')
+
+    task_duration_time('ffprober_av1_check',function_start_time)
 
 @app.task(queue='manager')
 def ffresults(ffresults_input):
 
     function_start_time = task_start_time('ffresults')
+
+    print ('Checking video codec in: ' + ffresults_input['file'])
+    print ('In: ' + ffresults_input['root'])
 
     ffmpeg_command = ffresults_input["ffmpeg_command"]
     file_name = ffresults_input["file"]
@@ -155,7 +188,7 @@ def ffresults(ffresults_input):
 
     recorded_date = datetime.now()
 
-    print ("File encoding recorded: " + str(recorded_date))
+    print ("File encoding recorded: " + str(recorded_date) + 'MB')
     unique_identifier = file_name + str(recorded_date.microsecond)
     print ('Primary key saved as: ' + unique_identifier)
 

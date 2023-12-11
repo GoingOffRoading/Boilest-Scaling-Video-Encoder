@@ -67,7 +67,7 @@ def is_directory_empty_recursive(directory_path):
     # If the loop completes without returning, the directory and its subdirectories are empty
     return True
 
-def ffprober(file_path):
+def ffprober_function(file_path):
     try:
         ffprobe_string = "ffprobe -loglevel quiet -show_entries format:stream=index,stream,codec_type,codec_name,channel_layout -of json"
         file_path = file_path["file_path"]

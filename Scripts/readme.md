@@ -29,16 +29,16 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] Repo Documentation
 - [x] Add the other two SQL insert statements to fresults
 - [x] Rearrange git repo/directory structure
-- [ ] Experiment with the Ubuntu FFMpeg image for SVT-AV! latest and greatest
+- [x] Experiment with the Ubuntu FFMpeg image for SVT-AV! latest and greatest
 - [ ] Create and integrate a secrets/config file/template, or maybe use container evars
-- [ ] See if we can create a test pipeline using open source video clip
+- [x] See if we can create a test pipeline using open source video clip
 - [x] Sort through the test scrips, and start deleting duplicates
-- [ ] Rewrite the function that checks the queues as that is spagetti
+- [x] Rewrite the function that checks the queues as that is spagetti
 - [ ] Replace the print statements with logging: https://docs.python.org/3/howto/logging.html
 - [ ] Add python scripts to the DB folder to get stats
 - [x] Resolve issues with OPUS compatibility
 - [x] Resolve issues where output = 0.0 but tries to get moved anyway
-- [ ] In each step, if we no longer need components of the JSON, delete them
+- [x] In each step, if we no longer need components of the JSON, delete them
 - [x] Rewrite the ffprobe codec check loop to use variables from the config again
 - [ ] Need to configure for AMPQ retries against RabbitMQ if RabbitMQ restarts
 - [x] Need to figure out how to configure RabbitMQ for celery if RabbitMQ restarts
@@ -62,8 +62,8 @@ This is the Boilest workflow, and work that is currently outstanding
 - [x] Break up the tasks into worker and manager, including queue changes
 - [ ] Put together a Kubernetes PV, PVC for the shared media
 - [ ] Make the log level a container variable
-- [ ] Adjust the ffresults to use the end file name, not the start file name, and add the start container to original string
-- [ ] Update the ffencode print statement to remove the ( )
+- [x] Adjust the ffresults to use the end file name, not the start file name, and add the start container to original string
+- [x] Update the ffencode print statement to remove the ( )
 
 
 
