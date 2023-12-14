@@ -98,11 +98,11 @@ def ffprober_av1_check(file_located,ffprobe_results):
     print ('In: ' + file_located['root'])
 
     if file_located['directory'] == '/anime':
-        ffmpeg_string = "libsvtav1 -crf 30 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0:enable-qm=1:qm-min=0:qm-max=15"
+        ffmpeg_string = "libsvtav1 -crf 25 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0:enable-qm=1:qm-min=0:qm-max=15"
     elif file_located['directory'] == '/tv':
         ffmpeg_string = "libsvtav1 -crf 30 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0:enable-qm=1:qm-min=0:qm-max=15"
     elif file_located['directory'] == '/movies':
-        ffmpeg_string = "libsvtav1 -crf 30 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0:enable-qm=1:qm-min=0:qm-max=15"
+        ffmpeg_string = "libsvtav1 -crf 25 -preset 6 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0:enable-qm=1:qm-min=0:qm-max=15"
     else:
         print ('Directory configuration does not exist')
 
