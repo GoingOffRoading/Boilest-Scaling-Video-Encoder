@@ -1,6 +1,6 @@
 from celery import Celery
 import subprocess, os, shutil
-from task_shared_services import celery_url_path, file_size_mb, task_start_time, task_duration_time
+from task_shared_services import celery_url_path, file_size_mb, task_start_time, task_duration_time, validate_video
 
 app = Celery('tasks', backend = celery_url_path('rpc://'), broker = celery_url_path('amqp://') )
 
@@ -14,15 +14,15 @@ def fencoder(ffmpeg_inputs):
   
     ffmpeg_command = ffmpeg_inputs['ffmpeg_command']
 
-    print ('FFMpeg command for ' + ffmpeg_inputs['file'])
-    print (ffmpeg_command)
+    if validate_video(ffmpeg_inputs['file_path']) == 'Success':
+        print ('FFMpeg command for ' + ffmpeg_inputs['file'])
+        print (ffmpeg_command)
+        print ('Please hold')
+        
+        process = subprocess.Popen(ffmpeg_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,universal_newlines=True)
 
-    print ('Please hold')
-    
-    process = subprocess.Popen(ffmpeg_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,universal_newlines=True)
-
-    for line in process.stdout:
-        print(line)
+        for line in process.stdout:
+            print(line)
 
     files_exist = str()
     encode_outcome = str()
@@ -32,12 +32,16 @@ def fencoder(ffmpeg_inputs):
     temp_filepath = ffmpeg_inputs['temp_filepath']
     root = ffmpeg_inputs['root']
 
-    if os.path.exists(file_path and temp_filepath):
-        files_exist = 'yes'
-    elif os.path.exists(temp_filepath):
-        os.remove(temp_filepath)
+
+    if validate_video(ffmpeg_inputs['temp_filepath']) == 'Success':
+        if os.path.exists(file_path and temp_filepath):
+            files_exist = 'yes'
+        elif os.path.exists(temp_filepath):
+            os.remove(temp_filepath)
+        else:
+            print ('Issue with: ' + ffmpeg_inputs['file'])
     else:
-        print ('Issue with: ' + ffmpeg_inputs['file'])
+        os.remove(ffmpeg_inputs['temp_filepath'])
 
     
     if files_exist == 'yes':

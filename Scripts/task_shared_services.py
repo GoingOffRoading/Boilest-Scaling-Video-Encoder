@@ -130,4 +130,26 @@ def run_ffmpeg(input_file, output_file, ffmpeg_args):
     except Exception as e:
         print(f"Error: {e}")
         return 1  # Return a non-zero exit code to indicate an error
+    
+
+def validate_video(file_path):
+    # This function determines if a video is valid, or if the video contains errors
+    # Returns:
+    #       Failure if the shell command returns anything; i.e. one of the streams is bad
+    #       Success if the shell command doesn't return anything; i.e. the streams are good
+    #       Error if the shell command fails; this shouldn't happen
+    try:
+        command = 'ffmpeg -v error -i "' + file_path + '" -f null -'
+        print (command)
+        # Run the shell command and capture both stdout and stderr
+        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+        # Check if there is any output (stdout or stderr)
+        if result.stdout or result.stderr:
+            return "Failure"
+        else:
+            return "Success"
+    except Exception as e:
+        return f"Error: {e}"
+
 
