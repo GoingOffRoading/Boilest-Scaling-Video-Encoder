@@ -12,25 +12,32 @@ def fencoder(ffmpeg_inputs):
 
     function_start_time = task_start_time('fencoder')
 
-    ready_command = str()
-  
     ffmpeg_command = ffmpeg_inputs['ffmpeg_command']
+    ready_command = str()
+    encode_outcome = str()
+    file_path = ffmpeg_inputs['file_path']
+    temp_filepath = ffmpeg_inputs['temp_filepath']
+    root = ffmpeg_inputs['root']
 
-    print ('Checking: ' + ffmpeg_inputs['file'])
 
-    if validate_video(ffmpeg_inputs['file_path']) == 'Success':
-        print (ffmpeg_inputs['file'] + ' passed validation')
-        ready_command = 'input_validated'
-    else:
-        print (ffmpeg_inputs['file'] + ' fails validation')
+    if os.path.exists(ffmpeg_inputs['file_path']):
+        ready_command = 'ready_to_validate_source'
+
+    
+    if ready_command == 'ready_to_validate_source':
+        print ('Checking: ' + ffmpeg_inputs['file'])
+        if validate_video(ffmpeg_inputs['file_path']) == 'Success':
+            print (ffmpeg_inputs['file'] + ' passed validation')
+            ready_command = 'input_validated'
+        else:
+            print (ffmpeg_inputs['file'] + ' fails validation')
+    
 
     if ready_command == 'input_validated':
         print ('FFMpeg command for ' + ffmpeg_inputs['file'])
         print (ffmpeg_command)
-        print ('Please hold')
- 
+        print ('Please hold') 
         exit_code = run_ffmpeg(ffmpeg_command)
-
         if exit_code == 0:
             print("Encoding was successful.")
             ready_command = 'encode_success'
@@ -39,6 +46,7 @@ def fencoder(ffmpeg_inputs):
             os.remove(temp_filepath)
             ready_command = 'encode_failed'
 
+
     if ready_command == 'encode_failed':
         if os.path.exists(temp_filepath):
             os.remove(temp_filepath)
@@ -46,37 +54,17 @@ def fencoder(ffmpeg_inputs):
     
     if ready_command == 'encode_success':
         if validate_video(ffmpeg_inputs['temp_filepath']) == 'Success':
-            if os.path.exists(file_path and temp_filepath):
-                files_exist = 'yes'
-            elif os.path.exists(temp_filepath):
-                os.remove(temp_filepath)
-            else:
-                print ('Issue with: ' + ffmpeg_inputs['file'])
-        else:
-            print (temp_filepath + ' fails validation, removing')
-            os.remove(ffmpeg_inputs['temp_filepath'])
-        
-
-    files_exist = str()
-    encode_outcome = str()
-    stats = str()
-    move = str()
-    file_path = ffmpeg_inputs['file_path']
-    temp_filepath = ffmpeg_inputs['temp_filepath']
-    root = ffmpeg_inputs['root']
-
-
-
+            ready_command = 'ready_to_compare'
 
     
-    if files_exist == 'yes':
+    if ready_command == 'ready_to_compare':
         old_file_size = file_size_mb(file_path)
         new_file_size = file_size_mb(temp_filepath)
         new_file_size_difference = old_file_size - new_file_size
         print ('Old file size is: ' + str(old_file_size) + ' MB')
         print ('New file size is: ' + str(new_file_size) + ' MB')
         print ('Space saved on this encode: ' + str(new_file_size_difference) + ' MB')
-        stats = 'exist'
+        ready_command = 'stats_exist'
         if new_file_size_difference >= 0:
             encode_outcome = 'success'
         elif new_file_size_difference < 0:
@@ -87,24 +75,25 @@ def fencoder(ffmpeg_inputs):
     else:
         print ('Issue with: ' + ffmpeg_inputs['file'])
 
-    if stats == 'exist' and encode_outcome in ['success','file_larger']:
+
+    if ready_command == 'stats_exist' and encode_outcome in ['success','file_larger']:
         destination_filepath = root + '/' + os.path.basename(temp_filepath)
         print('Moving ' + temp_filepath + ' to ' + destination_filepath)
         os.remove(file_path)
         shutil.move(temp_filepath, destination_filepath) 
-        move = 'complete'
+        ready_command = 'move_complete'
         print ('Move complete')
     else:
         print ('Issue with: ' + ffmpeg_inputs['file'])
 
-    if move == 'complete':
+
+    if ready_command == 'move_complete':
         ffresults_input = ffmpeg_inputs
         del ffmpeg_inputs['temp_filepath']
         ffresults_input.update({'new_file_size':new_file_size})
         ffresults_input.update({'old_file_size':old_file_size})
         ffresults_input.update({'new_file_size_difference':new_file_size_difference})
         ffresults_input.update({'encode_outcome':encode_outcome})
-
         ffresults.delay(ffresults_input)
 
         print ('ffresults called')
