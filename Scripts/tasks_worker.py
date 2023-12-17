@@ -1,6 +1,6 @@
 from celery import Celery
 import subprocess, os, shutil
-from task_shared_services import celery_url_path, file_size_mb, task_start_time, task_duration_time, validate_video
+from task_shared_services import celery_url_path, file_size_mb, task_start_time, task_duration_time, validate_video, run_ffmpeg
 
 app = Celery('tasks', backend = celery_url_path('rpc://'), broker = celery_url_path('amqp://') )
 
@@ -14,15 +14,24 @@ def fencoder(ffmpeg_inputs):
   
     ffmpeg_command = ffmpeg_inputs['ffmpeg_command']
 
+    print ('Checking: ' + ffmpeg_inputs['file'])
+
     if validate_video(ffmpeg_inputs['file_path']) == 'Success':
+        print (ffmpeg_inputs['file'] + ' passed validation')
         print ('FFMpeg command for ' + ffmpeg_inputs['file'])
         print (ffmpeg_command)
         print ('Please hold')
-        
-        process = subprocess.Popen(ffmpeg_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,universal_newlines=True)
+ 
+        exit_code = run_ffmpeg(ffmpeg_command)
 
-        for line in process.stdout:
-            print(line)
+        if exit_code == 0:
+            print("Encoding was successful.")
+        else:
+            print(f"Encoding failed with exit code {exit_code}")
+            os.remove(temp_filepath)
+
+    else:
+        print (ffmpeg_inputs['file'] + ' fails validation')
 
     files_exist = str()
     encode_outcome = str()
@@ -41,6 +50,7 @@ def fencoder(ffmpeg_inputs):
         else:
             print ('Issue with: ' + ffmpeg_inputs['file'])
     else:
+        print (temp_filepath + ' fails validation, removing')
         os.remove(ffmpeg_inputs['temp_filepath'])
 
     
