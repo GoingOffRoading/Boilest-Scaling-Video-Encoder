@@ -11,6 +11,8 @@ def fencoder(ffmpeg_inputs):
     from tasks_manager import ffresults
 
     function_start_time = task_start_time('fencoder')
+
+    ready_command = str()
   
     ffmpeg_command = ffmpeg_inputs['ffmpeg_command']
 
@@ -18,6 +20,11 @@ def fencoder(ffmpeg_inputs):
 
     if validate_video(ffmpeg_inputs['file_path']) == 'Success':
         print (ffmpeg_inputs['file'] + ' passed validation')
+        ready_command = 'input_validated'
+    else:
+        print (ffmpeg_inputs['file'] + ' fails validation')
+
+    if ready_command == 'input_validated':
         print ('FFMpeg command for ' + ffmpeg_inputs['file'])
         print (ffmpeg_command)
         print ('Please hold')
@@ -26,12 +33,29 @@ def fencoder(ffmpeg_inputs):
 
         if exit_code == 0:
             print("Encoding was successful.")
+            ready_command = 'encode_success'
         else:
             print(f"Encoding failed with exit code {exit_code}")
             os.remove(temp_filepath)
+            ready_command = 'encode_failed'
 
-    else:
-        print (ffmpeg_inputs['file'] + ' fails validation')
+    if ready_command == 'encode_failed':
+        if os.path.exists(temp_filepath):
+            os.remove(temp_filepath)
+
+    
+    if ready_command == 'encode_success':
+        if validate_video(ffmpeg_inputs['temp_filepath']) == 'Success':
+            if os.path.exists(file_path and temp_filepath):
+                files_exist = 'yes'
+            elif os.path.exists(temp_filepath):
+                os.remove(temp_filepath)
+            else:
+                print ('Issue with: ' + ffmpeg_inputs['file'])
+        else:
+            print (temp_filepath + ' fails validation, removing')
+            os.remove(ffmpeg_inputs['temp_filepath'])
+        
 
     files_exist = str()
     encode_outcome = str()
@@ -42,16 +66,7 @@ def fencoder(ffmpeg_inputs):
     root = ffmpeg_inputs['root']
 
 
-    if validate_video(ffmpeg_inputs['temp_filepath']) == 'Success':
-        if os.path.exists(file_path and temp_filepath):
-            files_exist = 'yes'
-        elif os.path.exists(temp_filepath):
-            os.remove(temp_filepath)
-        else:
-            print ('Issue with: ' + ffmpeg_inputs['file'])
-    else:
-        print (temp_filepath + ' fails validation, removing')
-        os.remove(ffmpeg_inputs['temp_filepath'])
+
 
     
     if files_exist == 'yes':
