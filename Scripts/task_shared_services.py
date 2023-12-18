@@ -133,8 +133,9 @@ def run_ffmpeg(ffmpeg_command):
 
         for line in process.stdout:
             print(line)
-        return exit_code
+
+        return "Success"
     except Exception as e:
         print(f"Error: {e}")
-        return 1  # Return a non-zero exit code to indicate an error
+        return "Failure"  # Return a non-zero exit code to indicate an error
 

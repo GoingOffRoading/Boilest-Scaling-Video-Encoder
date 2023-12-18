@@ -38,17 +38,17 @@ def fencoder(ffmpeg_inputs):
         print (ffmpeg_command)
         print ('Please hold') 
         exit_code = run_ffmpeg(ffmpeg_command)
-        if exit_code == 0:
+        if exit_code == 'Success':
             print("Encoding was successful.")
             ready_command = 'encode_success'
         else:
-            print(f"Encoding failed with exit code {exit_code}")
-            os.remove(temp_filepath)
+            print(f"Encoding failed")
             ready_command = 'encode_failed'
 
 
     if ready_command == 'encode_failed':
         if os.path.exists(temp_filepath):
+            print ('Removing: ' + ffmpeg_inputs['temp_filepath'])
             os.remove(temp_filepath)
 
     
@@ -72,8 +72,6 @@ def fencoder(ffmpeg_inputs):
         else:
             encode_outcome = 'unknown_outcome'
         print ('Encode Outcome: ' + encode_outcome)
-    else:
-        print ('Issue with: ' + ffmpeg_inputs['file'])
 
 
     if ready_command == 'stats_exist' and encode_outcome in ['success','file_larger']:
