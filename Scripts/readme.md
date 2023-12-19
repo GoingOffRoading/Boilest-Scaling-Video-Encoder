@@ -64,6 +64,7 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] Make the log level a container variable
 - [x] Adjust the ffresults to use the end file name, not the start file name, and add the start container to original string
 - [x] Update the ffencode print statement to remove the ( )
+- [ ] Add a valid file check to the beginning of ffprobe
 
 
 
