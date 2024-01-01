@@ -1,25 +1,20 @@
 from datetime import datetime
-import os, json, requests, shutil, subprocess
+import os, json, requests, shutil, subprocess, logging
+
+logging.basicConfig(
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
 
 def task_start_time(task):
     function_task_start_time = datetime.now()
-    print ('>>>>>>>>>>>>>>>> ' + task + ' starting at ' + str(function_task_start_time) + '<<<<<<<<<<<<<<<<<<<')
+    logging.info ('>>>>>>>>>>>>>>>> ' + task + ' starting at ' + str(function_task_start_time) + '<<<<<<<<<<<<<<<<<<<')
     return function_task_start_time
 
 def task_duration_time(task,function_task_start_time):
     function_task_duration_time = (datetime.now() - function_task_start_time).total_seconds() / 60.0
-    print ('>>>>>>>>>>>>>>>> ' + task + ' complete, executed for ' + str(function_task_duration_time) + ' minutes <<<<<<<<<<<<<<<<<<<')
+    logging.info ('>>>>>>>>>>>>>>>> ' + task + ' complete, executed for ' + str(function_task_duration_time) + ' minutes <<<<<<<<<<<<<<<<<<<')
 
-def check_queue(queue_name):
-    rabbitmq_host = 'http://' + os.environ.get('rabbitmq_host','192.168.1.110')
-    rabbitmq_port = os.environ.get('rabbitmq_port','32311')
-    user = os.environ.get('user','celery')
-    password = os.environ.get('password','celery')
-    url = rabbitmq_host + ':' + str(rabbitmq_port) + '/api/queues/celery/' + queue_name
-    print ('Checking RabbitMQ queue depth for: ' + queue_name)
-    worker_queue = json.loads(requests.get(url, auth=(user,password)).text)
-    queue_depth = (worker_queue["messages_unacknowledged"])
-    return queue_depth
 
 def celery_url_path(thing):
     # https://docs.celeryq.dev/en/stable/getting-started/first-steps-with-celery.html#keeping-results
@@ -29,7 +24,47 @@ def celery_url_path(thing):
     celery_port = os.environ.get('celery_port', '31672')
     celery_vhost = os.environ.get('celery_vhost','celery')
     thing = thing + user + ':' + password + '@' + celery_host + ':' + celery_port + '/' + celery_vhost
+    logging.info ('celery_url_path is: ' + thing)
     return thing
+
+def check_queue(queue_name):
+    rabbitmq_host = 'http://' + os.environ.get('rabbitmq_host','192.168.1.110')
+    rabbitmq_port = os.environ.get('rabbitmq_port','32311')
+    user = os.environ.get('user','celery')
+    password = os.environ.get('password','celery')
+    celery_vhost = os.environ.get('celery_vhost','celery')
+    url = rabbitmq_host + ':' + str(rabbitmq_port) + '/api/queues/' + celery_vhost + '/' + queue_name
+    logging.debug ('Checking RabbitMQ queue depth for: ' + queue_name)
+    worker_queue = json.loads(requests.get(url, auth=(user,password)).text)
+    queue_depth = (worker_queue["messages_unacknowledged"])
+    logging.debug ('check_queue queue depth is: ' + str(queue_depth))
+    return queue_depth
+
+def get_active_tasks(queue_name)-> int:
+    from celery import Celery
+    try:
+        # Create a Celery instance
+        app = Celery('get_active_tasks_count', broker = celery_url_path('amqp://'))
+
+        with app.connection() as connection:
+            # Create a Celery control object
+            celery_control = app.control
+
+            # Inspect active tasks for the specified queue
+            active_tasks = celery_control.inspect().active(queue_name)
+
+            if active_tasks is not None and queue_name in active_tasks:
+                # Return the count of active tasks in the specified queue 
+                logging.debug ('get_active_tasks tasks in-progress for ' + queue_name + ' is: ' + str(len(active_tasks[queue_name])) )
+                return len(active_tasks[queue_name])
+            else:
+                # No active tasks in the specified queue
+                logging.debug ('Remaining tasks in progress: 0')
+                return 0
+
+    except Exception as e:
+        logging.error(f"Error getting active tasks count: {e}")
+        return -1 # Return -1 to indicate an error
 
 def file_size_mb(file_path):
     # Used a bit in tasks_worker
@@ -54,9 +89,9 @@ def copy_directory_contents(source_directory, destination_directory):
                 # Copy files
                 shutil.copy2(source_item, destination_item)
 
-        print("Contents copied successfully.")
+        logging.debug("Contents copied successfully.")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logging.error(f"An error occurred: {e}")
 
 def is_directory_empty_recursive(directory_path):
     # Check to see if a directory is empty, return True if Empty
@@ -115,7 +150,7 @@ def validate_video(file_path):
     #       Error if the shell command fails; this shouldn't happen
     try:
         command = 'ffmpeg -v error -i "' + file_path + '" -f null -'
-        print (command)
+        logging.debug (command)
         # Run the shell command and capture both stdout and stderr
         result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
@@ -132,10 +167,10 @@ def run_ffmpeg(ffmpeg_command):
         process = subprocess.Popen(ffmpeg_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,universal_newlines=True)
 
         for line in process.stdout:
-            print(line)
+            logging.debug(line)
 
         return "Success"
     except Exception as e:
-        print(f"Error: {e}")
+        logging.debug(f"Error: {e}")
         return "Failure"  # Return a non-zero exit code to indicate an error
 

@@ -30,11 +30,11 @@ This is the Boilest workflow, and work that is currently outstanding
 - [x] Add the other two SQL insert statements to fresults
 - [x] Rearrange git repo/directory structure
 - [x] Experiment with the Ubuntu FFMpeg image for SVT-AV! latest and greatest
-- [ ] Create and integrate a secrets/config file/template, or maybe use container evars
+- [x] Create and integrate a secrets/config file/template, or maybe use container evars
 - [x] See if we can create a test pipeline using open source video clip
 - [x] Sort through the test scrips, and start deleting duplicates
 - [x] Rewrite the function that checks the queues as that is spagetti
-- [ ] Replace the print statements with logging: https://docs.python.org/3/howto/logging.html
+- [x] Replace the print statements with logging: https://docs.python.org/3/howto/logging.html
 - [ ] Add python scripts to the DB folder to get stats
 - [x] Resolve issues with OPUS compatibility
 - [x] Resolve issues where output = 0.0 but tries to get moved anyway
@@ -66,6 +66,10 @@ This is the Boilest workflow, and work that is currently outstanding
 - [x] Update the ffencode print statement to remove the ( )
 - [ ] Add a valid file check to the beginning of ffprobe
 - [ ] Add a validation check on writing the results
+- [ ] Create a way for Boilest to not encode files that were changed after the last scan.  Either with a last modified check, empty the queue week... Something
+- [ ] Write the logs to a file, or aggregate the logs somewhere
+- [ ] Take a second pass at adjusting the log evels of things
+- [ ] Convert Celery.sh to python, and have all of the container start stuff be there
 
 
 

@@ -1,7 +1,12 @@
 from celery import Celery
 from datetime import datetime
-import json, os, sqlite3
-from task_shared_services import task_start_time, task_duration_time, check_queue, find_files, celery_url_path, check_queue, ffmpeg_output_file, ffprober_function
+import json, os, sqlite3, logging
+from task_shared_services import task_start_time, task_duration_time, check_queue, find_files, celery_url_path, check_queue, ffmpeg_output_file, ffprober_function, get_active_tasks
+
+logging.basicConfig(
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
 
 app = Celery('tasks', backend = celery_url_path('rpc://'), broker = celery_url_path('amqp://') )
 
@@ -11,17 +16,29 @@ app = Celery('tasks', backend = celery_url_path('rpc://'), broker = celery_url_p
 def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(3600.0, queue_workers_if_queue_empty.s('hit it'))
 
+
+@app.task(queue='manager')
+# Not in use... yet
+def purge_queue(queue_name):
+    with app.connection() as connection:
+        # Create a channel
+        channel = connection.channel()
+        # Purge the specified queue
+        channel.queue_purge(queue=queue_name)
+        logging.debug(f"All tasks in the '{queue_name}' queue have been purged.")
+
+
 @app.task(queue='manager')
 def queue_workers_if_queue_empty(arg):
-    queue_depth = check_queue('worker')
-    print ('Current Worker queue depth is: ' + str(queue_depth))
+    queue_depth = check_queue('worker') + get_active_tasks('worker')
+    logging.debug ('Current Worker queue depth is: ' + str(queue_depth))
     if queue_depth == 0:
-        print ('Starting Configurations Discovery')
+        logging.info ('Starting locate_files')
         locate_files.delay(arg)
-    elif queue_depth != 0:
-        print (str(queue_depth) + ' tasks in queue')
+    elif queue_depth > 0:
+        logging.info (str(queue_depth) + ' tasks in queue.  No rescan needed at this time.')
     else:
-        print ('Something went wrong checking the Worker Queue')
+        logging.error ('Something went wrong checking the Worker Queue')
 
 
 @app.task(queue='manager')
@@ -29,12 +46,12 @@ def locate_files(arg):
     function_start_time = task_start_time('locate_files')
     directories = ['/anime', '/tv', '/movies']
     extensions = ['.mp4', '.mkv', '.avi']
-    print ('Searching: ' + str(directories))
-    print ('For: ' + str(extensions))
+    logging.info ('Searching: ' + str(directories))
+    logging.info ('For: ' + str(extensions))
     for file_located in find_files(directories, extensions):
-            print ('Send to ffprobe function')
+            logging.debug ('Send to ffprobe function')
             file_located = json.loads(file_located)
-            print(json.dumps(file_located, indent=3, sort_keys=True))
+            logging.debug(json.dumps(file_located, indent=3, sort_keys=True))
             ffprober.delay(file_located)
     task_duration_time('locate_files',function_start_time)
 
@@ -43,7 +60,7 @@ def locate_files(arg):
 def ffprober(file_located):
     function_start_time = task_start_time('ffprober')    
     ffprobe_results = ffprober_function(file_located) 
-    print(json.dumps(ffprobe_results, indent=3, sort_keys=True))
+    logging.debug(json.dumps(ffprobe_results, indent=3, sort_keys=True))
     container_check.delay(file_located,ffprobe_results)
     task_duration_time('ffprober',function_start_time)
 
@@ -56,12 +73,12 @@ def container_check(file_located, ffprobe_results):
 
     function_start_time = task_start_time('container_check')
 
-    print ('Checking contaienr type for: ' + file_located['file'])
-    print ('In: ' + file_located['root'])
+    logging.debug ('Checking contaienr type for: ' + file_located['file'])
+    logging.debug ('In: ' + file_located['root'])
 
     if ffprobe_results['format']['format_name'] != 'matroska,webm' or file_located['extension'] != '.mkv':
-        print (file_located['file'] + ' is not .MKV')
-        print ('Sending to FFmpeg:')
+        logging.debug (file_located['file'] + ' is not .MKV')
+        logging.debug ('Sending to FFmpeg:')
         
         ffmpeg_command = 'ffmpeg ' + \
                         os.environ.get('ffmpeg_settings') + \
@@ -69,7 +86,7 @@ def container_check(file_located, ffprobe_results):
                         '"' + file_located['file_path'] + '" ' + \
                         '"' + ffmpeg_output_file(file_located['file']) + '"'
         
-        print (ffmpeg_command)
+        logging.debug (ffmpeg_command)
 
         ffmpeg_inputs = file_located        
         ffmpeg_inputs.update({'ffmpeg_command':ffmpeg_command})
@@ -80,8 +97,8 @@ def container_check(file_located, ffprobe_results):
 
         fencoder.delay(ffmpeg_inputs)
     else:
-        print (file_located['file'] + ' is .MKV')
-        print ('Sending ' + file_located['file'] + ' to the next step')
+        logging.debug (file_located['file'] + ' is .MKV')
+        logging.debug ('Sending ' + file_located['file'] + ' to the next step')
         ffprober_av1_check.delay(file_located,ffprobe_results)
         
     task_duration_time('container_check',function_start_time)
@@ -94,8 +111,8 @@ def ffprober_av1_check(file_located,ffprobe_results):
 
     function_start_time = task_start_time('ffprober_av1_check')
 
-    print ('Checking video codec in: ' + file_located['file'])
-    print ('In: ' + file_located['root'])
+    logging.debug ('Checking video codec in: ' + file_located['file'])
+    logging.debug ('In: ' + file_located['root'])
 
     if file_located['directory'] == '/anime':
         ffmpeg_string = "libsvtav1 -crf 25 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0:enable-qm=1:qm-min=0:qm-max=15"
@@ -104,14 +121,14 @@ def ffprober_av1_check(file_located,ffprobe_results):
     elif file_located['directory'] == '/movies':
         ffmpeg_string = "libsvtav1 -crf 25 -preset 6 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0:enable-qm=1:qm-min=0:qm-max=15"
     else:
-        print ('Directory configuration does not exist')
+        logging.debug ('Directory configuration does not exist')
 
     ffmpeg_command = str()
     encode_decision = 'no'
     original_string = str()
 
     streams_count = ffprobe_results['format']['nb_streams']
-    print ('there are ' + str(streams_count) + ' streams:')
+    logging.debug ('there are ' + str(streams_count) + ' streams:')
 
     for i in range (0,streams_count): 
         codec_type = ffprobe_results['streams'][i]['codec_type']
@@ -120,18 +137,18 @@ def ffprober_av1_check(file_located,ffprobe_results):
             if codec_name == 'av1':
                 ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:v copy'
                 # No need to change encode_decision as the video codec is in the desired format
-                print ('Stream ' + str(i) + ' is already ' + codec_name + ', copying stream')
+                logging.debug ('Stream ' + str(i) + ' is already ' + codec_name + ', copying stream')
             elif codec_name == 'mjpeg':
-                print ('Garbage mjpeg stream, ignoring')    
+                logging.debug ('Garbage mjpeg stream, ignoring')    
                 # No use for this for now
             elif codec_name != 'av1':
                 encode_decision = 'yes'
                 ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:v ' + ffmpeg_string
                 original_string = original_string + '{stream ' + str(i) + ' ' + ffprobe_results['streams'][i]['codec_type'] + ' = ' + codec_name + '}'
-                print ('Stream ' + str(i) + ' is ' + codec_name + ', encoding stream')
+                logging.debug ('Stream ' + str(i) + ' is ' + codec_name + ', encoding stream')
                 # encode_decision = yes as the video codec is not in the desired format
             else:
-                print ('Something is broken with stream ' + str(i))
+                logging.debug ('Something is broken with stream ' + str(i))
                 # Catch all error state        
         else:
            if codec_type == 'audio':
@@ -141,7 +158,7 @@ def ffprober_av1_check(file_located,ffprobe_results):
            elif codec_type == 'attachment':
                ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:t copy'
            else:
-            print ('unexpected codec type')
+            logging.debug ('unexpected codec type')
     
     ffmpeg_command = 'ffmpeg ' + \
                 os.environ.get('ffmpeg_settings') + \
@@ -151,8 +168,8 @@ def ffprober_av1_check(file_located,ffprobe_results):
                 ' "' + ffmpeg_output_file(file_located['file']) + '"'
     
     if encode_decision == 'yes':
-        print ('Incoming FFMpeg command:')
-        print (ffmpeg_command)
+        logging.debug ('Incoming FFMpeg command:')
+        logging.debug (ffmpeg_command)
         ffmpeg_inputs = file_located        
         ffmpeg_inputs.update({'ffmpeg_command':ffmpeg_command})
         ffmpeg_inputs.update({'job':'ffprober_av1_check'})
@@ -162,9 +179,9 @@ def ffprober_av1_check(file_located,ffprobe_results):
 
         fencoder.delay(ffmpeg_inputs)
     elif encode_decision == 'no':
-        print('Next task goes here')
+        logging.debug('Next task goes here')
     else:
-        print ('Error state here')
+        logging.debug ('Error state here')
 
     task_duration_time('ffprober_av1_check',function_start_time)
 
@@ -173,8 +190,8 @@ def ffresults(ffresults_input):
 
     function_start_time = task_start_time('ffresults')
 
-    print ('Encoding results for: ' + ffresults_input['file'])
-    print ('From: ' + ffresults_input['root'])
+    logging.debug ('Encoding results for: ' + ffresults_input['file'])
+    logging.debug ('From: ' + ffresults_input['root'])
 
     ffmpeg_command = ffresults_input["ffmpeg_command"]
     file_name = ffresults_input["file"]
@@ -188,9 +205,9 @@ def ffresults(ffresults_input):
 
     recorded_date = datetime.now()
 
-    print ("File encoding recorded: " + str(recorded_date) + 'MB')
+    logging.debug ("File encoding recorded: " + str(recorded_date) + 'MB')
     unique_identifier = file_name + str(recorded_date.microsecond)
-    print ('Primary key saved as: ' + unique_identifier)
+    logging.debug ('Primary key saved as: ' + unique_identifier)
 
     database = r"/Boilest/DB/Boilest.db"
     conn = sqlite3.connect(database)
@@ -217,8 +234,8 @@ def ffresults(ffresults_input):
     total_space_saved = c.fetchone()
     conn.close()
 
-    print ('The space delta on ' + file_name + ' was: ' + str(new_file_size_difference) + ' MB')
-    print ('We have saved so far: ' + str(total_space_saved) + ' MB.')
+    logging.debug ('The space delta on ' + file_name + ' was: ' + str(new_file_size_difference) + ' MB')
+    logging.debug ('We have saved so far: ' + str(total_space_saved) + ' MB.')
 
     task_duration_time('ffresults',function_start_time)
 
