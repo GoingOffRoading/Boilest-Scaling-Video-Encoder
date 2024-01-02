@@ -68,7 +68,7 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] Add a validation check on writing the results
 - [ ] Create a way for Boilest to not encode files that were changed after the last scan.  Either with a last modified check, empty the queue week... Something
 - [ ] Write the logs to a file, or aggregate the logs somewhere
-- [ ] Take a second pass at adjusting the log evels of things
+- [x] Take a second pass at adjusting the log evels of things
 - [ ] Convert Celery.sh to python, and have all of the container start stuff be there
 
 

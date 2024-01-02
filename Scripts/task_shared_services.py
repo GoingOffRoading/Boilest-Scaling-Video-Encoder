@@ -24,7 +24,7 @@ def celery_url_path(thing):
     celery_port = os.environ.get('celery_port', '31672')
     celery_vhost = os.environ.get('celery_vhost','celery')
     thing = thing + user + ':' + password + '@' + celery_host + ':' + celery_port + '/' + celery_vhost
-    logging.info ('celery_url_path is: ' + thing)
+    logging.debug ('celery_url_path is: ' + thing)
     return thing
 
 def check_queue(queue_name):

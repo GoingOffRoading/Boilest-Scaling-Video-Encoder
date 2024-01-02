@@ -73,12 +73,12 @@ def container_check(file_located, ffprobe_results):
 
     function_start_time = task_start_time('container_check')
 
-    logging.debug ('Checking contaienr type for: ' + file_located['file'])
+    logging.info ('Checking contaienr type for: ' + file_located['file'])
     logging.debug ('In: ' + file_located['root'])
 
     if ffprobe_results['format']['format_name'] != 'matroska,webm' or file_located['extension'] != '.mkv':
-        logging.debug (file_located['file'] + ' is not .MKV')
-        logging.debug ('Sending to FFmpeg:')
+        logging.info (file_located['file'] + ' is not .MKV')
+        logging.info ('Sending to FFmpeg:')
         
         ffmpeg_command = 'ffmpeg ' + \
                         os.environ.get('ffmpeg_settings') + \
@@ -97,8 +97,8 @@ def container_check(file_located, ffprobe_results):
 
         fencoder.delay(ffmpeg_inputs)
     else:
-        logging.debug (file_located['file'] + ' is .MKV')
-        logging.debug ('Sending ' + file_located['file'] + ' to the next step')
+        logging.info (file_located['file'] + ' is .MKV')
+        logging.info ('Sending ' + file_located['file'] + ' to the next step')
         ffprober_av1_check.delay(file_located,ffprobe_results)
         
     task_duration_time('container_check',function_start_time)
@@ -111,8 +111,8 @@ def ffprober_av1_check(file_located,ffprobe_results):
 
     function_start_time = task_start_time('ffprober_av1_check')
 
-    logging.debug ('Checking video codec in: ' + file_located['file'])
-    logging.debug ('In: ' + file_located['root'])
+    logging.info ('Checking video codec in: ' + file_located['file'])
+    logging.info ('In: ' + file_located['root'])
 
     if file_located['directory'] == '/anime':
         ffmpeg_string = "libsvtav1 -crf 25 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0:enable-qm=1:qm-min=0:qm-max=15"
@@ -158,7 +158,7 @@ def ffprober_av1_check(file_located,ffprobe_results):
            elif codec_type == 'attachment':
                ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:t copy'
            else:
-            logging.debug ('unexpected codec type')
+            logging.ERROR ('unexpected codec type')
     
     ffmpeg_command = 'ffmpeg ' + \
                 os.environ.get('ffmpeg_settings') + \
@@ -168,8 +168,8 @@ def ffprober_av1_check(file_located,ffprobe_results):
                 ' "' + ffmpeg_output_file(file_located['file']) + '"'
     
     if encode_decision == 'yes':
-        logging.debug ('Incoming FFMpeg command:')
-        logging.debug (ffmpeg_command)
+        logging.info ('Incoming FFMpeg command:')
+        logging.info (ffmpeg_command)
         ffmpeg_inputs = file_located        
         ffmpeg_inputs.update({'ffmpeg_command':ffmpeg_command})
         ffmpeg_inputs.update({'job':'ffprober_av1_check'})
@@ -179,9 +179,9 @@ def ffprober_av1_check(file_located,ffprobe_results):
 
         fencoder.delay(ffmpeg_inputs)
     elif encode_decision == 'no':
-        logging.debug('Next task goes here')
+        logging.info('Next task goes here')
     else:
-        logging.debug ('Error state here')
+        logging.ERROR ('Error state here')
 
     task_duration_time('ffprober_av1_check',function_start_time)
 
@@ -190,8 +190,8 @@ def ffresults(ffresults_input):
 
     function_start_time = task_start_time('ffresults')
 
-    logging.debug ('Encoding results for: ' + ffresults_input['file'])
-    logging.debug ('From: ' + ffresults_input['root'])
+    logging.info ('Encoding results for: ' + ffresults_input['file'])
+    logging.info ('From: ' + ffresults_input['root'])
 
     ffmpeg_command = ffresults_input["ffmpeg_command"]
     file_name = ffresults_input["file"]
@@ -205,7 +205,7 @@ def ffresults(ffresults_input):
 
     recorded_date = datetime.now()
 
-    logging.debug ("File encoding recorded: " + str(recorded_date) + 'MB')
+    logging.debug ("File encoding recorded: " + str(recorded_date))
     unique_identifier = file_name + str(recorded_date.microsecond)
     logging.debug ('Primary key saved as: ' + unique_identifier)
 
@@ -231,11 +231,11 @@ def ffresults(ffresults_input):
     conn.commit()
 
     c.execute("select round(sum(new_file_size_difference)) from ffencode_results")
-    total_space_saved = c.fetchone()
+    total_space_saved = c.fetchone()[0]
     conn.close()
 
-    logging.debug ('The space delta on ' + file_name + ' was: ' + str(new_file_size_difference) + ' MB')
-    logging.debug ('We have saved so far: ' + str(total_space_saved) + ' MB.')
+    logging.info ('The space delta on ' + file_name + ' was: ' + str(new_file_size_difference) + ' MB')
+    logging.info ('We have saved so far: ' + str(total_space_saved) + ' MB.')
 
     task_duration_time('ffresults',function_start_time)
 
