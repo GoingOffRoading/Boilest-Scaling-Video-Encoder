@@ -11,7 +11,7 @@ logging.basicConfig(
 app = Celery('tasks', backend = celery_url_path('rpc://'), broker = celery_url_path('amqp://') )
 
 @app.on_after_configure.connect
-# Celery's scheduler.  Kicks off ffconfigs every hour
+# Celery's scheduler.  Kicks off queue_workers_if_queue_empty every hour
 # https://docs.celeryq.dev/en/stable/userguide/periodic-tasks.html#entries
 def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(3600.0, queue_workers_if_queue_empty.s('hit it'))
@@ -29,25 +29,27 @@ def purge_queue(queue_name):
 
 
 @app.task(queue='manager')
+# queue_workers_if_queue_empty stops the rest of the workflow from creaing duplicate tasks (because the tasks the rest of the workflow would create would be duplicates of the tasks already in the queue).
 def queue_workers_if_queue_empty(arg):
     queue_depth = check_queue('worker') + get_active_tasks('worker')
     logging.debug ('Current Worker queue depth is: ' + str(queue_depth))
     if queue_depth == 0:
-        logging.info ('Starting locate_files')
+        logging.debug ('Starting locate_files')
         locate_files.delay(arg)
     elif queue_depth > 0:
-        logging.info (str(queue_depth) + ' tasks in queue.  No rescan needed at this time.')
+        logging.debug (str(queue_depth) + ' tasks in queue.  No rescan needed at this time.')
     else:
         logging.error ('Something went wrong checking the Worker Queue')
 
 
 @app.task(queue='manager')
+# Assuming we get an all clear from queue_workers_if_queue_empty, locate_files locates media file to be probed (probing is a dependency to determine if the file must be encoded)
 def locate_files(arg):
     function_start_time = task_start_time('locate_files')
     directories = ['/anime', '/tv', '/movies']
     extensions = ['.mp4', '.mkv', '.avi']
-    logging.info ('Searching: ' + str(directories))
-    logging.info ('For: ' + str(extensions))
+    logging.debug ('Searching: ' + str(directories))
+    logging.debug ('For: ' + str(extensions))
     for file_located in find_files(directories, extensions):
             logging.debug ('Send to ffprobe function')
             file_located = json.loads(file_located)
@@ -57,6 +59,7 @@ def locate_files(arg):
 
 
 @app.task(queue='manager')
+# Nothing special...  ffprober, on getting a media file from locate_files, runs ffprobe and ships the combined payloads to container_check
 def ffprober(file_located):
     function_start_time = task_start_time('ffprober')    
     ffprobe_results = ffprober_function(file_located) 
@@ -66,6 +69,7 @@ def ffprober(file_located):
 
 
 @app.task(queue='manager')
+# Stuff
 def container_check(file_located, ffprobe_results):
     import sys
     sys.path.append("/Scripts")
@@ -73,12 +77,12 @@ def container_check(file_located, ffprobe_results):
 
     function_start_time = task_start_time('container_check')
 
-    logging.info ('Checking contaienr type for: ' + file_located['file'])
+    logging.debug ('Checking contaienr type for: ' + file_located['file'])
     logging.debug ('In: ' + file_located['root'])
 
     if ffprobe_results['format']['format_name'] != 'matroska,webm' or file_located['extension'] != '.mkv':
-        logging.info (file_located['file'] + ' is not .MKV')
-        logging.info ('Sending to FFmpeg:')
+        logging.debug (file_located['file'] + ' is not .MKV')
+        logging.debug ('Sending to FFmpeg:')
         
         ffmpeg_command = 'ffmpeg ' + \
                         os.environ.get('ffmpeg_settings') + \
@@ -97,8 +101,8 @@ def container_check(file_located, ffprobe_results):
 
         fencoder.delay(ffmpeg_inputs)
     else:
-        logging.info (file_located['file'] + ' is .MKV')
-        logging.info ('Sending ' + file_located['file'] + ' to the next step')
+        logging.debug (file_located['file'] + ' is .MKV')
+        logging.debug ('Sending ' + file_located['file'] + ' to the next step')
         ffprober_av1_check.delay(file_located,ffprobe_results)
         
     task_duration_time('container_check',function_start_time)
@@ -111,8 +115,8 @@ def ffprober_av1_check(file_located,ffprobe_results):
 
     function_start_time = task_start_time('ffprober_av1_check')
 
-    logging.info ('Checking video codec in: ' + file_located['file'])
-    logging.info ('In: ' + file_located['root'])
+    logging.debug ('Checking video codec in: ' + file_located['file'])
+    logging.debug ('In: ' + file_located['root'])
 
     if file_located['directory'] == '/anime':
         ffmpeg_string = "libsvtav1 -crf 25 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0:enable-qm=1:qm-min=0:qm-max=15"
@@ -179,7 +183,7 @@ def ffprober_av1_check(file_located,ffprobe_results):
 
         fencoder.delay(ffmpeg_inputs)
     elif encode_decision == 'no':
-        logging.info('Next task goes here')
+        logging.debug ('Next task goes here')
     else:
         logging.ERROR ('Error state here')
 
@@ -190,8 +194,8 @@ def ffresults(ffresults_input):
 
     function_start_time = task_start_time('ffresults')
 
-    logging.info ('Encoding results for: ' + ffresults_input['file'])
-    logging.info ('From: ' + ffresults_input['root'])
+    logging.debug ('Encoding results for: ' + ffresults_input['file'])
+    logging.debug ('From: ' + ffresults_input['root'])
 
     ffmpeg_command = ffresults_input["ffmpeg_command"]
     file_name = ffresults_input["file"]

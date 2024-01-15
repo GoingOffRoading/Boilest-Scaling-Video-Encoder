@@ -30,27 +30,37 @@ Handbrake is awesome, but:
 
 # How does Boilest work?
 
-* A script scans a container volume for media.  Each file discovered is individually sent to an FFprobe function to determine if the file should be reencoded.
-* An FFProbe function scans each discovered piece of media and determines actions based on FFProbe outputs (re-encode video, re-encode audio, change subtitle format, change container, etc).  The decision is made against a configuration.  Any files determined to require encoding are sent to the next step.
-* Media files passed  from the FFprobe step are encoded using FFmpeg.  Once the file is done encoding, it is compared to the original.  If the comparison passes, the original file is replaced, and file stats are sent to the next step.
-* All encoded file states from the FFmpeg step are recorded in a SQL database.
+A manager node kicks off a series of tasks:
 
-This works end to end.  I'm on the fence about having the scan kick off at launch...  TBD...  The end goal is to have a configuration UI, but I am a little ways away from that step.
+* Hourly, kick off the workflow
+* Continue if the queue is empty
+* Scan direcorites for media files
+* Probe those media files
+* Then work through a progressive workflow of determining which streams, media files, and which codecs in each media file need to be endeded.  If a target media file is already in the desired state, Boilest will not attept to encode it.
+
+The worker(s) pick up the tasks from the manager, and encodes the file (as determined by the manager), then sends some stats back to the manager on success.  
 
 # What is in this repo today?
 
-Little bits of code that work, and me struggling with the basics to glue it all together
+Little bits of code that work, and me struggling with the basics to glue it all together...  BUT, it all works and is running.
 
 # How to deploy
 
-https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/
+Can be deployed in Docker or in Kubernetes.  General container and prerequesit information will be belllow. Deployment examples will be in the /Deployment directory.
+
+## Prerequisit 
+
+### RabbitMQ
+
+The backbone of Boilest is a distributed task Python library called [Celery](https://docs.celeryq.dev/en/stable/getting-started/introduction.html). Celery needs a message transport (a place to store the task queue), and we leverage RabbitMQ for that.
+
+RabbitMQ will need to be deployed with it's management plugin.
 
 
 
-## RabbitMQ
 
-* Go into the Admin pannel, and create a vhost 'celery'
-* Then go into user pannel, and create a user 'celery', with password 'celery', access to the 'celery' vhost, and admin
+
+
 
 
 # Boilest Development Notes
@@ -84,3 +94,15 @@ sum(new_file_size_difference) as difference,
 (SUM(new_file_size_difference)/sum(old_file_size)) as difference2,
 sum(new_file_size_difference)/COUNT(DISTINCT unique_identifier) as space_per_file
 FROM ffencode_results;
+
+
+
+# Q'n A
+
+  * If Celery can use Reddis or RabbitMQ for it's message transport, can Boilest use Reddis?
+
+    Not in Boilest's current state.  Boilest doesn't use any RabbitMQ functionality that Reddis doesn't have an equivilent.  That said, of the to-dos in /Scripts, having message transport flexibility is not a priority at this time.
+
+- Why does Boilest use RabbitMQ over Reddis?
+
+    I happened to have RabbitMQ with the management plugin already installed.

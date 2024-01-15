@@ -70,7 +70,12 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] Write the logs to a file, or aggregate the logs somewhere
 - [x] Take a second pass at adjusting the log evels of things
 - [ ] Convert Celery.sh to python, and have all of the container start stuff be there
-
+- [ ] Think about doing a queue length check so that the queue legnth isn't crazy
+- [ ] Think about generating a file hash (name + file size or something) on initial ffprobe so that the worker can confirm that the file is the same one that the manager scanned 
+- [ ] Consider lookin into queue priorty 
+- [ ] Move the default logging to warning (currently info)
+- [ ] Consider modifying ffmpeg to export it's output to a file, and store that on the master node
+- [ ] Rethink queue_workers_if_queue_empty.  Specifically, can we keep the queue to like 100 tasks, and then just check the queue to see if that file is already represented there.
 
 
 https://ranvir.xyz/blog/using-celery-to-run-long-running-task-asynchronously/
