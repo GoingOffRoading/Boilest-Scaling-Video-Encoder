@@ -20,8 +20,6 @@ def fencoder(ffmpeg_inputs):
     temp_filepath = ffmpeg_inputs['temp_filepath']
     root = ffmpeg_inputs['root']
 
-    
-
     # Lets check to see if the file still exists
 
     File_Exists = os.path.exists(ffmpeg_inputs['file_path'])
