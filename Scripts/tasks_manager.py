@@ -1,7 +1,7 @@
 from celery import Celery
 from datetime import datetime
 import json, os, sqlite3, logging
-from task_shared_services import task_start_time, task_duration_time, check_queue, find_files, celery_url_path, check_queue, ffmpeg_output_file, ffprober_function, get_active_tasks
+from task_shared_services import task_start_time, task_duration_time, check_queue, find_files, celery_url_path, check_queue, ffmpeg_output_file, ffprober_function, get_active_tasks, get_file_size_bytes
 
 logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -83,6 +83,13 @@ def container_check(file_located, ffprobe_results):
     if ffprobe_results['format']['format_name'] != 'matroska,webm' or file_located['extension'] != '.mkv':
         logging.debug (file_located['file'] + ' is not .MKV')
         logging.debug ('Sending to FFmpeg:')
+
+
+        logging.debug ('Generating file size')
+        # I started to evaluate getting an actual hash but the functions took too long
+        # Using file size in bytes to valudate works as a tep solution
+        file_hash = get_file_size_bytes(file_located['file_path'])    
+
         
         ffmpeg_command = 'ffmpeg ' + \
                         os.environ.get('ffmpeg_settings') + \
@@ -92,7 +99,8 @@ def container_check(file_located, ffprobe_results):
         
         logging.debug (ffmpeg_command)
 
-        ffmpeg_inputs = file_located        
+        ffmpeg_inputs = file_located    
+        ffmpeg_inputs.update({'file_hash':file_hash})
         ffmpeg_inputs.update({'ffmpeg_command':ffmpeg_command})
         ffmpeg_inputs.update({'job':'container_check'})
         ffmpeg_inputs.update({'temp_filepath':ffmpeg_output_file(file_located['file'])})
@@ -172,9 +180,16 @@ def ffprober_av1_check(file_located,ffprobe_results):
                 ' "' + ffmpeg_output_file(file_located['file']) + '"'
     
     if encode_decision == 'yes':
+
+        logging.debug ('Generating file size')
+        # I started to evaluate getting an actual hash but the functions took too long
+        # Using file size in bytes to valudate works as a tep solution
+        file_hash = get_file_size_bytes(file_located['file_path'])    
+
         logging.info ('Incoming FFMpeg command:')
         logging.info (ffmpeg_command)
-        ffmpeg_inputs = file_located        
+        ffmpeg_inputs = file_located
+        ffmpeg_inputs.update({'file_hash':file_hash})        
         ffmpeg_inputs.update({'ffmpeg_command':ffmpeg_command})
         ffmpeg_inputs.update({'job':'ffprober_av1_check'})
         ffmpeg_inputs.update({'temp_filepath':ffmpeg_output_file(file_located['file'])})

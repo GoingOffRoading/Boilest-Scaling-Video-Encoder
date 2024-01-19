@@ -174,3 +174,12 @@ def run_ffmpeg(ffmpeg_command):
         logging.debug(f"Error: {e}")
         return "Failure"  # Return a non-zero exit code to indicate an error
 
+
+def get_file_size_bytes(file_path):
+    try:
+        # Get the size of the file in bytes
+        size_bytes = os.path.getsize(file_path)
+        return size_bytes
+    except FileNotFoundError:
+        print(f"File not found: {file_path}")
+        return None
