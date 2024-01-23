@@ -8,12 +8,12 @@ logging.basicConfig(
 
 def task_start_time(task):
     function_task_start_time = datetime.now()
-    logging.info ('>>>>>>>>>>>>>>>> ' + task + ' starting at ' + str(function_task_start_time) + '<<<<<<<<<<<<<<<<<<<')
+    logging.debug ('>>>>>>>>>>>>>>>> ' + task + ' starting at ' + str(function_task_start_time) + '<<<<<<<<<<<<<<<<<<<')
     return function_task_start_time
 
 def task_duration_time(task,function_task_start_time):
     function_task_duration_time = (datetime.now() - function_task_start_time).total_seconds() / 60.0
-    logging.info ('>>>>>>>>>>>>>>>> ' + task + ' complete, executed for ' + str(function_task_duration_time) + ' minutes <<<<<<<<<<<<<<<<<<<')
+    logging.debug ('>>>>>>>>>>>>>>>> ' + task + ' complete, executed for ' + str(function_task_duration_time) + ' minutes <<<<<<<<<<<<<<<<<<<')
 
 
 def celery_url_path(thing):
@@ -26,6 +26,7 @@ def celery_url_path(thing):
     thing = thing + user + ':' + password + '@' + celery_host + ':' + celery_port + '/' + celery_vhost
     logging.debug ('celery_url_path is: ' + thing)
     return thing
+
 
 def check_queue(queue_name):
     rabbitmq_host = 'http://' + os.environ.get('rabbitmq_host','192.168.1.110')
