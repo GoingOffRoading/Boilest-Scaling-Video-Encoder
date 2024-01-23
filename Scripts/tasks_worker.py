@@ -19,12 +19,18 @@ def fencoder(ffmpeg_inputs):
     file_path = ffmpeg_inputs['file_path']
     temp_filepath = ffmpeg_inputs['temp_filepath']
     root = ffmpeg_inputs['root']
+    
 
     # Lets check to see if the file still exists
 
     File_Exists = os.path.exists(ffmpeg_inputs['file_path'])
+    logging.debug ('File_Exists : ' + str(File_Exists))
     Current_File_Size = get_file_size_bytes(ffmpeg_inputs['file_path'])
+    logging.debug ('Scanned size hash : ' + str(ffmpeg_inputs['file_hash']))
+    logging.debug ('Current size hash : ' + str(Current_File_Size))
     Video_Validation = validate_video(ffmpeg_inputs['file_path'])
+    logging.debug ('Video_Validation : ' + str(Video_Validation))
+
 
     if (File_Exists == True and
         Current_File_Size == ffmpeg_inputs['file_hash'] and
@@ -43,6 +49,9 @@ def fencoder(ffmpeg_inputs):
         logging.error (ffmpeg_inputs['file_path'] + ' is not a valid video file')
     else:
         logging.error ('Unknown error processing: ' + ffmpeg_inputs['file_path'])
+
+    
+    logging.debug ('exit_code : ' + str(exit_code))
 
 
     if (exit_code == 'Success' and 
