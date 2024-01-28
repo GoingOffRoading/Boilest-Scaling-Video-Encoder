@@ -3,10 +3,22 @@ from datetime import datetime
 import json, os, sqlite3, logging
 from task_shared_services import task_start_time, task_duration_time, check_queue, find_files, celery_url_path, check_queue, ffmpeg_output_file, ffprober_function, get_active_tasks, get_file_size_bytes
 
+# Get log level from environment variable, defaulting to INFO if not set
+log_level = os.environ.get('LOG_LEVEL', 'INFO')
+
+# Convert the log level string to the corresponding logging level constant
+log_level = getattr(logging, log_level.upper(), logging.INFO)
+
+# Configure basic logging
 logging.basicConfig(
+    level=log_level,
     format='%(asctime)s - %(levelname)s - %(message)s',
-    level=logging.INFO
+    handlers=[
+        logging.StreamHandler()  # Log to the console
+        # Add other handlers if needed (e.g., logging.FileHandler to log to a file)
+    ]
 )
+
 
 app = Celery('tasks', backend = celery_url_path('rpc://'), broker = celery_url_path('amqp://') )
 
@@ -138,6 +150,7 @@ def ffprober_av1_check(file_located,ffprobe_results):
     ffmpeg_command = str()
     encode_decision = 'no'
     original_string = str()
+    celery_priority_value = int()
 
     streams_count = ffprobe_results['format']['nb_streams']
     logging.debug ('there are ' + str(streams_count) + ' streams:')
@@ -158,6 +171,15 @@ def ffprober_av1_check(file_located,ffprobe_results):
                 ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:v ' + ffmpeg_string
                 original_string = original_string + '{stream ' + str(i) + ' ' + ffprobe_results['streams'][i]['codec_type'] + ' = ' + codec_name + '}'
                 logging.debug ('Stream ' + str(i) + ' is ' + codec_name + ', encoding stream')
+
+                if ffprobe_results['streams'][i]['codec_name'] == 'h264':
+                    celery_priority_value = 5
+                elif ffprobe_results['streams'][i]['codec_name'] == 'hevc':
+                    celery_priority_value = 7
+                else:
+                    celery_priority_value = 6
+                logging.debug ('celery_priority_value is ' + str(celery_priority_value))
+
                 # encode_decision = yes as the video codec is not in the desired format
             else:
                 logging.debug ('Something is broken with stream ' + str(i))
@@ -196,7 +218,8 @@ def ffprober_av1_check(file_located,ffprobe_results):
         ffmpeg_inputs.update({'original_string':original_string})
         del ffmpeg_inputs['extension']
 
-        fencoder.delay(ffmpeg_inputs)
+        #fencoder.delay(ffmpeg_inputs)
+        fencoder.apply_async(args=(ffmpeg_inputs, ), priority=celery_priority_value)
     elif encode_decision == 'no':
         logging.debug ('Next task goes here')
     else:

@@ -26,6 +26,7 @@ WORKDIR "/Scripts"
 
 # Used in Celery.sh
 ENV Manager No
+#ENV Celery_Log_level Warn 
 
 # User in Flower: https://flower.readthedocs.io/en/latest/config.html
 ENV FLOWER_FLOWER_BASIC_AUTH celery:celery

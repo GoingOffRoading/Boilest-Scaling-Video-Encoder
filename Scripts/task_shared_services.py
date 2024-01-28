@@ -1,9 +1,20 @@
 from datetime import datetime
 import os, json, requests, shutil, subprocess, logging
 
+# Get log level from environment variable, defaulting to INFO if not set
+log_level = os.environ.get('LOG_LEVEL', 'INFO')
+
+# Convert the log level string to the corresponding logging level constant
+log_level = getattr(logging, log_level.upper(), logging.INFO)
+
+# Configure basic logging
 logging.basicConfig(
+    level=log_level,
     format='%(asctime)s - %(levelname)s - %(message)s',
-    level=logging.INFO
+    handlers=[
+        logging.StreamHandler()  # Log to the console
+        # Add other handlers if needed (e.g., logging.FileHandler to log to a file)
+    ]
 )
 
 def task_start_time(task):
