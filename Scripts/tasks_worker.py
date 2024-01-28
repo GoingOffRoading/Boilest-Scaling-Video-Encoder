@@ -3,21 +3,21 @@ import os, shutil, logging
 from task_shared_services import celery_url_path, file_size_mb, task_start_time, task_duration_time, validate_video, run_ffmpeg, get_file_size_bytes
 
 # Get log level from environment variable, defaulting to INFO if not set
-log_level = os.environ.get('LOG_LEVEL', 'INFO')
-
-# Convert the log level string to the corresponding logging level constant
-log_level = getattr(logging, log_level.upper(), logging.INFO)
-
+#log_level = os.getenv('LOG_LEVEL', 'INFO')
+#
+#print ('log_level is: ' + log_level)
+#
 # Configure basic logging
-logging.basicConfig(
-    level=log_level,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler()  # Log to the console
-        # Add other handlers if needed (e.g., logging.FileHandler to log to a file)
-    ]
-)
+##logging.basicConfig(
+#    level=log_level,
+#    format='%(asctime)s - %(levelname)s - %(message)s'
+#)
+
 app = Celery('tasks', backend = celery_url_path('rpc://'), broker = celery_url_path('amqp://') )
+
+app.conf.update(
+    worker_log_level='WARNING'
+)
 
 
 @app.task(queue='worker')

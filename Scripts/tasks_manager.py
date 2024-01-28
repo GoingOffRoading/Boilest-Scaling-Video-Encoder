@@ -4,23 +4,22 @@ import json, os, sqlite3, logging
 from task_shared_services import task_start_time, task_duration_time, check_queue, find_files, celery_url_path, check_queue, ffmpeg_output_file, ffprober_function, get_active_tasks, get_file_size_bytes
 
 # Get log level from environment variable, defaulting to INFO if not set
-log_level = os.environ.get('LOG_LEVEL', 'INFO')
+#log_level = os.getenv('LOG_LEVEL', 'INFO')
 
-# Convert the log level string to the corresponding logging level constant
-log_level = getattr(logging, log_level.upper(), logging.INFO)
+#print ('log_level is: ' + log_level)
 
 # Configure basic logging
-logging.basicConfig(
-    level=log_level,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler()  # Log to the console
-        # Add other handlers if needed (e.g., logging.FileHandler to log to a file)
-    ]
-)
+#logging.basicConfig(
+#    level=log_level,
+#    format='%(asctime)s - %(levelname)s - %(message)s'
+#)
 
 
 app = Celery('tasks', backend = celery_url_path('rpc://'), broker = celery_url_path('amqp://') )
+
+app.conf.update(
+    worker_log_level='WARNING'
+)
 
 @app.on_after_configure.connect
 # Celery's scheduler.  Kicks off queue_workers_if_queue_empty every hour
