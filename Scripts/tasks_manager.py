@@ -3,23 +3,7 @@ from datetime import datetime
 import json, os, sqlite3, logging
 from task_shared_services import task_start_time, task_duration_time, check_queue, find_files, celery_url_path, check_queue, ffmpeg_output_file, ffprober_function, get_active_tasks, get_file_size_bytes
 
-# Get log level from environment variable, defaulting to INFO if not set
-#log_level = os.getenv('LOG_LEVEL', 'INFO')
-
-#print ('log_level is: ' + log_level)
-
-# Configure basic logging
-#logging.basicConfig(
-#    level=log_level,
-#    format='%(asctime)s - %(levelname)s - %(message)s'
-#)
-
-
 app = Celery('tasks', backend = celery_url_path('rpc://'), broker = celery_url_path('amqp://') )
-
-app.conf.update(
-    worker_log_level='WARNING'
-)
 
 @app.on_after_configure.connect
 # Celery's scheduler.  Kicks off queue_workers_if_queue_empty every hour
@@ -171,13 +155,6 @@ def ffprober_av1_check(file_located,ffprobe_results):
                 original_string = original_string + '{stream ' + str(i) + ' ' + ffprobe_results['streams'][i]['codec_type'] + ' = ' + codec_name + '}'
                 logging.debug ('Stream ' + str(i) + ' is ' + codec_name + ', encoding stream')
 
-                if ffprobe_results['streams'][i]['codec_name'] == 'h264':
-                    celery_priority_value = 5
-                elif ffprobe_results['streams'][i]['codec_name'] == 'hevc':
-                    celery_priority_value = 7
-                else:
-                    celery_priority_value = 6
-                logging.debug ('celery_priority_value is ' + str(celery_priority_value))
 
                 # encode_decision = yes as the video codec is not in the desired format
             else:
@@ -201,6 +178,14 @@ def ffprober_av1_check(file_located,ffprobe_results):
                 ' "' + ffmpeg_output_file(file_located['file']) + '"'
     
     if encode_decision == 'yes':
+
+        if ffprobe_results['streams'][0]['codec_name'] == 'h264':
+            celery_priority_value = 7
+        elif ffprobe_results['streams'][0]['codec_name'] == 'hevc':
+            celery_priority_value = 5
+        else:
+            celery_priority_value = 6
+        logging.debug ('celery_priority_value is ' + str(celery_priority_value))
 
         logging.debug ('Generating file size')
         # I started to evaluate getting an actual hash but the functions took too long
