@@ -27,6 +27,7 @@ CELERY_QUEUES = {
 
 # Set concurrency to 1
 CELERYD_CONCURRENCY = 1
+CELERY_ACKS_LATE = True
 
 # Set prefetch_count to 1
 CELERYD_PREFETCH_MULTIPLIER = 1
