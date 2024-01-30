@@ -1,15 +1,6 @@
 from datetime import datetime
 import os, json, requests, shutil, subprocess, logging
 
-# Get log level from environment variable, defaulting to INFO if not set
-#log_level = os.getenv('LOG_LEVEL', 'INFO')
-#
-# Configure basic logging
-#logging.basicConfig(
-#    level=log_level,
-#    format='%(asctime)s - %(levelname)s - %(message)s'
-#)
-
 def task_start_time(task):
     function_task_start_time = datetime.now()
     logging.debug ('>>>>>>>>>>>>>>>> ' + task + ' starting at ' + str(function_task_start_time) + '<<<<<<<<<<<<<<<<<<<')

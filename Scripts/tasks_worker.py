@@ -1,6 +1,7 @@
 from celery import Celery
 import os, shutil, logging
 from task_shared_services import celery_url_path, file_size_mb, task_start_time, task_duration_time, validate_video, run_ffmpeg, get_file_size_bytes
+import celeryconfig
 
 # Get log level from environment variable, defaulting to INFO if not set
 #log_level = os.getenv('LOG_LEVEL', 'INFO')
@@ -14,6 +15,7 @@ from task_shared_services import celery_url_path, file_size_mb, task_start_time,
 #)
 
 app = Celery('tasks', backend = celery_url_path('rpc://'), broker = celery_url_path('amqp://') )
+app.config_from_object(celeryconfig)
 
 app.conf.update(
     worker_log_level='WARNING'

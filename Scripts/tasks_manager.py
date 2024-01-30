@@ -2,8 +2,10 @@ from celery import Celery
 from datetime import datetime
 import json, os, sqlite3, logging
 from task_shared_services import task_start_time, task_duration_time, check_queue, find_files, celery_url_path, check_queue, ffmpeg_output_file, ffprober_function, get_active_tasks, get_file_size_bytes
+import celeryconfig
 
 app = Celery('tasks', backend = celery_url_path('rpc://'), broker = celery_url_path('amqp://') )
+app.config_from_object(celeryconfig)
 
 @app.on_after_configure.connect
 # Celery's scheduler.  Kicks off queue_workers_if_queue_empty every hour
@@ -122,11 +124,11 @@ def ffprober_av1_check(file_located,ffprobe_results):
     logging.debug ('In: ' + file_located['root'])
 
     if file_located['directory'] == '/anime':
-        ffmpeg_string = "libsvtav1 -crf 25 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0:enable-qm=1:qm-min=0:qm-max=15"
+        ffmpeg_string = "libsvtav1 -crf 45 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0:enable-qm=1:qm-min=0:qm-max=15"
     elif file_located['directory'] == '/tv':
-        ffmpeg_string = "libsvtav1 -crf 30 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0:enable-qm=1:qm-min=0:qm-max=15"
+        ffmpeg_string = "libsvtav1 -crf 45 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0:enable-qm=1:qm-min=0:qm-max=15"
     elif file_located['directory'] == '/movies':
-        ffmpeg_string = "libsvtav1 -crf 25 -preset 6 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0:enable-qm=1:qm-min=0:qm-max=15"
+        ffmpeg_string = "libsvtav1 -crf 45 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0:enable-qm=1:qm-min=0:qm-max=15"
     else:
         logging.debug ('Directory configuration does not exist')
 
