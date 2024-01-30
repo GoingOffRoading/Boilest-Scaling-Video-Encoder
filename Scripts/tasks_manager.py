@@ -182,9 +182,9 @@ def ffprober_av1_check(file_located,ffprobe_results):
     if encode_decision == 'yes':
 
         if ffprobe_results['streams'][0]['codec_name'] == 'h264':
-            celery_priority_value = 7
-        elif ffprobe_results['streams'][0]['codec_name'] == 'hevc':
             celery_priority_value = 5
+        elif ffprobe_results['streams'][0]['codec_name'] == 'hevc':
+            celery_priority_value = 7
         else:
             celery_priority_value = 6
         logging.debug ('celery_priority_value is ' + str(celery_priority_value))
@@ -205,7 +205,8 @@ def ffprober_av1_check(file_located,ffprobe_results):
         del ffmpeg_inputs['extension']
 
         #fencoder.delay(ffmpeg_inputs)
-        fencoder.apply_async(args=(ffmpeg_inputs, ), priority=celery_priority_value)
+        #fencoder.apply_async(args=(ffmpeg_inputs, ), priority=celery_priority_value)
+        fencoder.apply_async(kwargs={'ffmpeg_inputs': ffmpeg_inputs}, priority=celery_priority_value)
     elif encode_decision == 'no':
         logging.debug ('Next task goes here')
     else:

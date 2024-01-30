@@ -13,14 +13,16 @@ CELERY_QUEUES = {
         'exchange': 'manager_exchange',
         'exchange_type': 'direct',
         'routing_key': 'manager_routing_key',
-        'queue_arguments': {'x-max-priority': 10}
+        'queue_arguments': {'x-max-priority': 10},
+        'default_priority': 5 # Set the default priority for tasks in this queue
     },
     'worker': {
         'exchange': 'worker_exchange',
         'exchange_type': 'direct',
         'routing_key': 'worker_routing_key',
-        'queue_arguments': {'x-max-priority': 10}
-    },
+        'queue_arguments': {'x-max-priority': 10},
+        'default_priority': 5 # Set the default priority for tasks in this queue
+    }, 
 }
 
 # Set concurrency to 1

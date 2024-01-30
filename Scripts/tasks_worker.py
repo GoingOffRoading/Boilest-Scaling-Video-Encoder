@@ -23,12 +23,14 @@ app.conf.update(
 
 
 @app.task(queue='worker')
-def fencoder(ffmpeg_inputs):
+def fencoder(*args, **kwargs):
     import sys
     sys.path.append("/Scripts")
     from tasks_manager import ffresults
 
     function_start_time = task_start_time('fencoder')
+
+    ffmpeg_inputs = kwargs.get('ffmpeg_inputs')
 
     ffmpeg_command = ffmpeg_inputs['ffmpeg_command']
     encode_outcome = str()
