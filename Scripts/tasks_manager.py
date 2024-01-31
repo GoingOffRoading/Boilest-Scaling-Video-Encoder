@@ -181,13 +181,8 @@ def ffprober_av1_check(file_located,ffprobe_results):
     
     if encode_decision == 'yes':
 
-        if ffprobe_results['streams'][0]['codec_name'] == 'h264':
-            celery_priority_value = 5
-        elif ffprobe_results['streams'][0]['codec_name'] == 'hevc':
-            celery_priority_value = 7
-        else:
-            celery_priority_value = 6
-        logging.debug ('celery_priority_value is ' + str(celery_priority_value))
+        
+        
 
         logging.debug ('Generating file size')
         # I started to evaluate getting an actual hash but the functions took too long
@@ -206,7 +201,18 @@ def ffprober_av1_check(file_located,ffprobe_results):
 
         #fencoder.delay(ffmpeg_inputs)
         #fencoder.apply_async(args=(ffmpeg_inputs, ), priority=celery_priority_value)
-        fencoder.apply_async(kwargs={'ffmpeg_inputs': ffmpeg_inputs}, priority=celery_priority_value)
+        
+        if ffprobe_results['streams'][0]['codec_name'] == 'h264':
+            fencoder.apply_async(kwargs={'ffmpeg_inputs': ffmpeg_inputs}, priority=6)
+            logging.debug ('celery_priority_value is 4')
+        elif ffprobe_results['streams'][0]['codec_name'] == 'hevc':
+            fencoder.apply_async(kwargs={'ffmpeg_inputs': ffmpeg_inputs}, priority=4)
+            logging.debug ('celery_priority_value is 6')
+        else:
+            fencoder.apply_async(kwargs={'ffmpeg_inputs': ffmpeg_inputs}, priority=5)
+            logging.debug ('celery_priority_value is 5')
+
+
     elif encode_decision == 'no':
         logging.debug ('Next task goes here')
     else:
