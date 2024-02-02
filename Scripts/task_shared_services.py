@@ -110,6 +110,7 @@ def ffprober_function(file_path):
 
 def find_files(directories, extensions):
     for directory in directories:
+        logging.info ('Scanning: ' + directory)
         for root, dirs, files in os.walk(directory):
             for file in files:
                 for ext in extensions:

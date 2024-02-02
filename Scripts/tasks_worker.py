@@ -23,6 +23,8 @@ def fencoder(*args, **kwargs):
 
     ffmpeg_inputs = kwargs.get('ffmpeg_inputs')
 
+    logging.info ('Processing: ' + ffmpeg_inputs['file_path']) 
+
     ffmpeg_command = ffmpeg_inputs['ffmpeg_command']
     encode_outcome = str()
     exit_code = str()
@@ -31,7 +33,6 @@ def fencoder(*args, **kwargs):
     root = ffmpeg_inputs['root']
     
     
-
     # Lets check to see if the file still exists
 
     File_Exists = os.path.exists(ffmpeg_inputs['file_path'])
@@ -105,7 +106,9 @@ def fencoder(*args, **kwargs):
         logging.debug ('Removing: ' + ffmpeg_inputs['temp_filepath'])
         os.remove(temp_filepath)
     else:
-        logging.debug('No idea')       
+        logging.debug('No idea')     
+
+    logging.info ('Processing ' + ffmpeg_inputs['file_path'] + ' Complete')   
 
     task_duration_time('fencoder',function_start_time)
     

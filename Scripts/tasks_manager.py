@@ -135,7 +135,6 @@ def ffprober_av1_check(file_located,ffprobe_results):
     ffmpeg_command = str()
     encode_decision = 'no'
     original_string = str()
-    celery_priority_value = int()
 
     streams_count = ffprobe_results['format']['nb_streams']
     logging.debug ('there are ' + str(streams_count) + ' streams:')
@@ -156,7 +155,6 @@ def ffprober_av1_check(file_located,ffprobe_results):
                 ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:v ' + ffmpeg_string
                 original_string = original_string + '{stream ' + str(i) + ' ' + ffprobe_results['streams'][i]['codec_type'] + ' = ' + codec_name + '}'
                 logging.debug ('Stream ' + str(i) + ' is ' + codec_name + ', encoding stream')
-
 
                 # encode_decision = yes as the video codec is not in the desired format
             else:
@@ -179,15 +177,17 @@ def ffprober_av1_check(file_located,ffprobe_results):
                 ffmpeg_command + \
                 ' "' + ffmpeg_output_file(file_located['file']) + '"'
     
-    if encode_decision == 'yes':        
+    if encode_decision == 'yes':       
+
+        logging.info ('Sending: ' + file_located['file'] + ' for processing') 
 
         logging.debug ('Generating file size')
         # I started to evaluate getting an actual hash but the functions took too long
         # Using file size in bytes to valudate works as a tep solution
         file_hash = get_file_size_bytes(file_located['file_path'])    
 
-        logging.info ('Incoming FFMpeg command:')
-        logging.info (ffmpeg_command)
+        logging.debug ('Incoming FFMpeg command:')
+        logging.debug (ffmpeg_command)
         ffmpeg_inputs = file_located
         ffmpeg_inputs.update({'file_hash':file_hash})        
         ffmpeg_inputs.update({'ffmpeg_command':ffmpeg_command})
