@@ -4,11 +4,11 @@ from task_shared_services import celery_url_path
 
 print("Celery configuration loaded!")
 
-BROKER_URL = celery_url_path('amqp://')
-CELERY_RESULT_BACKEND = celery_url_path('rpc://')
+broker_url = celery_url_path('amqp://')
+result_backend = celery_url_path('rpc://')
 
 # Define two queues with x-max-priority
-CELERY_QUEUES = {
+task_queues = {
     'manager': {
         'exchange': 'manager_exchange',
         'exchange_type': 'direct',
@@ -26,14 +26,14 @@ CELERY_QUEUES = {
 }
 
 # Set concurrency to 1
-CELERYD_CONCURRENCY = 1
-CELERY_ACKS_LATE = True
+worker_concurrency = 1
+task_acks_late = True
 
 # Set prefetch_count to 1
-CELERYD_PREFETCH_MULTIPLIER = 1
+worker_prefetch_multiplier = 1
 
 # Enable task events
-CELERY_SEND_EVENTS = True
-CELERY_SEND_TASK_SENT_EVENT = True
-CELERY_TRACK_STARTED = True
-CELERYD_POOL_RESTARTS = True
+worker_send_task_events = True
+task_send_sent_event = True
+task_track_started = True
+worker_pool_restarts = True
