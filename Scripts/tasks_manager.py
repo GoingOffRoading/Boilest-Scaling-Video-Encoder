@@ -179,10 +179,7 @@ def ffprober_av1_check(file_located,ffprobe_results):
                 ffmpeg_command + \
                 ' "' + ffmpeg_output_file(file_located['file']) + '"'
     
-    if encode_decision == 'yes':
-
-        
-        
+    if encode_decision == 'yes':        
 
         logging.debug ('Generating file size')
         # I started to evaluate getting an actual hash but the functions took too long

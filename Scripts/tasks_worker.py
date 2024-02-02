@@ -3,19 +3,10 @@ import os, shutil, logging
 from task_shared_services import celery_url_path, file_size_mb, task_start_time, task_duration_time, validate_video, run_ffmpeg, get_file_size_bytes
 import celeryconfig
 
-# Get log level from environment variable, defaulting to INFO if not set
-#log_level = os.getenv('LOG_LEVEL', 'INFO')
-#
-#print ('log_level is: ' + log_level)
-#
-# Configure basic logging
-##logging.basicConfig(
-#    level=log_level,
-#    format='%(asctime)s - %(levelname)s - %(message)s'
-#)
 
 app = Celery('tasks', backend = celery_url_path('rpc://'), broker = celery_url_path('amqp://') )
 app.config_from_object(celeryconfig)
+
 
 app.conf.update(
     worker_log_level='WARNING'
@@ -38,6 +29,7 @@ def fencoder(*args, **kwargs):
     file_path = ffmpeg_inputs['file_path']
     temp_filepath = ffmpeg_inputs['temp_filepath']
     root = ffmpeg_inputs['root']
+    
     
 
     # Lets check to see if the file still exists
