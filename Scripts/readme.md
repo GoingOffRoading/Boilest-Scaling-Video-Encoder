@@ -65,17 +65,21 @@ This is the Boilest workflow, and work that is currently outstanding
 - [x] Adjust the ffresults to use the end file name, not the start file name, and add the start container to original string
 - [x] Update the ffencode print statement to remove the ( )
 - [ ] Add a valid file check to the beginning of ffprobe
-- [ ] Add a validation check on writing the results
+- [x] Add a validation check on writing the results
 - [x] Create a way for Boilest to not encode files that were changed after the last scan.  Either with a last modified check, empty the queue week... Something
 - [ ] Write the logs to a file, or aggregate the logs somewhere
 - [x] Take a second pass at adjusting the log evels of things
 - [ ] Convert Celery.sh to python, and have all of the container start stuff be there
 - [ ] Think about doing a queue length check so that the queue legnth isn't crazy
 - [x] Think about generating a file hash (name + file size or something) on initial ffprobe so that the worker can confirm that the file is the same one that the manager scanned 
-- [ ] Consider lookin into queue priorty 
+- [x] Consider lookin into queue priorty 
 - [x] Move the default logging to warning (currently info)
 - [ ] Consider modifying ffmpeg to export it's output to a file, and store that on the master node
-- [ ] Rethink queue_workers_if_queue_empty.  Specifically, can we keep the queue to like 100 tasks, and then just check the queue to see if that file is already represented there.
+- [x] Rethink queue_workers_if_queue_empty.  Specifically, can we keep the queue to like 100 tasks, and then just check the queue to see if that file is already represented there.
+- [ ] Rewrite how AV1's settings are stored per directory.  Consider a YAML or etc for these configs.
+- [ ] Rewrite how tasks are prioritized
+- [ ] Make adjustments to the log levels
+
 
 
 https://ranvir.xyz/blog/using-celery-to-run-long-running-task-asynchronously/
