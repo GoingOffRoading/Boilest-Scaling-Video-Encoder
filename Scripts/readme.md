@@ -20,7 +20,6 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] Experiement with audio codec settings
 - [ ] UI
 - [x] When establishing the codecs, we check for keywords like 'video' (see line 91 in Taks.py), which may return a false positive because ffprobe could use the keyworld 'video' in objects not related to defining the stream type.  Will need to figure out how to work around this.
-- [ ] Stopping the script does not stop the ffmpeg terminal/os command.  There should be a way to interupt ffmpeg from the script
 - [x] Add more inline documentation
 - [x] Add additional fields so different file attributes can get different ffmpeg commands
 - [x] Celery queues: https://stackoverflow.com/questions/51631455/how-to-route-tasks-to-different-queues-with-celery-and-django
@@ -53,7 +52,6 @@ This is the Boilest workflow, and work that is currently outstanding
 - [x] Find a more elegant solution to overflowing the buffer than sys.stdout.flush().  Likely moot if I write to a log
 - [x] Investigate the db lock issue
 - [x] Fix the logic for calling ffresults
-- [ ] Clear queue cron: https://stackoverflow.com/questions/70971478/how-to-delete-celery-task-logs-in-flower
 - [ ] Send failed queue to log file
 - [x] When printing results, or the hold because of queue, print a timestamp
 - [x] When printing results, print the size delta on the encoded file
@@ -64,7 +62,6 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] Make the log level a container variable
 - [x] Adjust the ffresults to use the end file name, not the start file name, and add the start container to original string
 - [x] Update the ffencode print statement to remove the ( )
-- [ ] Add a valid file check to the beginning of ffprobe
 - [x] Add a validation check on writing the results
 - [x] Create a way for Boilest to not encode files that were changed after the last scan.  Either with a last modified check, empty the queue week... Something
 - [ ] Write the logs to a file, or aggregate the logs somewhere
@@ -78,7 +75,8 @@ This is the Boilest workflow, and work that is currently outstanding
 - [x] Rethink queue_workers_if_queue_empty.  Specifically, can we keep the queue to like 100 tasks, and then just check the queue to see if that file is already represented there.
 - [ ] Rewrite how AV1's settings are stored per directory.  Consider a YAML or etc for these configs.
 - [ ] Rewrite how tasks are prioritized
-- [ ] Make adjustments to the log levels
+- [X] Make adjustments to the log levels
+- [ ] Change the logic to 'try' for anything interacting with a file
 
 
 
