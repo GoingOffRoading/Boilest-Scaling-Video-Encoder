@@ -28,6 +28,12 @@ WORKDIR "/Scripts"
 ENV Manager No
 #ENV Celery_Log_level Warn 
 
+# Used in Flask
+ENV FLASK_APP=Flask.py
+ENV FLASK_ENV=development
+ENV FLASK_RUN_HOST=0.0.0.0
+ENV FLASK_RUN_PORT=5000
+
 # User in Flower: https://flower.readthedocs.io/en/latest/config.html
 ENV FLOWER_FLOWER_BASIC_AUTH celery:celery
 ENV FLOWER_persistent true
@@ -46,7 +52,6 @@ ENV rabbitmq_port 32311
 
 # USed in FFmpeg
 ENV ffmpeg_settings "-hide_banner -loglevel 16 -stats -stats_period 10"
-
 
 # Add a user that is the same user group as the data being read
 # Is this clean?  Not really...  Will need to revisit this later

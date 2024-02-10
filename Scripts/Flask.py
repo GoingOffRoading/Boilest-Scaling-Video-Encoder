@@ -66,5 +66,6 @@ def index():
 
 # Run the Flask app in the Jupyter Notebook
 if __name__ == '__main__':
-    from werkzeug.serving import run_simple
-    run_simple('localhost', 5000, app)
+    #from werkzeug.serving import run_simple
+    #run_simple('localhost', 5000, app)
+    app.run

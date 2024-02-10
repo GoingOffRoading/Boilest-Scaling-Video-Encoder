@@ -5,18 +5,8 @@ python /Scripts/container_start.py
 
 echo "Starting Flask"
 
-# Set the Flask app file
-FLASK_APP=Flask.py
-
-# Set the Flask environment
-export FLASK_ENV=development
-
-# Set the host and port for the development server
-#export FLASK_RUN_HOST=0.0.0.0
-#export FLASK_RUN_PORT=5000
-
-# Run the Flask app
-flask run
+#flask run
+nohup flask run > log.txt 2>&1 &
 
 echo "Flask Started"
 

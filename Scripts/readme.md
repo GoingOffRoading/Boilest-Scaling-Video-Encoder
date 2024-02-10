@@ -16,9 +16,7 @@ This is the Boilest workflow, and work that is currently outstanding
 - [x] Rewrite the FFProbe section to handle when a media file doesn't have a video, audio, or subtitle stream
 - [x] Expirement with AV1 film grain: https://www.google.com/search?q=av1+film+grain+synthesis+anime
 - [x] Fix an issue where invalid ffmpeg settings would crash ffmpeg, and a file of 0kb would replace source 
-- [ ] Expirement with subtitle settings
-- [ ] Experiement with audio codec settings
-- [ ] UI
+- [x] UI
 - [x] When establishing the codecs, we check for keywords like 'video' (see line 91 in Taks.py), which may return a false positive because ffprobe could use the keyworld 'video' in objects not related to defining the stream type.  Will need to figure out how to work around this.
 - [x] Add more inline documentation
 - [x] Add additional fields so different file attributes can get different ffmpeg commands
@@ -77,6 +75,9 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] Rewrite how tasks are prioritized
 - [X] Make adjustments to the log levels
 - [ ] Change the logic to 'try' for anything interacting with a file
+- [ ] Expirement with subtitle settings
+- [ ] Experiement with audio codec settings
+- [ ] Think about how the project is structured within the working directories
 
 
 
