@@ -3,9 +3,27 @@ echo "starting"
 echo "Getting this party started"
 python /Scripts/container_start.py
 
+echo "Starting Flask"
+
+# Set the Flask app file
+FLASK_APP=Flask.py
+
+# Set the Flask environment
+export FLASK_ENV=development
+
+# Set the host and port for the development server
+#export FLASK_RUN_HOST=0.0.0.0
+#export FLASK_RUN_PORT=5000
+
+# Run the Flask app
+flask run
+
+echo "Flask Started"
+
+echo "Starting Celery"
 echo "Checking Variables"
 echo "Manager is set to:" $Manager
-echo "Starting Celery"
+
 
 if [ $Manager = "Yes" ]; then
     echo "Running Manager" 

@@ -10,7 +10,8 @@ print ('diagnostic3')
 
 # Function to connect to the SQLite database
 def connect_db():
-    return sqlite3.connect(r"/Boilest/DB/Boilest.db")  # Update with your actual database file name
+    database = r"/Boilest/DB/Boilest.db"
+    return sqlite3.connect(database)  # Update with your actual database file name
 
 # Route for the home page
 @app.route('/', methods=['GET', 'POST'])
@@ -50,7 +51,7 @@ def index():
 
     if request.method == 'POST' and request.form.get('execute_script'):
         # Execute a Python script when the button is clicked
-        subprocess.run(['python', 'your_script.py'])  # Update with your actual script name
+        subprocess.run(['python', 'start.py'])  # Update with your actual script name
         
     print ('diagnostic1')
     
