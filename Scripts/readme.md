@@ -32,7 +32,6 @@ This is the Boilest workflow, and work that is currently outstanding
 - [x] Sort through the test scrips, and start deleting duplicates
 - [x] Rewrite the function that checks the queues as that is spagetti
 - [x] Replace the print statements with logging: https://docs.python.org/3/howto/logging.html
-- [ ] Add python scripts to the DB folder to get stats
 - [x] Resolve issues with OPUS compatibility
 - [x] Resolve issues where output = 0.0 but tries to get moved anyway
 - [x] In each step, if we no longer need components of the JSON, delete them
@@ -45,7 +44,6 @@ This is the Boilest workflow, and work that is currently outstanding
 - [x] See if we can get ffmpeg to stream it's output to print or logs
 - [ ] Reorganize the container startup so it's not such a mess
 - [x] Determine if it would be better to copy the file being encoded to the encoding machine to deal with NFS errors
-- [ ] Determine if we should keep attachments from ffprobe
 - [x] Determine if we could slow down the number of status messages from ffmpeg
 - [x] Find a more elegant solution to overflowing the buffer than sys.stdout.flush().  Likely moot if I write to a log
 - [x] Investigate the db lock issue

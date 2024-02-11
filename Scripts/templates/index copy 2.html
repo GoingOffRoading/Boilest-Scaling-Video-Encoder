@@ -7,18 +7,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Boilest Stats</title>
     <style>
-        .tile-container {
-            display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap;
-        }
-
         .tile {
             border: 1px solid #ddd;
             padding: 20px;
             margin: 10px;
             text-align: center;
-            flex: 1; /* Distribute available space equally */
         }
     </style>
 </head>
@@ -29,12 +22,10 @@
         <button type="submit" name="execute_script">Execute Python Script</button>
     </form>
 
-    <div class="tile-container">
-        <div class="tile">{{ result_1 }} MB Saved</div>
-        <div class="tile">{{ result_2 }} Files Processed</div>
-        <div class="tile">{{ result_3 }} Days Run</div>
-        <div class="tile">{{ result_4 }} MB saved per file</div>
-    </div>
+    <div class="tile">{{ result_1 }} MB Saved</div>
+    <div class="tile">{{ result_2 }} Files Processed</div>
+    <div class="tile">{{ result_3 }} Days Run</div>
+    <div class="tile">{{ result_4 }} MB saved per file</div>
 
     <h2>First Table</h2>
     <table border="1">
