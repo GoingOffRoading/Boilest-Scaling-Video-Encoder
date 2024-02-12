@@ -260,8 +260,7 @@ def ffresults(ffresults_input):
         c.execute("SELECT ROUND(SUM(new_file_size_difference)) FROM ffencode_results")
         result = c.fetchone()[0]
         if result is not None:
-            total_space_saved = result[0]
-            logging.info(f'Total space saved: {total_space_saved} MB')
+            logging.info(f'Total space saved: {result} MB')
         else:
             logging.warning('No records found in ffencode_results table.')
             
