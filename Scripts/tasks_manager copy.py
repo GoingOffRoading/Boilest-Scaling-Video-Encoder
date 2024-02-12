@@ -217,63 +217,61 @@ def ffprober_av1_check(file_located,ffprobe_results):
 
     task_duration_time('ffprober_av1_check',function_start_time)
 
-############################################################################################################
-    # Database functions
-############################################################################################################
-
 @app.task(queue='manager')
 def ffresults(ffresults_input):
 
     function_start_time = task_start_time('ffresults')
 
     logging.debug ('Encoding results for: ' + ffresults_input['file'])
-    logging.debug ('From: ' + ffresults_input['root']) 
+    logging.debug ('From: ' + ffresults_input['root'])
+
+    ffmpeg_command = ffresults_input["ffmpeg_command"]
+    file_name = ffresults_input["file"]
+    file_path = ffresults_input["file_path"]
+    new_file_size = ffresults_input["new_file_size"]
+    new_file_size_difference = ffresults_input["new_file_size_difference"]
+    old_file_size = ffresults_input["old_file_size"]
+    original_string = ffresults_input["original_string"]
+    encode_outcome = ffresults_input["encode_outcome"]
+    
 
     recorded_date = datetime.now()
 
     logging.debug ("File encoding recorded: " + str(recorded_date))
-    unique_identifier = ffresults_input["file"] + str(recorded_date.microsecond)
+    unique_identifier = file_name + str(recorded_date.microsecond)
     logging.debug ('Primary key saved as: ' + unique_identifier)
 
     database = r"/Boilest/DB/Boilest.db"
-    try:
-        conn = sqlite3.connect(database)
-        c = conn.cursor()
-        c.execute(
-            "INSERT INTO ffencode_results"
-            " VALUES (?,?,?,?,?,?,?,?,?,?)",
-            (
-                unique_identifier,
-                recorded_date,
-                ffresults_input["file"], 
-                ffresults_input["file_path"], 
-                ffresults_input["new_file_size"], 
-                ffresults_input["new_file_size_difference"], 
-                ffresults_input["old_file_size"],
-                ffresults_input["ffmpeg_command"],
-                ffresults_input["encode_outcome"],
-                ffresults_input["original_string"]
+    with sqlite3.connect(database) as conn:
+        try:
+            c = conn.cursor()
+            c.execute(
+                "INSERT INTO ffencode_results"
+                " VALUES (?,?,?,?,?,?,?,?,?,?)",
+                (
+                    unique_identifier,
+                    recorded_date,
+                    file_name, 
+                    file_path, 
+                    new_file_size, 
+                    new_file_size_difference, 
+                    old_file_size,
+                    ffmpeg_command,
+                    encode_outcome,
+                    original_string
+                )
             )
-        )
-        conn.commit()
-        
-        c.execute("SELECT ROUND(SUM(new_file_size_difference)) FROM ffencode_results")
-        result = c.fetchone()[0]
-        if result is not None:
-            total_space_saved = result[0]
-            logging.info(f'Total space saved: {total_space_saved} MB')
-        else:
-            logging.warning('No records found in ffencode_results table.')
-            
-    except sqlite3.Error as e:
-        logging.error(f"Database error: {e}")
-    except Exception as e:
-        logging.error(f"Unexpected error: {e}")
-    finally:
+            conn.commit()
+        except sqlite3.Error as e:
+            logging.error(f"Database error: {e}")
+
+        c.execute("select round(sum(new_file_size_difference)) from ffencode_results")
+        total_space_saved = c.fetchone()[0]
         conn.close()
 
+    logging.info ('The space delta on ' + file_name + ' was: ' + str(new_file_size_difference) + ' MB')
+    logging.info ('We have saved so far: ' + str(total_space_saved) + ' MB.')
 
-    logging.info ('The space delta on ' + ffresults_input["file"] + ' was: ' + str(ffresults_input["new_file_size_difference"]) + ' MB')
     task_duration_time('ffresults',function_start_time)
 
 

@@ -76,6 +76,10 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] Expirement with subtitle settings
 - [ ] Experiement with audio codec settings
 - [ ] Think about how the project is structured within the working directories
+- [ ] Create startup scripts that check for the celery user, namespace, queues, and creates anything that doens't exist
+- [ ] As part of manager start up, have it delete all tasks
+- [ ] Cron to back up DB periodically
+- [ ] Cron to delete completed tasks
 
 
 
