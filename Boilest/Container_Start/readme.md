@@ -20,3 +20,10 @@ Database
 - [ ] Check the DB for the expected fields
 
 
+Config
+
+- [ ] Check to see if Config folder exists
+- [ ] If config folder does not exist, create it
+- [ ] Check to see if the config exists in the folder
+- [ ] If config does not exist, copy boilerplate over
+- [ ] Validate config
