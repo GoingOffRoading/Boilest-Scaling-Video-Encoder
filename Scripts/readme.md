@@ -80,6 +80,7 @@ This is the Boilest workflow, and work that is currently outstanding
 - [ ] As part of manager start up, have it delete all tasks
 - [ ] Cron to back up DB periodically
 - [ ] Cron to delete completed tasks
+- [ ] Rewrite manager to ffprobe and make decision on process a single function
 
 
 
