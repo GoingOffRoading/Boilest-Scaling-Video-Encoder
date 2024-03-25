@@ -159,6 +159,7 @@ def ffprober_video_stream(json_configuration):
     del json_configuration['format_extension']
     del json_configuration['format_name']
 
+<<<<<<< Updated upstream
     print ('ffmpeg_command is: ' + ffmpeg_command)
     print ('encode_decision is: ' + encode_decision)
     print ('original_string is: ' + original_string)
@@ -172,6 +173,39 @@ def ffprober_video_stream(json_configuration):
         print(json.dumps(json_configuration, indent=3, sort_keys=True))
         fencoder.delay(json_configuration)
         print ('fencoder called')
+=======
+        logging.debug ('Generating file size')
+        # I started to evaluate getting an actual hash but the functions took too long
+        # Using file size in bytes to valudate works as a tep solution
+        file_hash = get_file_size_bytes(file_located['file_path'])    
+
+        logging.debug ('Incoming FFMpeg command:')
+        logging.debug (ffmpeg_command)
+        ffmpeg_inputs = file_located
+        ffmpeg_inputs.update({'file_hash':file_hash})        
+        ffmpeg_inputs.update({'ffmpeg_command':ffmpeg_command})
+        ffmpeg_inputs.update({'job':'ffprober_av1_check'})
+        ffmpeg_inputs.update({'temp_filepath':ffmpeg_output_file(file_located['file'])})
+        ffmpeg_inputs.update({'original_string':original_string})
+        del ffmpeg_inputs['extension']
+
+        #fencoder.delay(ffmpeg_inputs)
+        #fencoder.apply_async(args=(ffmpeg_inputs, ), priority=celery_priority_value)
+        
+        if ffprobe_results['streams'][0]['codec_name'] == 'h264':
+            fencoder.apply_async(kwargs={'ffmpeg_inputs': ffmpeg_inputs}, priority=7)
+            logging.debug ('celery_priority_value is 4')
+        elif ffprobe_results['streams'][0]['codec_name'] == 'hevc':
+            fencoder.apply_async(kwargs={'ffmpeg_inputs': ffmpeg_inputs}, priority=3)
+            logging.debug ('celery_priority_value is 6')
+        else:
+            fencoder.apply_async(kwargs={'ffmpeg_inputs': ffmpeg_inputs}, priority=5)
+            logging.debug ('celery_priority_value is 5')
+
+
+    elif encode_decision == 'no':
+        logging.debug ('Next task goes here')
+>>>>>>> Stashed changes
     else:
         print('Something went wrong')
 
