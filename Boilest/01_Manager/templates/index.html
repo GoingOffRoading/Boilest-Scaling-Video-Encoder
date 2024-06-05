@@ -1,0 +1,89 @@
+<!-- templates/index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boilest Stats</title>
+    <style>
+        .tile-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+
+        .tile {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 10px;
+            text-align: center;
+            flex: 1; /* Distribute available space equally */
+        }
+    </style>
+</head>
+<body>
+    <h1>Boilest Stats</h1>
+    
+    <form method="post">
+        <button type="submit" name="execute_script">Execute Python Script</button>
+    </form>
+
+    <div class="tile-container">
+        <div class="tile">{{ result_1 }} MB Saved</div>
+        <div class="tile">{{ result_2 }} Files Processed</div>
+        <div class="tile">{{ result_3 }} Days Run</div>
+        <div class="tile">{{ result_4 }} MB saved per file</div>
+    </div>
+
+    <h2>Recent Performance</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>space_saved</th>
+                <th>files_processed</th>
+                <th>data_processed</th>
+                <!-- Add more columns as needed -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in table_data_1 %}
+                <tr>
+                    {% for cell in row %}
+                        <td>{{ cell }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Recent Files</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Unique Identifier</th>
+                <th>Date</th>
+                <th>File Name</th>
+                <th>File Path</th>
+                <th>New File Size</th>
+                <th>New File Size Difference</th>
+                <th>Old File Size</th>
+                <th>FFmpeg Command</th>
+                <th>Encode Outcome</th>
+                <th>Original String</th>
+                <!-- Add more columns as needed -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in table_data_2 %}
+                <tr>
+                    {% for cell in row %}
+                        <td>{{ cell }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
