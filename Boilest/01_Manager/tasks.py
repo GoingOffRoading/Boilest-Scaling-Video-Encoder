@@ -1,95 +1,82 @@
 from celery import Celery
-from datetime import datetime
-import json, os, sqlite3, logging
-from task_shared_services import task_start_time, task_duration_time, check_queue, find_files, celery_url_path, check_queue, ffmpeg_output_file, ffprober_function, get_active_tasks, get_file_size_bytes
+import logging, os, requests
 import celeryconfig
+from shared_services import celery_url_path
+from worker.tasks import locate_files
+
+
 
 app = Celery('tasks', backend = celery_url_path('rpc://'), broker = celery_url_path('amqp://') )
 app.config_from_object(celeryconfig)
+
+
+@app.task(queue='manager')
+def queue_workers_if_queue_empty(arg):
+    try:
+        manager_queue_depth = check_queue('manager') + get_active_tasks('manager')
+        worker_queue_depth = check_queue('worker') + get_active_tasks('worker')
+        queue_depth = worker_queue_depth + manager_queue_depth
+        
+        logging.info(f'Current Worker queue depth is: {queue_depth}')
+        print(f'Current Worker queue depth is: {queue_depth}')
+        
+        if queue_depth == 0:
+            logging.debug('Starting locate_files')
+            locate_files.apply_async(kwargs={'arg':'arg'}, priority=10)
+        elif queue_depth > 0:
+            logging.debug(f'{queue_depth} tasks in queue. No rescan needed at this time.')
+        else:
+            logging.error('Something went wrong checking the Worker Queue')
+    
+    except Exception as e:
+        logging.error(f"Error in queue_workers_if_queue_empty: {e}")
+
 
 @app.on_after_configure.connect
 # Celery's scheduler.  Kicks off queue_workers_if_queue_empty every hour
 # https://docs.celeryq.dev/en/stable/userguide/periodic-tasks.html#entries
 def setup_periodic_tasks(sender, **kwargs):
-    sender.add_periodic_task(3600.0, queue_workers_if_queue_empty.s('hit it'))
+    sender.add_periodic_task(3600.0, queue_workers_if_queue_empty.s('hit it'), name='queue_workers_every_hour')
 
 
-@app.task(queue='manager')
-# Not in use... yet
-def purge_queue(queue_name):
-    with app.connection() as connection:
-        # Create a channel
-        channel = connection.channel()
-        # Purge the specified queue
-        channel.queue_purge(queue=queue_name)
-        logging.debug(f"All tasks in the '{queue_name}' queue have been purged.")
-
-
-@app.task(queue='manager')
-# queue_workers_if_queue_empty stops the rest of the workflow from creaing duplicate tasks (because the tasks the rest of the workflow would create would be duplicates of the tasks already in the queue).
-def queue_workers_if_queue_empty(arg):
-    queue_depth = check_queue('worker') + get_active_tasks('worker') + check_queue('manager') + get_active_tasks('manager')
-    logging.debug ('Current Worker queue depth is: ' + str(queue_depth))
-    if queue_depth == 0:
-        logging.debug ('Starting locate_files')
-        locate_files.delay(arg)
-    elif queue_depth > 0:
-        logging.debug (str(queue_depth) + ' tasks in queue.  No rescan needed at this time.')
-    else:
-        logging.error ('Something went wrong checking the Worker Queue')
-
-@app.task(queue='manager')
-def ffresults(ffresults_input):
-
-    function_start_time = task_start_time('ffresults')
-
-    logging.debug ('Encoding results for: ' + ffresults_input['file'])
-    logging.debug ('From: ' + ffresults_input['root']) 
-
-    recorded_date = datetime.now()
-
-    logging.debug ("File encoding recorded: " + str(recorded_date))
-    unique_identifier = ffresults_input["file"] + str(recorded_date.microsecond)
-    logging.debug ('Primary key saved as: ' + unique_identifier)
-
-    database = r"/Boilest/DB/Boilest.db"
+def get_active_tasks(queue_name)-> int:
     try:
-        conn = sqlite3.connect(database)
-        c = conn.cursor()
-        c.execute(
-            "INSERT INTO ffencode_results"
-            " VALUES (?,?,?,?,?,?,?,?,?,?)",
-            (
-                unique_identifier,
-                recorded_date,
-                ffresults_input["file"], 
-                ffresults_input["file_path"], 
-                ffresults_input["new_file_size"], 
-                ffresults_input["new_file_size_difference"], 
-                ffresults_input["old_file_size"],
-                ffresults_input["ffmpeg_command"],
-                ffresults_input["encode_outcome"],
-                ffresults_input["original_string"]
-            )
-        )
-        conn.commit()
-        
-        c.execute("SELECT ROUND(SUM(new_file_size_difference)) FROM ffencode_results")
-        result = c.fetchone()[0]
-        if result is not None:
-            logging.info(f'Total space saved: {result} MB')
-        else:
-            logging.warning('No records found in ffencode_results table.')
-            
-    except sqlite3.Error as e:
-        logging.error(f"Database error: {e}")
+        with app.connection() as connection:
+            celery_control = app.control
+            active_tasks = celery_control.inspect().active(queue_name)
+
+            if active_tasks is not None and queue_name in active_tasks:
+                task_count = len(active_tasks[queue_name])
+                logging.debug(f'get_active_tasks tasks in-progress for {queue_name} is: {task_count}')
+                return task_count
+            else:
+                # No active tasks in the specified queue
+                logging.debug ('Remaining tasks in progress: 0')
+                return 0
     except Exception as e:
-        logging.error(f"Unexpected error: {e}")
-    finally:
-        conn.close()
+        logging.error(f"Error getting active tasks count: {e}")
+        return -1 # Return -1 to indicate an error
 
 
-    logging.info ('The space delta on ' + ffresults_input["file"] + ' was: ' + str(ffresults_input["new_file_size_difference"]) + ' MB')
-    task_duration_time('ffresults',function_start_time)
+def check_queue(queue_name):
+    try:
+        rabbitmq_host = 'http://' + os.environ.get('rabbitmq_host','192.168.1.110')
+        rabbitmq_port = os.environ.get('rabbitmq_port','32311')
+        user = os.environ.get('user','celery')
+        password = os.environ.get('password','celery')
+        celery_vhost = os.environ.get('celery_vhost','celery')
 
+        url = f"{rabbitmq_host}:{rabbitmq_port}/api/queues/{celery_vhost}/{queue_name}"
+        logging.debug(f'Checking RabbitMQ queue depth for: {queue_name}')
 
+        response = requests.get(url, auth=(user, password))
+        response.raise_for_status()  # Ensure we raise an exception for HTTP errors
+
+        worker_queue = response.json()
+        queue_depth = worker_queue.get("messages_unacknowledged", 0)
+
+        logging.debug (f'check_queue queue depth is: ' + str(queue_depth))
+        return queue_depth
+    except Exception as e:
+        logging.error(f"Error getting active tasks count: {e}")
+        return -1 # Return -1 to indicate an error
