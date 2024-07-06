@@ -5,7 +5,6 @@ from shared_services import celery_url_path
 from worker.tasks import locate_files
 
 
-
 app = Celery('tasks', backend = celery_url_path('rpc://'), broker = celery_url_path('amqp://') )
 app.config_from_object(celeryconfig)
 
