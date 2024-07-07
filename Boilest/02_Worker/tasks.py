@@ -227,3 +227,136 @@ def process_attachment_stream(codec_name, index):
     global process_file, ffmpeg_command
     #print(f"Attachment stream: codec_name={codec_name}")
     ffmpeg_command = ffmpeg_command + ' -map 0:' + str(index) + ' -c:t copy'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import subprocess
+import json
+
+# Global variables to track processing state and store strings
+process_file = False
+original_string = "stream"
+ffmpeg_command = " "
+
+def check_media_file(file_path):
+    # Initial ffmpeg check
+    if initial_ffmpeg_check(file_path) == "Success":
+        result = full_workflow(file_path)
+
+
+def initial_ffmpeg_check(file_path):
+    ffmpeg_command = f'ffmpeg -v error -i "{file_path}" -f null -'
+    try:
+        result = subprocess.run(ffmpeg_command, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        if result.stdout or result.stderr:
+            #print (file_path + " file is invalid")          
+            return "Failure"
+        else:
+            #print (file_path + " file is valid") 
+            return "Success"
+    except subprocess.CalledProcessError as e:
+        #print(result.stdout)
+        return "Error"
+
+
+def full_workflow(file_path):
+    ffprobe_command = f'ffprobe -loglevel quiet -show_entries format:stream=index,stream,codec_type,codec_name,channel_layout,format=nb_streams -of json "{file_path}"'
+    
+    try:
+        result = subprocess.run(ffprobe_command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stream_info = json.loads(result.stdout)
+        streams_count = stream_info['format']['nb_streams']
+        for i in range(streams_count):
+            process_stream(stream_info['streams'][i], i)
+
+        ffmpeg_string = 'ffmpeg -hide_banner -loglevel 16 -stats -stats_period 10 -i "' + file_path + '"' + ffmpeg_command + ' "' + file_path + '"'
+        print ("original_string is: " + original_string)
+        print ("ffmpeg_command is: " + ffmpeg_string)
+        print ("process_file is:" + str(process_file))
+    except subprocess.CalledProcessError as e:
+        print(result.stdout)
+
+def process_stream(stream, index):
+    global original_string
+    codec_type = stream.get('codec_type')
+    #print ("codec_type is: " + codec_type)
+    codec_name = stream.get('codec_name')
+    channel_layout = stream.get('channel_layout')
+
+    original_string = original_string + " 0:" + str(index) + " " + codec_type + ":" + codec_name
+    
+    if codec_type == 'video':
+        process_video_stream(codec_name, index)
+    elif codec_type == 'audio':
+        process_audio_stream(codec_name, channel_layout, index)
+    elif codec_type == 'subtitle':
+        process_subtitle_stream(codec_name, index)
+    elif codec_type == 'attachment':
+        process_attachment_stream(codec_name, index)
+    else:
+        print(f"Other stream type: codec_name={codec_name}, codec_type={codec_type}")
+
+def process_video_stream(codec_name, index):
+    global process_file, ffmpeg_command
+    #print ("codec_name is: " + codec_name)
+    if codec_name == 'av1':
+        #print(f"Video stream {index}: codec_name=av1")
+        ffmpeg_command = ffmpeg_command + ' -map 0:' + str(index) + ' -c:v stuff'
+        #print (process_file)
+        #print (ffmpeg_command)
+    else:
+        #print(f"Video stream {index}: codec_name={codec_name}")
+        ffmpeg_command = ffmpeg_command + ' -map 0:' + str(index) + ' -c:v copy'
+        process_file = True
+        #print (process_file)
+        #print (ffmpeg_command)
+
+def process_audio_stream(codec_name, channel_layout, index):
+    global process_file, ffmpeg_command
+    #print(f"Audio stream: codec_name={codec_name}, channel_layout={channel_layout}")
+    ffmpeg_command = ffmpeg_command + ' -map 0:' + str(index) + ' -c:a copy'
+    
+def process_subtitle_stream(codec_name, index):
+    global process_file, ffmpeg_command
+    #print(f"Subtitle stream: codec_name={codec_name}")
+    ffmpeg_command = ffmpeg_command + ' -map 0:' + str(index) + ' -c:s copy'
+
+def process_attachment_stream(codec_name, index):
+    global process_file, ffmpeg_command
+    #print(f"Attachment stream: codec_name={codec_name}")
+    ffmpeg_command = ffmpeg_command + ' -map 0:' + str(index) + ' -c:t copy'
