@@ -22,7 +22,7 @@ def locate_files(arg):
             file_located_data = json.loads(file_located)
             logging.debug(json.dumps(file_located_data, indent=3, sort_keys=True))
             print(json.dumps(file_located_data, indent=3, sort_keys=True))
-            ffprober.delay(file_located_data)  # Uncomment this line to send the task to ffprober
+            requires_encoding.delay(file_located_data)  # Uncomment this line to send the task to ffprober
         except json.JSONDecodeError as e:
             logging.error(f'Failed to decode JSON: {e}')
             continue
@@ -45,318 +45,121 @@ def find_files(directories, extensions):
                         yield json.dumps(result_dict)
 
 @app.task(queue='worker')
-def ffprober(file_located_data):
+def check_video_stream(encoding_decision, i, stream_info, ffmpeg_command):
+    # Checks the video stream from check_codecs to determine if the stream needs encoding
+    codec_name = stream_info['streams'][i]['codec_name'] 
+    desired_video_codec = 'av1'
+    print('Steam ' + str(i) + ' codec is: ' + codec_name)
+    if codec_name == desired_video_codec:
+        ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:v copy'
+    elif codec_name == 'mjpeg':
+        ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:v copy'
+    elif codec_name != desired_video_codec: 
+        encoding_decision = True
+        svt_av1_string = "libsvtav1 -crf 25 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0:enable-qm=1:qm-min=0:qm-max=15"
+        ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:v ' + svt_av1_string
+    else:
+        print ('ignoring for now')
+    return encoding_decision, ffmpeg_command
 
-    encode_string = str()
-    encode_decision = 'no'
-    original_string = str()
+def check_audio_stream(encoding_decision, i, stream_info, ffmpeg_command):
+    # Checks the audio stream from check_codecs to determine if the stream needs encoding
+    codec_name = stream_info['streams'][i]['codec_name'] 
+    # This will be populated at a later date
+    #desired_audio_codec = 'aac'
+    #if codec_name != desired_video_codec:
+    #    encoding_decision = True
+    print('Steam ' + str(i) + ' codec is: ' + codec_name)
+    ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:a copy'
+    return encoding_decision, ffmpeg_command
+    
+def check_subtitle_stream(encoding_decision, i, stream_info, ffmpeg_command):
+    # Checks the subtitle stream from check_codecs to determine if the stream needs encoding
+    codec_name = stream_info['streams'][i]['codec_name'] 
+    # This will be populated at a later date
+    #desired_subtitle_codec = 'srt'
+    #if codec_name != desired_subtitle_codec:
+    #    encoding_decision = True
+    print('Steam ' + str(i) + ' codec is: ' + codec_name)
+    ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:s copy'
+    return encoding_decision, ffmpeg_command
 
+def check_attachmeent_stream(encoding_decision, i, stream_info, ffmpeg_command):
+    # Checks the attachment stream from check_codecs to determine if the stream needs encoding
+    codec_name = stream_info['streams'][i]['codec_name'] 
+    # This will be populated at a later date
+    #desired_attachment_codec = '???'
+    #if codec_name != desired_attachment_codec:
+    #    encoding_decision = True
+    print('Steam ' + str(i) + ' codec is: ' + codec_name)
+    ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:t copy'
+    return encoding_decision, ffmpeg_command
 
-
-
-
-
-
-    def processfile(*args, **kwargs):
-        if encode_decision == 'yes':
-            fencoder.apply_async(kwargs={'ffmpeg_inputs': ffmpeg_inputs}, priority=5)
-        else:
-            print('No need to encode')
-
-
-def encode_decision():
-
-
-
-
-
-
-
-
-
-
-def ffprober_function(file_path):
-    try:
-             = "ffprobe -loglevel quiet -show_entries format:stream=index,stream,codec_type,codec_name,channel_layout -of json"
-        file_path = file_path["file_path"]
-        full_command = f'{ffprobe_string} "{file_path}"'
-        result = subprocess.run(full_command, capture_output=True, text=True, shell=True, check=True)
-        return json.loads(result.stdout)
-    except subprocess.CalledProcessError as e:
-        return {"error": f"Error running ffprobe: {e}"}
-
-
-def validate_video(file_path):
-    try:
-        command = 'ffmpeg -v error -i "' + file_path + '" -f null -'
-        logging.debug (command)
-        # Run the shell command and capture both stdout and stderr
-        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-
-        # Check if there is any output (stdout or stderr)
-        if result.stdout or result.stderr:
-            return "Failure"
-        else:
-            return "Success"
-    except Exception as e:
-        return f"Error: {e}"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+def check_codecs(stream_info, encoding_decision):
+    # Loops through the streams in stream_info from requires_encoding, then
+    # calls functions to determine if the steam needs encoding based on stream type conditions 
+    streams_count = stream_info['format']['nb_streams']
+    ffmpeg_command = str()
+    print ('There are : ' + str(streams_count) + ' streams')
+    for i in range (0,streams_count):
+        codec_type = stream_info['streams'][i]['codec_type'] 
+        if codec_type == 'video':
+            encoding_decision, ffmpeg_command = check_video_stream(encoding_decision, i, stream_info, ffmpeg_command)
+        elif codec_type == 'audio':
+            encoding_decision, ffmpeg_command = check_audio_stream(encoding_decision, i, stream_info, ffmpeg_command)
+        elif codec_type == 'subtitle':
+            encoding_decision, ffmpeg_command = check_subtitle_stream(encoding_decision, i, stream_info, ffmpeg_command)
+        elif codec_type == 'attachment':
+            encoding_decision, ffmpeg_command = check_attachmeent_stream(encoding_decision, i, stream_info, ffmpeg_command)        
+    return encoding_decision, ffmpeg_command
 
 
+def check_container_extension(file, encoding_decision):
+    base, ext = os.path.splitext(file)
+    if ext.lower() != '.mkv':
+        # Change the extension to .mkv
+        file = base + '.mkv'
+        encoding_decision = True
+    ffmepg_output_file = '/boil_hold/' + file
+    return encoding_decision, ffmepg_output_file
 
+def check_container_type(stream_info, encoding_decision, file):
+    # Desired container is MKV so we check for that, and pass True for all other container types
+    format_name = stream_info['format'].get('format_name')
+    print ('format is: ' + format_name)
+    if format_name != 'matroska,webm':
+        encoding_decision = True
+    encoding_decision, ffmepg_output_file = check_container_extension(file, encoding_decision)
+    print ('>>>check_container_type<<<  Container is: ' + format_name + ' so, encoding_decision is: ' + str(encoding_decision))
+    return encoding_decision, ffmepg_output_file
+    
 
-
-
-
-
-
-
-
-
-
-
-@app.task
-import subprocess
-import json
-
-# Global variables to track processing state and store strings
-process_file = False
-original_string = str()
-ffmpeg_command = str()
-
-def check_media_file(file_path):
-    global process_file, original_string, ffmpeg_string
-    process_file = False  # Initialize the flag to False
-    original_string = "original"  # Set initial value for original_string
-    ffmpeg_command = "ffmpeg"  # Set initial value for ffmpeg_string
-
-    # Initial ffmpeg check
-    if initial_ffmpeg_check(file_path) == "Success":
-        result = full_workflow(file_path)
-
-
-def initial_ffmpeg_check(file_path):
-    ffmpeg_command = f'ffmpeg -v error -i "{file_path}" -f null -'
-    try:
-        result = subprocess.run(ffmpeg_command, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-        if result.stdout or result.stderr:
-            print (file_path + " file is invalid")          
-            return "Failure"
-        else:
-            print (file_path + " file is valid") 
-            return "Success"
-    except subprocess.CalledProcessError as e:
-        print(result.stdout)
-        return "Error"
-
-
-def full_workflow(file_path):
+def ffprobe_function(file_path):
+    # Subprocess call to ffprobe to retrieve video info in JSON format
     ffprobe_command = f'ffprobe -loglevel quiet -show_entries format:stream=index,stream,codec_type,codec_name,channel_layout,format=nb_streams -of json "{file_path}"'
-    try:
-        result = subprocess.run(ffprobe_command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stream_info = json.loads(result.stdout)
-        streams_count = stream_info['format']['nb_streams']
-        for i in range(streams_count):
-            process_stream(stream_info['streams'][i], i)
-        print ("original_string is: " + original_string)
-        print ("ffmpeg_command is: " + ffmpeg_command)
-        print ("process_file is:" + str(process_file))
-    except subprocess.CalledProcessError as e:
-        print(result.stdout)
+    result = subprocess.run(ffprobe_command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stream_info = json.loads(result.stdout)
+    return stream_info
 
-def process_stream(stream, index):
-    global original_string
-    
-    codec_type = stream.get('codec_type')
-    print ("codec_type is: " + codec_type)
-    codec_name = stream.get('codec_name')
-    channel_layout = stream.get('channel_layout')
+def build_ffmpeg_command(file_path, ffmpeg_command, ffmepg_output_file_name):
+    ffmpeg_settings = 'ffmpeg -hide_banner -loglevel 16 -stats -stats_period 10'
+    ffmpeg_command = ffmpeg_settings + ' -i ' + file_path + ' ' + ffmpeg_command + ' ' + ffmepg_output_file_name
+    return ffmpeg_command
 
-    original_string = original_string + " 0:" + str(index) + " " + codec_type + ":" + codec_name
+def requires_encoding(file_located_data):
+    stream_info = ffprobe_function(file_located_data['file_path'])
+    encoding_decision = False
     
-    if codec_type == 'video':
-        process_video_stream(codec_name, index)
-    elif codec_type == 'audio':
-        process_audio_stream(codec_name, channel_layout, index)
-    elif codec_type == 'subtitle':
-        process_subtitle_stream(codec_name, index)
-    elif codec_type == 'attachment':
-        process_attachment_stream(codec_name, index)
+    encoding_decision, ffmepg_output_file_name = check_container_type(stream_info, encoding_decision, file_located_data['file'])
+    encoding_decision, ffmpeg_command = check_codecs(stream_info, encoding_decision)
+    if encoding_decision == True:
+        print ('file needs encoding')
+        ffmpeg_command = build_ffmpeg_command(file_located_data['file_path'], ffmpeg_command, ffmepg_output_file_name)
+
+        
     else:
-        print(f"Other stream type: codec_name={codec_name}, codec_type={codec_type}")
+        print ('file does not need encoding')
+    print (encoding_decision)
+    print (ffmpeg_command)
 
-def process_video_stream(codec_name, index):
-    global process_file, ffmpeg_command
-    print ("codec_name is: " + codec_name)
-    if codec_name == 'av1':
-        #print(f"Video stream {index}: codec_name=av1")
-        ffmpeg_command = ffmpeg_command + ' -map 0:' + str(index) + ' -c:v stuff'
-        print (process_file)
-        print (ffmpeg_command)
-    else:
-        #print(f"Video stream {index}: codec_name={codec_name}")
-        ffmpeg_command = ffmpeg_command + ' -map 0:' + str(index) + ' -c:a copy'
-        process_file = True
-        print (process_file)
-        print (ffmpeg_command)
-
-def process_audio_stream(codec_name, channel_layout, index):
-    global process_file, ffmpeg_command
-    #print(f"Audio stream: codec_name={codec_name}, channel_layout={channel_layout}")
-    ffmpeg_command = ffmpeg_command + ' -map 0:' + str(index) + ' -c:a copy'
-    
-def process_subtitle_stream(codec_name, index):
-    global process_file, ffmpeg_command
-    #print(f"Subtitle stream: codec_name={codec_name}")
-    ffmpeg_command = ffmpeg_command + ' -map 0:' + str(index) + ' -c:s copy'
-
-def process_attachment_stream(codec_name, index):
-    global process_file, ffmpeg_command
-    #print(f"Attachment stream: codec_name={codec_name}")
-    ffmpeg_command = ffmpeg_command + ' -map 0:' + str(index) + ' -c:t copy'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-import subprocess
-import json
-
-# Global variables to track processing state and store strings
-process_file = False
-original_string = "stream"
-ffmpeg_command = " "
-
-def check_media_file(file_path):
-    # Initial ffmpeg check
-    if initial_ffmpeg_check(file_path) == "Success":
-        result = full_workflow(file_path)
-
-
-def initial_ffmpeg_check(file_path):
-    ffmpeg_command = f'ffmpeg -v error -i "{file_path}" -f null -'
-    try:
-        result = subprocess.run(ffmpeg_command, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-        if result.stdout or result.stderr:
-            #print (file_path + " file is invalid")          
-            return "Failure"
-        else:
-            #print (file_path + " file is valid") 
-            return "Success"
-    except subprocess.CalledProcessError as e:
-        #print(result.stdout)
-        return "Error"
-
-
-def full_workflow(file_path):
-    ffprobe_command = f'ffprobe -loglevel quiet -show_entries format:stream=index,stream,codec_type,codec_name,channel_layout,format=nb_streams -of json "{file_path}"'
-    
-    try:
-        result = subprocess.run(ffprobe_command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stream_info = json.loads(result.stdout)
-        streams_count = stream_info['format']['nb_streams']
-        for i in range(streams_count):
-            process_stream(stream_info['streams'][i], i)
-
-        ffmpeg_string = 'ffmpeg -hide_banner -loglevel 16 -stats -stats_period 10 -i "' + file_path + '"' + ffmpeg_command + ' "' + file_path + '"'
-        print ("original_string is: " + original_string)
-        print ("ffmpeg_command is: " + ffmpeg_string)
-        print ("process_file is:" + str(process_file))
-    except subprocess.CalledProcessError as e:
-        print(result.stdout)
-
-def process_stream(stream, index):
-    global original_string
-    codec_type = stream.get('codec_type')
-    #print ("codec_type is: " + codec_type)
-    codec_name = stream.get('codec_name')
-    channel_layout = stream.get('channel_layout')
-
-    original_string = original_string + " 0:" + str(index) + " " + codec_type + ":" + codec_name
-    
-    if codec_type == 'video':
-        process_video_stream(codec_name, index)
-    elif codec_type == 'audio':
-        process_audio_stream(codec_name, channel_layout, index)
-    elif codec_type == 'subtitle':
-        process_subtitle_stream(codec_name, index)
-    elif codec_type == 'attachment':
-        process_attachment_stream(codec_name, index)
-    else:
-        print(f"Other stream type: codec_name={codec_name}, codec_type={codec_type}")
-
-def process_video_stream(codec_name, index):
-    global process_file, ffmpeg_command
-    #print ("codec_name is: " + codec_name)
-    if codec_name == 'av1':
-        #print(f"Video stream {index}: codec_name=av1")
-        ffmpeg_command = ffmpeg_command + ' -map 0:' + str(index) + ' -c:v stuff'
-        #print (process_file)
-        #print (ffmpeg_command)
-    else:
-        #print(f"Video stream {index}: codec_name={codec_name}")
-        ffmpeg_command = ffmpeg_command + ' -map 0:' + str(index) + ' -c:v copy'
-        process_file = True
-        #print (process_file)
-        #print (ffmpeg_command)
-
-def process_audio_stream(codec_name, channel_layout, index):
-    global process_file, ffmpeg_command
-    #print(f"Audio stream: codec_name={codec_name}, channel_layout={channel_layout}")
-    ffmpeg_command = ffmpeg_command + ' -map 0:' + str(index) + ' -c:a copy'
-    
-def process_subtitle_stream(codec_name, index):
-    global process_file, ffmpeg_command
-    #print(f"Subtitle stream: codec_name={codec_name}")
-    ffmpeg_command = ffmpeg_command + ' -map 0:' + str(index) + ' -c:s copy'
-
-def process_attachment_stream(codec_name, index):
-    global process_file, ffmpeg_command
-    #print(f"Attachment stream: codec_name={codec_name}")
-    ffmpeg_command = ffmpeg_command + ' -map 0:' + str(index) + ' -c:t copy'
+ 
