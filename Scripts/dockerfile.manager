@@ -6,8 +6,9 @@ RUN apk update && \
     apk add --no-cache \
         build-base \
         linux-headers \
-        supervisor && \
-    pip install --no-cache-dir celery flower requests && \
+        supervisor \
+        ffmpeg && \
+    pip install --no-cache-dir celery requests && \
     apk upgrade
 
 # Create a non-root user and group
@@ -18,25 +19,20 @@ RUN addgroup -g $GID appgroup && \
 
 # Create application directory and set ownership
 WORKDIR /app
-COPY 01_Manager/ /app
-COPY Config /app
+COPY . /app
 RUN chown -R appuser:appgroup /app
 
-# Create /worker directory and set ownership
-RUN mkdir -p /app/worker && \
-    chown -R appuser:appgroup /app/worker
-
-# Add worker tasks to worker
-COPY 02_Worker/tasks.py /app/workertasks.py
-RUN chown appuser:appgroup /app/workertasks.py
-
 # Add supervisord configuration file
-COPY 01_Manager/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY Manager/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 RUN chown appuser:appgroup /etc/supervisor/conf.d/supervisord.conf
 
 # Create log directory and set ownership
 RUN mkdir -p /app/logs && \
     chown -R appuser:appgroup /app/logs
+
+# Create additional directories without setting ownership
+RUN mkdir -p /tv /anime /moviles
+RUN mkdir -p /processed
 
 # Environment variables
 ENV TZ=US/Pacific
@@ -66,5 +62,3 @@ USER appuser
 
 # Start supervisord
 CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
-
-

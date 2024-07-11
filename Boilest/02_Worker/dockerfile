@@ -27,6 +27,10 @@ RUN chown -R appuser:appgroup /app
 COPY 02_Worker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 RUN chown appuser:appgroup /etc/supervisor/conf.d/supervisord.conf
 
+# Add manager tasks to worker
+COPY 01_Manager/tasks.py /app/managertasks.py
+RUN chown appuser:appgroup /app/managertasks.py
+
 # Create log directory and set ownership
 RUN mkdir -p /app/logs && \
     chown -R appuser:appgroup /app/logs

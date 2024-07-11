@@ -16,12 +16,12 @@ worker_exchange = Exchange('worker_exchange', type='direct')
 
 # Define queues
 task_queues = (
-    Queue('manager', manager_exchange, routing_key='manager_routing_key', queue_arguments={'x-max-priority': 10}),
-    Queue('worker', worker_exchange, routing_key='worker_routing_key', queue_arguments={'x-max-priority': 10}),
+    Queue('Manager', manager_exchange, routing_key='manager_routing_key', queue_arguments={'x-max-priority': 10}),
+    Queue('Worker', worker_exchange, routing_key='worker_routing_key', queue_arguments={'x-max-priority': 10}),
 )
 
 # Default queue settings
-task_default_queue = 'worker'
+task_default_queue = 'Worker'
 task_default_exchange = 'worker_exchange'
 task_default_routing_key = 'worker_routing_key'
 task_default_priority = 5
@@ -38,8 +38,8 @@ task_track_started = True
 worker_pool_restarts = True
 
 # Update task routes
-task_routes = {
-    'tasks.queue_workers_if_queue_empty': {'queue': 'manager'},
-    'tasks.locate_files': {'queue': 'worker'},
-    'tasks.requires_encoding': {'queue': 'worker'}
-}
+#task_routes = {
+#    'queue_workers_if_queue_empty': {'queue': 'Manager'},
+#    'locate_files': {'queue': 'Worker'},
+#    'requires_encoding': {'queue': 'Worker'}
+#}

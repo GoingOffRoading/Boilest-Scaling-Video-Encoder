@@ -2,7 +2,6 @@ from celery import Celery
 import json, os, logging, subprocess
 import celeryconfig
 from shared_services import celery_url_path
-from manager.tasks import queue_workers_if_queue_empty
 
 
 app = Celery('worker', backend = celery_url_path('rpc://'), broker = celery_url_path('amqp://') )
