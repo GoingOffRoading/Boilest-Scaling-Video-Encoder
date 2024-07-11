@@ -28,7 +28,7 @@ def locate_files(arg):
             print(json.dumps(file_located_data, indent=3, sort_keys=True))
             # >>>>>>>>>>><<<<<<<<<<<<<<<<
             # >>>>>>>>>>><<<<<<<<<<<<<<<<
-            app.send_task('tasks.requires_encoding', kwarg = {'file_located_data':file_located_data}, priority=2, queue='worker') 
+            requires_encoding.apply_async(kwargs={'file_located_data': file_located_data}, priority=2)
             # >>>>>>>>>>><<<<<<<<<<<<<<<<
             # >>>>>>>>>>><<<<<<<<<<<<<<<<
         except json.JSONDecodeError as e:

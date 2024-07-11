@@ -23,7 +23,7 @@ def queue_workers_if_queue_empty(arg):
             logging.debug('Starting locate_files')
             # >>>>>>>>>>><<<<<<<<<<<<<<<<
             # >>>>>>>>>>><<<<<<<<<<<<<<<<
-            app.send_task('locate_files', kwargs = {'arg':arg}, priority=1, queue='Worker') 
+            locate_files.apply_async(kwargs={'arg': arg}, priority=1)
             # >>>>>>>>>>><<<<<<<<<<<<<<<<
             # >>>>>>>>>>><<<<<<<<<<<<<<<<
         elif queue_depth > 0:

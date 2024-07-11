@@ -16,12 +16,12 @@ worker_exchange = Exchange('worker_exchange', type='direct')
 
 # Define queues
 task_queues = (
-    Queue('Manager', manager_exchange, routing_key='manager_routing_key', queue_arguments={'x-max-priority': 10}),
-    Queue('Worker', worker_exchange, routing_key='worker_routing_key', queue_arguments={'x-max-priority': 10}),
+    Queue('manager', manager_exchange, routing_key='manager_routing_key', queue_arguments={'x-max-priority': 10}),
+    Queue('worker', worker_exchange, routing_key='worker_routing_key', queue_arguments={'x-max-priority': 10}),
 )
 
 # Default queue settings
-task_default_queue = 'Worker'
+task_default_queue = 'worker'
 task_default_exchange = 'worker_exchange'
 task_default_routing_key = 'worker_routing_key'
 task_default_priority = 5
