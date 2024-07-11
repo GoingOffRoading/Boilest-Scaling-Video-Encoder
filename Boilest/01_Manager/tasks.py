@@ -2,12 +2,13 @@ from celery import Celery
 import logging, os, requests
 import celeryconfig
 from shared_services import celery_url_path
-from worker.tasks import locate_files
+#from worker.tasks import locate_files
 
 
-app = Celery('tasks', backend = celery_url_path('rpc://'), broker = celery_url_path('amqp://') )
+app = Celery('manager', backend = celery_url_path('rpc://'), broker = celery_url_path('amqp://') )
 app.config_from_object(celeryconfig)
 
+app.autodiscover_tasks(['manager.tasks'])
 
 @app.task(queue='manager')
 def queue_workers_if_queue_empty(arg):
@@ -21,7 +22,7 @@ def queue_workers_if_queue_empty(arg):
         
         if queue_depth == 0:
             logging.debug('Starting locate_files')
-            locate_files.apply_async(kwargs={'arg':'arg'}, priority=10)
+            app.send_task('worker.app.locate_files', kwarg = {'arg':arg}, priority=1) 
         elif queue_depth > 0:
             logging.debug(f'{queue_depth} tasks in queue. No rescan needed at this time.')
         else:

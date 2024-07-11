@@ -36,3 +36,10 @@ worker_send_task_events = True
 task_send_sent_event = True
 task_track_started = True
 worker_pool_restarts = True
+
+# Update task routes
+task_routes = {
+    'worker.locate_files': {'queue': 'worker', 'routing_key': 'worker_routing_key'},
+    'worker.requires_encoding': {'queue': 'worker', 'routing_key': 'worker_routing_key'},
+    'worker.locate_files': {'queue': 'worker', 'routing_key': 'worker_routing_key'},
+}
