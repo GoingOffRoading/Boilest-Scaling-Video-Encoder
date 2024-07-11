@@ -113,7 +113,6 @@ def check_codecs(stream_info, encoding_decision):
             encoding_decision, ffmpeg_command = check_attachmeent_stream(encoding_decision, i, stream_info, ffmpeg_command)        
     return encoding_decision, ffmpeg_command
 
-
 def check_container_extension(file, encoding_decision):
     base, ext = os.path.splitext(file)
     if ext.lower() != '.mkv':
@@ -133,7 +132,6 @@ def check_container_type(stream_info, encoding_decision, file):
     print ('>>>check_container_type<<<  Container is: ' + format_name + ' so, encoding_decision is: ' + str(encoding_decision))
     return encoding_decision, ffmepg_output_file
     
-
 def ffprobe_function(file_path):
     # Subprocess call to ffprobe to retrieve video info in JSON format
     ffprobe_command = f'ffprobe -loglevel quiet -show_entries format:stream=index,stream,codec_type,codec_name,channel_layout,format=nb_streams -of json "{file_path}"'
@@ -156,7 +154,7 @@ def requires_encoding(file_located_data):
         print ('file needs encoding')
         ffmpeg_command = build_ffmpeg_command(file_located_data['file_path'], ffmpeg_command, ffmepg_output_file_name)
 
-        
+
     else:
         print ('file does not need encoding')
     print (encoding_decision)
