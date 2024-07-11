@@ -39,7 +39,7 @@ worker_pool_restarts = True
 
 # Update task routes
 task_routes = {
-    'worker.locate_files': {'queue': 'worker', 'routing_key': 'worker_routing_key'},
-    'worker.requires_encoding': {'queue': 'worker', 'routing_key': 'worker_routing_key'},
-    'worker.locate_files': {'queue': 'worker', 'routing_key': 'worker_routing_key'},
+    'tasks.queue_workers_if_queue_empty': {'queue': 'manager'},
+    'tasks.locate_files': {'queue': 'worker'},
+    'tasks.requires_encoding': {'queue': 'worker'}
 }

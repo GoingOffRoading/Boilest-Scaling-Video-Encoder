@@ -8,7 +8,8 @@ from shared_services import celery_url_path
 app = Celery('manager', backend = celery_url_path('rpc://'), broker = celery_url_path('amqp://') )
 app.config_from_object(celeryconfig)
 
-app.autodiscover_tasks(['manager.tasks'])
+
+
 
 @app.task(queue='manager')
 def queue_workers_if_queue_empty(arg):
@@ -22,7 +23,11 @@ def queue_workers_if_queue_empty(arg):
         
         if queue_depth == 0:
             logging.debug('Starting locate_files')
-            app.send_task('worker.app.locate_files', kwarg = {'arg':arg}, priority=1) 
+            # >>>>>>>>>>><<<<<<<<<<<<<<<<
+            # >>>>>>>>>>><<<<<<<<<<<<<<<<
+            app.send_task('tasks.locate_files', kwargs = {'arg':arg}, priority=1, queue='worker') 
+            # >>>>>>>>>>><<<<<<<<<<<<<<<<
+            # >>>>>>>>>>><<<<<<<<<<<<<<<<
         elif queue_depth > 0:
             logging.debug(f'{queue_depth} tasks in queue. No rescan needed at this time.')
         else:

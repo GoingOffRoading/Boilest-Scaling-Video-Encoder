@@ -7,7 +7,8 @@ from shared_services import celery_url_path
 app = Celery('worker', backend = celery_url_path('rpc://'), broker = celery_url_path('amqp://') )
 app.config_from_object(celeryconfig)
 
-app.autodiscover_tasks(['worker.tasks'])
+
+
 
 
 # >>>>>>>>>>>>>>>>>>>>>> <<<<<<<<<<<<<<<<<<<<<< 
@@ -28,7 +29,11 @@ def locate_files(arg):
             file_located_data = json.loads(file_located)
             logging.debug(json.dumps(file_located_data, indent=3, sort_keys=True))
             print(json.dumps(file_located_data, indent=3, sort_keys=True))
-            app.send_task('worker.app.requires_encoding', kwarg = {'file_located_data':file_located_data}, priority=2) 
+            # >>>>>>>>>>><<<<<<<<<<<<<<<<
+            # >>>>>>>>>>><<<<<<<<<<<<<<<<
+            app.send_task('tasks.requires_encoding', kwarg = {'file_located_data':file_located_data}, priority=2, queue='worker') 
+            # >>>>>>>>>>><<<<<<<<<<<<<<<<
+            # >>>>>>>>>>><<<<<<<<<<<<<<<<
         except json.JSONDecodeError as e:
             logging.error(f'Failed to decode JSON: {e}')
             continue
