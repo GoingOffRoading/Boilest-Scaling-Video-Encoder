@@ -11,12 +11,10 @@ result_backend = celery_url_path('rpc://')
 from kombu import Exchange, Queue
 
 # Define exchanges
-manager_exchange = Exchange('manager_exchange', type='direct')
 worker_exchange = Exchange('worker_exchange', type='direct')
 
 # Define queues
 task_queues = (
-    Queue('manager', manager_exchange, routing_key='manager_routing_key', queue_arguments={'x-max-priority': 10}),
     Queue('worker', worker_exchange, routing_key='worker_routing_key', queue_arguments={'x-max-priority': 10}),
 )
 
