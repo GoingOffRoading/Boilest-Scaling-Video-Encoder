@@ -17,22 +17,21 @@ ARG GID=1000
 RUN addgroup -g $GID appgroup && \
     adduser -D -u $UID -G appgroup appuser
 
+# Create additional directories without setting ownership
+RUN mkdir -p /tv /anime /moviles /boil_hold
+
 # Create application directory and set ownership
 WORKDIR /app
 COPY . /app
-RUN chown -R appuser:appgroup /app
+RUN chown -R appuser:appgroup /app /boil_hold
 
 # Add supervisord configuration file
-COPY Manager/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 RUN chown appuser:appgroup /etc/supervisor/conf.d/supervisord.conf
 
 # Create log directory and set ownership
 RUN mkdir -p /app/logs && \
     chown -R appuser:appgroup /app/logs
-
-# Create additional directories without setting ownership
-RUN mkdir -p /tv /anime /moviles
-RUN mkdir -p /processed
 
 # Environment variables
 ENV TZ=US/Pacific

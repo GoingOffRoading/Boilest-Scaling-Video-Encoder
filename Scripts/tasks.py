@@ -1,15 +1,12 @@
 from celery import Celery
-import json, os, logging, subprocess
+import json, os, logging, subprocess, requests
 import celeryconfig
-from shared_services import celery_url_path
 
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  
 # >>>>>>>>>>>>>>> Celery Configurations >>>>>>>>>>>>>>>
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  
 
-app = Celery('worker', backend = celery_url_path('rpc://'), broker = celery_url_path('amqp://') )
-app.config_from_object(celeryconfig)
 
 def celery_url_path(thing):
     # https://docs.celeryq.dev/en/stable/getting-started/first-steps-with-celery.html#keeping-results
@@ -22,23 +19,24 @@ def celery_url_path(thing):
     logging.debug('celery_url_path is: ' + thing)
     return thing
 
+app = Celery('worker', backend = celery_url_path('rpc://'), broker = celery_url_path('amqp://') )
+app.config_from_object(celeryconfig)
+
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 # >>>>>>>>>>>>>>> Check queue depth >>>>>>>>>>>>>>>
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-@app.task(queue='worker', name='queue_workers_if_queue_empty')
+@app.task
 def queue_workers_if_queue_empty(arg):
     try:
-        queue_depth = check_queue('worker')
-        
-        logging.info(f'Current Worker queue depth is: {queue_depth}')
+        queue_depth = check_queue('Worker')        
         print(f'Current Worker queue depth is: {queue_depth}')
-        
+        print(f'Current Worker queue depth is: {queue_depth}')        
         if queue_depth == 0:
-            logging.debug('Starting locate_files')
+            print('Starting locate_files')
             # >>>>>>>>>>><<<<<<<<<<<<<<<<
             # >>>>>>>>>>><<<<<<<<<<<<<<<<
-            locate_files.apply_async(kwargs={'arg': arg}, priority=1)
+            locate_files.apply_async(kwargs={'arg': arg}, priority=2)
             # >>>>>>>>>>><<<<<<<<<<<<<<<<
             # >>>>>>>>>>><<<<<<<<<<<<<<<<
         elif queue_depth > 0:
@@ -78,7 +76,7 @@ def check_queue(queue_name):
 # This section starts the discovery of the files by searching directories
 # >>>>>>>>>>>>>>>>>>>>>> <<<<<<<<<<<<<<<<<<<<<<
 
-@app.task(queue='Worker', name='locate_files')
+@app.task
 def locate_files(arg):
     directories = ['/anime', '/tv', '/movies']
     extensions = ['.mp4', '.mkv', '.avi']
@@ -94,7 +92,7 @@ def locate_files(arg):
             print(json.dumps(file_located_data, indent=3, sort_keys=True))
             # >>>>>>>>>>><<<<<<<<<<<<<<<<
             # >>>>>>>>>>><<<<<<<<<<<<<<<<
-            requires_encoding.apply_async(kwargs={'file_located_data': file_located_data}, priority=2)
+            requires_encoding.apply_async(kwargs={'file_located_data': file_located_data}, priority=3)
             # >>>>>>>>>>><<<<<<<<<<<<<<<<
             # >>>>>>>>>>><<<<<<<<<<<<<<<<
         except json.JSONDecodeError as e:
@@ -122,7 +120,7 @@ def find_files(directories, extensions):
 # This section starts the discovery of the file meta data, and determing what processing may need to occure
 # >>>>>>>>>>>>>>>>>>>>>> <<<<<<<<<<<<<<<<<<<<<<
 
-@app.task(queue='worker', name='requires_encoding')
+@app.task
 def requires_encoding(file_located_data):
     stream_info = ffprobe_function(file_located_data['file_path'])
     encoding_decision = False
@@ -131,17 +129,25 @@ def requires_encoding(file_located_data):
     encoding_decision, ffmpeg_command = check_codecs(stream_info, encoding_decision)
     if encoding_decision == True:
         print ('file needs encoding')
-        ffmpeg_command = build_ffmpeg_command(file_located_data['file_path'], ffmpeg_command, ffmepg_output_file_name)
+        file_located_data['ffmpeg_command'] = ffmpeg_command
+        file_located_data['ffmepg_output_file_name'] = ffmepg_output_file_name
+        file_located_data['file_hash'] = file_size_kb(file_located_data['file_path'])
+        print(json.dumps(file_located_data, indent=4))
+        process_ffmpeg.apply_async(kwargs={'file_located_data': file_located_data}, priority=6)
     else:
         print ('file does not need encoding')
     print (encoding_decision)
     print (ffmpeg_command)
 
 
-def build_ffmpeg_command(file_path, ffmpeg_command, ffmepg_output_file_name):
-    ffmpeg_settings = 'ffmpeg -hide_banner -loglevel 16 -stats -stats_period 10'
-    ffmpeg_command = ffmpeg_settings + ' -i ' + file_path + ' ' + ffmpeg_command + ' ' + ffmepg_output_file_name
-    return ffmpeg_command
+def file_size_kb(file_path):
+    # Returns the file size of the file_path on disk
+    if os.path.isfile(file_path):
+        file_size_bytes = os.path.getsize(file_path)
+        file_size_kb = file_size_bytes / 1024
+        return round(file_size_kb)
+    else:
+        return 0.0
 
 
 def ffprobe_function(file_path):
@@ -250,3 +256,131 @@ def check_attachmeent_stream(encoding_decision, i, stream_info, ffmpeg_command):
 # This section starts the actual processing of media fules
 # >>>>>>>>>>>>>>>>>>>>>> <<<<<<<<<<<<<<<<<<<<<<
  
+
+@app.task()
+def process_ffmpeg(file_located_data):
+    if delete_old_move_new(file_located_data) == True:
+        print ('stuff')
+
+def delete_old_move_new(file_located_data):
+    if ffmpeg_postlaunch_checks(file_located_data) == True:
+        moving_files = move_processed_file(file_located_data)
+        if moving_files == True:
+            print ('all done!')
+            return True
+        else:
+            print ('delete_old_move_new failed')
+            return False
+
+def ffmpeg_postlaunch_checks(file_located_data):
+    if encode_video(file_located_data) and file_exists(file_located_data['ffmepg_output_file_name']) and check_encode_output_size(file_located_data['ffmepg_output_file_name']) and validate_video(file_located_data['ffmepg_output_file_name']):
+        print ('ffmpeg_postlaunch_checks succeeded')
+        return True
+    else:
+        print ('ffmpeg_postlaunch_checks failed')
+        return False
+
+
+def encode_video(file_located_data):
+    if ffmpeg_prelaunch_checks(file_located_data) == True:
+        ffmpeg_command = build_ffmpeg_command(file_located_data['file_path'], file_located_data['ffmpeg_command'], file_located_data['ffmepg_output_file_name'])
+        file_processed = run_ffmpeg(ffmpeg_command)
+        return file_processed
+    else:
+        print('File failed to meet conditions, will not process')
+
+
+def ffmpeg_prelaunch_checks(file_located_data):
+    if file_exists(file_located_data['file_path']) and check_file_hash(file_located_data):
+        print('file passed ffmpeg_prelaunch_checks')
+        return True
+    else:
+        print('file failed ffmpeg_prelaunch_checks')
+        return False
+
+
+def file_exists(file_path):
+    file_existance = os.path.isfile(file_path)
+    # Returns true if the file that is about to be touched is in the expected location
+    print (file_path + ' : ' + str(file_existance))
+    return file_existance
+
+
+def check_file_hash(file_located_data):
+    original_file_hash = file_located_data['file_hash'] 
+    print('original_file_hash: ' + str(original_file_hash))
+    current_file_hash = file_size_kb(file_located_data['file_path'])
+    print('current_file_hash: ' + str(current_file_hash))
+
+    if original_file_hash == current_file_hash:
+        print('Hashes match')
+        return True
+    else:
+        print('Hashes do not match')
+        return False
+
+
+def check_encode_output_size(file_path):
+    # Returns the file size of the file_path on disk
+    if get_file_size_kb(file_path) > 0.0:
+        return True
+    else:
+        return False
+    
+
+def get_file_size_kb(file_path):
+    file_size_bytes = os.path.getsize(file_path)
+    file_size_kb = round(file_size_bytes / 1024)
+    return file_size_kb
+
+
+def validate_video(file_path):
+    # This function determines if a video is valid, or if the video contains errors
+    # Returns:
+    #       Failure if the shell command returns anything; i.e. one of the streams is bad
+    #       Success if the shell command doesn't return anything; i.e. the streams are good
+    #       Error if the shell command fails; this shouldn't happen
+    try:
+        command = 'ffmpeg -v error -i "' + file_path + '" -f null -'
+        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if result.stdout or result.stderr:
+            print ('File failed validation')
+            return False
+        else:
+            print ('File passed validation')
+            return True
+    except Exception as e:
+        return f"Error: {e}"
+    
+def run_ffmpeg(ffmpeg_command):
+    print ('running ffmpeg now')
+    try:
+        process = subprocess.Popen(ffmpeg_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,universal_newlines=True)
+        for line in process.stdout:
+            print(line)
+        return True
+    except Exception as e:
+        print(f"Error: {e}")
+        return False  # Return a non-zero exit code to indicate an error
+    
+def move_processed_file (file_located_data):
+    # Delete the original file, replace it with the processed file
+    file_path = file_located_data['file_path']
+    ffmepg_output_file_name = file_located_data['ffmepg_output_file_name']
+    new_file_destination = os.path.join(os.path.dirname(file_path), os.path.basename(ffmepg_output_file_name))
+    print('new_file_destination: ' + str(new_file_destination))
+    try:
+        print('removing: ' + str(file_path))
+        os.remove(file_path)
+        print('moving: ' + str(ffmepg_output_file_name) + ' to: ' + str(new_file_destination))
+        shutil.move(ffmepg_output_file_name, new_file_destination) 
+        return True
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return False
+
+def build_ffmpeg_command(file_path, ffmpeg_command, ffmepg_output_file_name):
+    ffmpeg_settings = 'ffmpeg -hide_banner -loglevel 16 -stats -stats_period 10'
+    ffmpeg_command = ffmpeg_settings + ' -y -i "' + file_path + '" ' + ffmpeg_command + ' "' + ffmepg_output_file_name + '"'
+    print ('ffmpeg_command is: ' + ffmpeg_command)
+    return ffmpeg_command
