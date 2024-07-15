@@ -35,23 +35,21 @@ Handbrake is awesome, but:
 
 # How does Boilest work?
 
-A manager node kicks off a series of tasks:
+- Boilest kicks off a job that searches directories for video files
+- Boilest then checks each individual video file to see if the various codecs match a spec
+- If any of the codecs don't match spec, the file is dispatched for encoding
+- Once encoding is complete, the results are stored in a DB
 
-* Hourly, kick off the workflow
-* Continue if the queue is empty
-* Scan direcorites for media files
-* Probe those media files
-* Then work through a progressive workflow of determining which streams, media files, and which codecs in each media file need to be endeded.  If a target media file is already in the desired state, Boilest will not attept to encode it.
+ # What is in this repo today?
 
-The worker(s) pick up the tasks from the manager, and encodes the file (as determined by the manager), then sends some stats back to the manager on success.  
-
-# What is in this repo today?
-
-Little bits of code that work, and me struggling with the basics to glue it all together...  BUT, it all works and is running.
+A simplified workflow running in Celery
 
 # How to deploy
 
-Can be deployed in Docker or in Kubernetes.  General container and prerequesit information will be belllow. Deployment examples will be in the /Deployment directory.
+- Build the container image 
+- Deploy the image
+
+See /Deployment for a Kubernetes example using Azure Container Registry
 
 ## Prerequisit 
 
@@ -59,50 +57,9 @@ Can be deployed in Docker or in Kubernetes.  General container and prerequesit i
 
 The backbone of Boilest is a distributed task Python library called [Celery](https://docs.celeryq.dev/en/stable/getting-started/introduction.html). Celery needs a message transport (a place to store the task queue), and we leverage RabbitMQ for that.
 
-RabbitMQ will need to be deployed with it's management plugin.
+RabbitMQ will need to be deployed with it's ,management plugin.
 
-
-
-
-
-
-
-
-# Boilest Development Notes
-
-
-
-
-
-Setting the timezone
-
-Use the TZ identifier here: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List
-
-ffmpeg -hide_banner -loglevel 16 -stats -r 24 -i newtest.mkv -r 24 -i newtestsrtlaopus.mkv -lavfi libvmaf="n_threads=20:n_subsample=10" -f null -
-
-
-ffmpeg -video_size 3840x2160 -framerate 60 -pixel_format yuv420p10le -i decoded_encoded_h264_55.YUV -video_size 3840x2160 -framerate 60 -pixel_format yuv420p10le -i S01AirAcrobatic_3840x2160_60fps_10bit_420.yuv -lavfi libvmaf="model_path=vmaf_v0.6.1.pkl:log_path=VMAF.txt" -f null -
-
-
-https://stackoverflow.com/questions/16691161/getting-number-of-messages-in-a-rabbitmq-queue
-
-
-
-
-
-https://stackoverflow.com/questions/5844672/delete-an-element-from-a-dictionary
-
-
-select 
-COUNT(DISTINCT unique_identifier) as files_processed, 
-sum(new_file_size_difference) as difference,
-(SUM(new_file_size_difference)/sum(old_file_size)) as difference2,
-sum(new_file_size_difference)/COUNT(DISTINCT unique_identifier) as space_per_file
-FROM ffencode_results;
-
-
-
-# Q'n A
+# Q&A
 
   * If Celery can use Reddis or RabbitMQ for it's message transport, can Boilest use Reddis?
 
@@ -111,3 +68,13 @@ FROM ffencode_results;
 - Why does Boilest use RabbitMQ over Reddis?
 
     I happened to have RabbitMQ with the management plugin already installed.
+
+- What's in /Old?
+
+  A lot of previous itterations/experiments with this project:
+  - Different containers for tasks
+  - Different queues
+  - FFprobe via configuration files
+  - And more
+  
+  They're worth keeping around for refrences/discussion on [r/learnpython](https://www.reddit.com/r/learnpython/)
