@@ -4,9 +4,27 @@ import celeryconfig
 from shared_services import celery_url_path
 
 
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  
+# >>>>>>>>>>>>>>> Celery Configurations >>>>>>>>>>>>>>>
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  
+
 app = Celery('worker', backend = celery_url_path('rpc://'), broker = celery_url_path('amqp://') )
 app.config_from_object(celeryconfig)
 
+def celery_url_path(thing):
+    # https://docs.celeryq.dev/en/stable/getting-started/first-steps-with-celery.html#keeping-results
+    user = os.environ.get('user', 'celery')
+    password = os.environ.get('password', 'celery')
+    celery_host = os.environ.get('celery_host', '192.168.1.110')
+    celery_port = os.environ.get('celery_port', '31672')
+    celery_vhost = os.environ.get('celery_vhost', 'celery')
+    thing = thing + user + ':' + password + '@' + celery_host + ':' + celery_port + '/' + celery_vhost
+    logging.debug('celery_url_path is: ' + thing)
+    return thing
+
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# >>>>>>>>>>>>>>> Check queue depth >>>>>>>>>>>>>>>
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 @app.task(queue='worker', name='queue_workers_if_queue_empty')
 def queue_workers_if_queue_empty(arg):

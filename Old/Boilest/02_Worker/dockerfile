@@ -1,0 +1,58 @@
+# Use the official Python image based on Alpine
+FROM python:3.9-alpine
+
+# Install dependencies and supervisor
+RUN apk update && \
+    apk add --no-cache \
+        build-base \
+        linux-headers \
+        supervisor \
+        ffmpeg && \
+    pip install --no-cache-dir celery requests && \
+    apk upgrade
+
+# Create a non-root user and group
+ARG UID=1000
+ARG GID=1000
+RUN addgroup -g $GID appgroup && \
+    adduser -D -u $UID -G appgroup appuser
+
+# Create application directory and set ownership
+WORKDIR /app
+COPY 02_Worker/ /app
+COPY Config /app
+RUN chown -R appuser:appgroup /app
+
+# Add supervisord configuration file
+COPY 02_Worker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+RUN chown appuser:appgroup /etc/supervisor/conf.d/supervisord.conf
+
+# Add manager tasks to worker
+COPY 01_Manager/tasks.py /app/managertasks.py
+RUN chown appuser:appgroup /app/managertasks.py
+
+# Create log directory and set ownership
+RUN mkdir -p /app/logs && \
+    chown -R appuser:appgroup /app/logs
+
+# Create additional directories without setting ownership
+RUN mkdir -p /tv /anime /moviles
+RUN mkdir -p /processed
+
+# Environment variables
+ENV TZ=US/Pacific
+
+# Used in celery and rabbitmq
+ENV user celery
+ENV password celery
+ENV celery_host 192.168.1.110
+ENV celery_port 31672
+ENV celery_vhost celery
+ENV rabbitmq_host 192.168.1.110
+ENV rabbitmq_port 32311
+
+# Run as non-root user
+USER appuser
+
+# Start supervisord
+CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
