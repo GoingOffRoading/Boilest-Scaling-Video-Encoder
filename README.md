@@ -75,6 +75,7 @@ RabbitMQ will need to be deployed with it's ,management plugin.
   - Different containers for tasks
   - Different queues
   - FFprobe via configuration files
+  - Experiments with Flask font end
   - And more
   
   They're worth keeping around for refrences/discussion on [r/learnpython](https://www.reddit.com/r/learnpython/)
