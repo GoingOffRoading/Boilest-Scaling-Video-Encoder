@@ -1,5 +1,5 @@
 from celery import Celery
-import json, os, logging, subprocess, requests
+import json, os, logging, subprocess, requests, shutil
 import celeryconfig
 
 
