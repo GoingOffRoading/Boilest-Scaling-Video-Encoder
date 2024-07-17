@@ -229,7 +229,7 @@ def ffresults(ffresults_input):
     logging.debug ('Encoding results for: ' + ffresults_input['file'])
     logging.debug ('From: ' + ffresults_input['root']) 
 
-    recorded_date = datetime.now()
+    
 
     logging.debug ("File encoding recorded: " + str(recorded_date))
     unique_identifier = ffresults_input["file"] + str(recorded_date.microsecond)
