@@ -490,8 +490,8 @@ def write_results(file_located_data):
     new_file_size = file_located_data['new_file_size']
     old_file_size = file_located_data['old_file_size']
     new_file_size_difference = old_file_size - new_file_size
-    watch_folder = 'placeholder'
-    ffmpeg_encoding_string = 'placeholder'
+    watch_folder = file_located_data['directory']
+    ffmpeg_encoding_string = file_located_data['ffmpeg_command']
 
     print('Writing results')
     insert_record(unique_identifier, file_name, file_path, config_name, new_file_size, new_file_size_difference, old_file_size, watch_folder, ffmpeg_encoding_string)
