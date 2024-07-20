@@ -25,23 +25,12 @@ WORKDIR /app
 COPY . /app
 RUN chown -R appuser:appgroup /app /boil_hold
 
-# Add supervisord configuration file
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-RUN chown appuser:appgroup /etc/supervisor/conf.d/supervisord.conf
-
 # Create log directory and set ownership
 RUN mkdir -p /app/logs && \
     chown -R appuser:appgroup /app/logs
 
 # Environment variables
 ENV TZ=US/Pacific
-
-# User in Flower: https://flower.readthedocs.io/en/latest/config.html
-ENV FLOWER_FLOWER_BASIC_AUTH celery:celery
-ENV FLOWER_persistent true
-ENV FLOWER_db /app/flower_db
-ENV FLOWER_purge_offline_workers 60
-ENV FLOWER_UNAUTHENTICATED_API true
 
 # Used in celery and rabbitmq
 ENV user celery
@@ -58,10 +47,6 @@ ENV sql_port 32053
 ENV sql_database boilest
 ENV sql_user boilest
 ENV sql_pswd boilest
-
-# Related Ports
-EXPOSE 5000
-EXPOSE 5555
 
 # Run as non-root user
 USER appuser

@@ -7,8 +7,14 @@ from datetime import datetime
 # >>>>>>>>>>>>>>> Celery Configurations >>>>>>>>>>>>>>>
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger()
+logging.basicConfig(
+    level=logging.DEBUG, 
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("debug.log"),
+        logging.StreamHandler() 
+        ]
+    )
 
 def celery_url_path(thing):
     # https://docs.celeryq.dev/en/stable/getting-started/first-steps-with-celery.html#keeping-results
@@ -18,7 +24,7 @@ def celery_url_path(thing):
     celery_port = os.environ.get('celery_port', '31672')
     celery_vhost = os.environ.get('celery_vhost', 'celery')
     thing = thing + celery_user + ':' + celery_password + '@' + celery_host + ':' + celery_port + '/' + celery_vhost
-    logger.debug('celery_url_path is: ' + thing)
+    logging.debug('celery_url_path is: ' + thing)
     return thing
 
 app = Celery('worker_queue', broker = celery_url_path('amqp://') )
@@ -51,21 +57,21 @@ app.conf.task_routes = {
 def queue_workers_if_queue_empty(arg):
     try:
         queue_depth = check_queue('worker_queue')        
-        logger.debug(f'Current Worker queue depth is: {queue_depth}')       
+        logging.debug(f'Current Worker queue depth is: {queue_depth}')       
         if queue_depth == 0:
-            logger.info('Starting locate_files')
+            logging.info('Starting locate_files')
             # >>>>>>>>>>><<<<<<<<<<<<<<<<
             # >>>>>>>>>>><<<<<<<<<<<<<<<<
             locate_files.apply_async(kwargs={'arg': arg}, priority=1)
             # >>>>>>>>>>><<<<<<<<<<<<<<<<
             # >>>>>>>>>>><<<<<<<<<<<<<<<<
         elif queue_depth > 0:
-            logger.debug(f'{queue_depth} tasks in queue. No rescan needed at this time.')
+            logging.debug(f'{queue_depth} tasks in queue. No rescan needed at this time.')
         else:
-            logger.error('Something went wrong checking the Worker Queue')
+            logging.error('Something went wrong checking the Worker Queue')
     
     except Exception as e:
-        logger.error(f"Error in queue_workers_if_queue_empty: {e}")
+        logging.error(f"Error in queue_workers_if_queue_empty: {e}")
 
 
 def check_queue(queue_name):
@@ -77,7 +83,7 @@ def check_queue(queue_name):
         celery_vhost = os.environ.get('celery_vhost','celery')
 
         url = f"{rabbitmq_host}:{rabbitmq_port}/api/queues/{celery_vhost}/{queue_name}"
-        logger.debug(f'Checking RabbitMQ queue depth for: {queue_name}')
+        logging.debug(f'Checking RabbitMQ queue depth for: {queue_name}')
 
         response = requests.get(url, auth=(user, password))
         response.raise_for_status()  # Ensure we raise an exception for HTTP errors
@@ -85,10 +91,10 @@ def check_queue(queue_name):
         worker_queue = response.json()
         queue_depth = worker_queue.get("messages_unacknowledged", 0)
 
-        logger.debug (f'check_queue queue depth is: ' + str(queue_depth))
+        logging.debug (f'check_queue queue depth is: ' + str(queue_depth))
         return queue_depth
     except Exception as e:
-        logger.error(f"Error getting active tasks count: {e}")
+        logging.error(f"Error getting active tasks count: {e}")
         return -1 # Return -1 to indicate an error
 
 
@@ -101,26 +107,26 @@ def locate_files(arg):
     directories = ['/anime', '/tv', '/movies']
     extensions = ['.mp4', '.mkv', '.avi']
 
-    logger.debug(f'Searching directories: {directories}')
-    logger.debug(f'File extensions: {extensions}')
+    logging.debug(f'Searching directories: {directories}')
+    logging.debug(f'File extensions: {extensions}')
 
     for file_located in find_files(directories, extensions):
-        logger.debug('File located, sending to ffprobe function')
+        logging.debug('File located, sending to ffprobe function')
         try:
             file_located_data = json.loads(file_located)
-            logger.debug(json.dumps(file_located_data, indent=3, sort_keys=True))
+            logging.debug(json.dumps(file_located_data, indent=3, sort_keys=True))
             # >>>>>>>>>>><<<<<<<<<<<<<<<<
             # >>>>>>>>>>><<<<<<<<<<<<<<<<
             requires_encoding.apply_async(kwargs={'file_located_data': file_located_data}, priority=2)
             # >>>>>>>>>>><<<<<<<<<<<<<<<<
             # >>>>>>>>>>><<<<<<<<<<<<<<<<
         except json.JSONDecodeError as e:
-            logger.error(f'Failed to decode JSON: {e}')
+            logging.error(f'Failed to decode JSON: {e}')
             continue
 
 def find_files(directories, extensions):
     for directory in directories:
-        logger.info ('Scanning: ' + directory)
+        logging.info ('Scanning: ' + directory)
         for root, dirs, files in os.walk(directory):
             for file in files:
                 for ext in extensions:
@@ -145,34 +151,34 @@ def requires_encoding(file_located_data):
     encoding_decision = False
     old_file_size = file_size_kb(file_located_data['file_path'])
     processing_priority = get_ffmpeg_processing_priority(old_file_size,stream_info)
-    logger.debug('processing_priority is: ' + str(processing_priority))
+    logging.debug('processing_priority is: ' + str(processing_priority))
     encoding_decision, ffmepg_output_file_name = check_container_type(stream_info, encoding_decision, file_located_data['file'])
     encoding_decision, ffmpeg_command = check_codecs(stream_info, encoding_decision)
     if encoding_decision == True:
-        logger.info (file_located_data['file'] + ' requires encoding')
+        logging.info (file_located_data['file'] + ' requires encoding')
         file_located_data['ffmpeg_command'] = ffmpeg_command
         file_located_data['ffmepg_output_file_name'] = ffmepg_output_file_name
         file_located_data['old_file_size'] = file_size_kb(file_located_data['file_path'])
-        logger.debug(json.dumps(file_located_data, indent=4))
+        logging.debug(json.dumps(file_located_data, indent=4))
         process_ffmpeg.apply_async(kwargs={'file_located_data': file_located_data}, priority=processing_priority)
     else:
-        logger.debug ('file does not need encoding')
-    logger.debug (encoding_decision)
-    logger.debug (ffmpeg_command)
+        logging.debug ('file does not need encoding')
+    logging.debug (encoding_decision)
+    logging.debug (ffmpeg_command)
 
 
 def get_ffmpeg_processing_priority(old_file_size,stream_info):
     priority = 6
-    logger.debug('Starting with priority: ' + str(priority))
+    logging.debug('Starting with priority: ' + str(priority))
     if old_file_size > 1000000:
         priority = priority -1
-        logger.debug('File is large, priority is now: ' + str(priority))
+        logging.debug('File is large, priority is now: ' + str(priority))
     if stream_info["streams"][0]["codec_name"] != "av1":
         priority = priority -1
-        logger.debug('Video is not AV1, priority is now: ' + str(priority))
+        logging.debug('Video is not AV1, priority is now: ' + str(priority))
     if stream_info['format'].get('format_name') != "matroska,webm":
         priority = priority -1
-        logger.debug('Format is not MKV, priority is now: ' + str(priority))
+        logging.debug('Format is not MKV, priority is now: ' + str(priority))
     return priority
 
 
@@ -197,11 +203,11 @@ def ffprobe_function(file_path):
 def check_container_type(stream_info, encoding_decision, file):
     # Desired container is MKV so we check for that, and pass True for all other container types
     format_name = stream_info['format'].get('format_name')
-    logger.debug ('format is: ' + format_name)
+    logging.debug ('format is: ' + format_name)
     if format_name != 'matroska,webm':
         encoding_decision = True
     encoding_decision, ffmepg_output_file = check_container_extension(file, encoding_decision)
-    logger.debug ('>>>check_container_type<<<  Container is: ' + format_name + ' so, encoding_decision is: ' + str(encoding_decision))
+    logging.debug ('>>>check_container_type<<<  Container is: ' + format_name + ' so, encoding_decision is: ' + str(encoding_decision))
     return encoding_decision, ffmepg_output_file
     
 
@@ -220,7 +226,7 @@ def check_codecs(stream_info, encoding_decision):
     # calls functions to determine if the steam needs encoding based on stream type conditions 
     streams_count = stream_info['format']['nb_streams']
     ffmpeg_command = str()
-    logger.debug ('There are : ' + str(streams_count) + ' streams')
+    logging.debug ('There are : ' + str(streams_count) + ' streams')
     for i in range (0,streams_count):
         codec_type = stream_info['streams'][i]['codec_type'] 
         if codec_type == 'video':
@@ -238,7 +244,7 @@ def check_video_stream(encoding_decision, i, stream_info, ffmpeg_command):
     # Checks the video stream from check_codecs to determine if the stream needs encoding
     codec_name = stream_info['streams'][i]['codec_name'] 
     desired_video_codec = 'av1'
-    logger.debug('Steam ' + str(i) + ' codec is: ' + codec_name)
+    logging.debug('Steam ' + str(i) + ' codec is: ' + codec_name)
     if codec_name == desired_video_codec:
         ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:v copy'
     elif codec_name == 'mjpeg':
@@ -248,7 +254,7 @@ def check_video_stream(encoding_decision, i, stream_info, ffmpeg_command):
         svt_av1_string = "libsvtav1 -crf 25 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0:enable-qm=1:qm-min=0:qm-max=15"
         ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:v ' + svt_av1_string
     else:
-        logger.debug ('ignoring for now')
+        logging.debug ('ignoring for now')
     return encoding_decision, ffmpeg_command
 
 
@@ -259,7 +265,7 @@ def check_audio_stream(encoding_decision, i, stream_info, ffmpeg_command):
     #desired_audio_codec = 'aac'
     #if codec_name != desired_video_codec:
     #    encoding_decision = True
-    logger.debug('Steam ' + str(i) + ' codec is: ' + codec_name)
+    logging.debug('Steam ' + str(i) + ' codec is: ' + codec_name)
     ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:a copy'
     return encoding_decision, ffmpeg_command
     
@@ -271,7 +277,7 @@ def check_subtitle_stream(encoding_decision, i, stream_info, ffmpeg_command):
     #desired_subtitle_codec = 'srt'
     #if codec_name != desired_subtitle_codec:
     #    encoding_decision = True
-    logger.debug('Steam ' + str(i) + ' codec is: ' + codec_name)
+    logging.debug('Steam ' + str(i) + ' codec is: ' + codec_name)
     ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:s copy'
     return encoding_decision, ffmpeg_command
 
@@ -283,7 +289,7 @@ def check_attachmeent_stream(encoding_decision, i, stream_info, ffmpeg_command):
     #desired_attachment_codec = '???'
     #if codec_name != desired_attachment_codec:
     #    encoding_decision = True
-    logger.debug('Steam ' + str(i) + ' codec is: ' + codec_name)
+    logging.debug('Steam ' + str(i) + ' codec is: ' + codec_name)
     ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:t copy'
     return encoding_decision, ffmpeg_command
 
@@ -297,18 +303,18 @@ def check_attachmeent_stream(encoding_decision, i, stream_info, ffmpeg_command):
 def process_ffmpeg(file_located_data):
     file = file_located_data['file']
     if ffmpeg_prelaunch_checks(file_located_data) == True:
-        logger.debug(file + ' has passed ffmpeg_prelaunch_checks')
+        logging.debug(file + ' has passed ffmpeg_prelaunch_checks')
         if run_ffmpeg(file_located_data) == True:
-            logger.debug(file + ' has passed run_ffmpeg')
+            logging.debug(file + ' has passed run_ffmpeg')
             if ffmpeg_postlaunch_checks(file_located_data) == True:
-                logger.debug(file + ' has passed ffmpeg_postlaunch_checks')
+                logging.debug(file + ' has passed ffmpeg_postlaunch_checks')
                 if move_media(file_located_data) == True:
-                    logger.debug(file + ' has passed move_media')
+                    logging.debug(file + ' has passed move_media')
                     file_path = file_located_data['file_path']
                     ffmepg_output_file_name = file_located_data['ffmepg_output_file_name'] 
                     file_located_data['new_file_size'] = get_file_size_kb(destination_file_name_function(file_path, ffmepg_output_file_name))
                     write_results.apply_async(kwargs={'file_located_data': file_located_data}, priority=3)
-                    logger.debug(json.dumps(file_located_data, indent=4))
+                    logging.debug(json.dumps(file_located_data, indent=4))
 
 
 ################# Pre Launch Checks #################
@@ -327,29 +333,29 @@ def ffmpeg_prelaunch_checks(file_located_data):
 def prelaunch_file_exists(file_path):
     #  Checks to see if the input file still exists, returns True on existance
     if file_exists(file_path):
-        logger.debug(str(file_path) + ' Exists')
+        logging.debug(str(file_path) + ' Exists')
         return True
     else:
-        logger.debug(str(file_path) + ' Does Not Exists')
+        logging.debug(str(file_path) + ' Does Not Exists')
         return False
 
 
 def prelaunch_hash_match(file_path, pre_launch_old_file_size):
     current_file_hash = get_file_size_kb(file_path)
     if pre_launch_old_file_size == current_file_hash:
-        logger.debug(str(file_path) + ' matches its hash')
+        logging.debug(str(file_path) + ' matches its hash')
         return True
     else:
-        logger.debug (str(file_path) + ' does not match its hash')
+        logging.debug (str(file_path) + ' does not match its hash')
         return False
 
 
 def prelaunch_file_validation(file_path):
     if validate_video(file_path):
-        logger.debug(str(file_path) + ' passed validation')
+        logging.debug(str(file_path) + ' passed validation')
         return True
     else:
-        logger.debug(str(file_path) + ' failed validation')
+        logging.debug(str(file_path) + ' failed validation')
         return False    
 
 
@@ -362,15 +368,15 @@ def run_ffmpeg(file_located_data):
     ffmpeg_stringffmpeg_command = file_located_data['ffmpeg_command']
     ffmpeg_stringffmepg_output_file_name = file_located_data['ffmepg_output_file_name']
     output_ffmpeg_command = f"{ffmpeg_string_settings} \"{ffmpeg_stringfile_path}\" {ffmpeg_stringffmpeg_command} \"{ffmpeg_stringffmepg_output_file_name}\""
-    logger.debug ('ffmpeg_command is: ' + output_ffmpeg_command)
-    logger.debug ('running ffmpeg now')
+    logging.debug ('ffmpeg_command is: ' + output_ffmpeg_command)
+    logging.debug ('running ffmpeg now')
     try:
         process = subprocess.Popen(output_ffmpeg_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,universal_newlines=True)
         for line in process.stdout:
-            logger.debug(line)
+            logging.debug(line)
         return True
     except Exception as e:
-        logger.debug(f"Error: {e}")
+        logging.debug(f"Error: {e}")
         return False  # Return a non-zero exit code to indicate an error
 
 
@@ -384,27 +390,27 @@ def ffmpeg_postlaunch_checks(file_located_data):
         if post_launch_file_validation(post_launch_encoded_file):
             return True
     else:
-        logger.debug('ffmpeg_postlaunch_checks failed')
+        logging.debug('ffmpeg_postlaunch_checks failed')
         return False
 
 
 def post_launch_file_check(post_launch_original_file, post_launch_encoded_file):
     # Check to see if the original file, and the encoded file are there
     if file_exists(post_launch_original_file) and file_exists(post_launch_encoded_file):
-        logger.debug(str(post_launch_encoded_file) + ' passed post_launch_file_check')
+        logging.debug(str(post_launch_encoded_file) + ' passed post_launch_file_check')
         return True
     else:
-        logger.debug(str(post_launch_encoded_file) + ' failed post_launch_file_check')
+        logging.debug(str(post_launch_encoded_file) + ' failed post_launch_file_check')
         return False
     
 
 def post_launch_file_validation(post_launch_encoded_file):
-    logger.debug('Starting post_launch_file_validation')
+    logging.debug('Starting post_launch_file_validation')
     if validate_video(post_launch_encoded_file) == True:
-        logger.debug(str(post_launch_encoded_file) + ' passed post_launch_file_validation')
+        logging.debug(str(post_launch_encoded_file) + ' passed post_launch_file_validation')
         return True
     else:
-        logger.debug(str(post_launch_encoded_file) + ' failed post_launch_file_validation')
+        logging.debug(str(post_launch_encoded_file) + ' failed post_launch_file_validation')
         return False
 
 
@@ -443,12 +449,12 @@ def rename_original_file_function(file_path, renamed_file):
     try:
         os.rename(file_path, renamed_file)
     except Exception as e:
-        logger.debug(f"An error occurred: {e}")
+        logging.debug(f"An error occurred: {e}")
     if file_exists(renamed_file) == True:
-        logger.debug(file_path + ' passed rename_original_file')
+        logging.debug(file_path + ' passed rename_original_file')
         return True
     else:
-        logger.debug(file_path + ' filed rename_original_file')
+        logging.debug(file_path + ' filed rename_original_file')
         return False
 
 
@@ -457,12 +463,12 @@ def move_encoded_file_function(ffmepg_output_file_name, destination_file_name):
     try:
         shutil.move(ffmepg_output_file_name, destination_file_name) 
     except Exception as e:
-        logger.debug(f"An error occurred: {e}")
+        logging.debug(f"An error occurred: {e}")
     if file_exists(destination_file_name) == True:
-        logger.debug(destination_file_name + ' has passed move_encoded_file')
+        logging.debug(destination_file_name + ' has passed move_encoded_file')
         return True
     else:
-        logger.debug(destination_file_name + ' has failed move_encoded_file')
+        logging.debug(destination_file_name + ' has failed move_encoded_file')
         return False     
         
 
@@ -471,12 +477,12 @@ def delete_renamed_original_file_function(renamed_file):
     try:
         os.remove(renamed_file)
     except Exception as e:
-        logger.debug(f"An error occurred: {e}")
+        logging.debug(f"An error occurred: {e}")
     if file_exists(renamed_file) == True:
-        logger.debug(renamed_file + ' has failed delete_renamed_original_file_function')
+        logging.debug(renamed_file + ' has failed delete_renamed_original_file_function')
         return False
     else:
-        logger.debug(renamed_file + ' has passed delete_renamed_original_file_function')
+        logging.debug(renamed_file + ' has passed delete_renamed_original_file_function')
         return True        
 
 ########################## Common Functions ##########################
@@ -484,11 +490,11 @@ def delete_renamed_original_file_function(renamed_file):
 def file_exists(filepath):
     file_existance = os.path.isfile(filepath)
     # Returns true if the file that is about to be touched is in the expected location
-    logger.debug (filepath + ' : ' + str(file_existance))
+    logging.debug (filepath + ' : ' + str(file_existance))
     return file_existance
 
 def get_file_size_kb(filepath_for_size_kb):
-    logger.debug('filepath is: ' + str(filepath_for_size_kb))
+    logging.debug('filepath is: ' + str(filepath_for_size_kb))
     file_size_bytes = os.path.getsize(filepath_for_size_kb)
     file_size_kb = round(file_size_bytes / 1024)
     return file_size_kb
@@ -503,10 +509,10 @@ def validate_video(filepath):
         command = 'ffmpeg -v error -i "' + filepath + '" -f null -'
         result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         if result.stdout or result.stderr:
-            logger.debug ('File failed validation')
+            logging.debug ('File failed validation')
             return False
         else:
-            logger.debug ('File passed validation')
+            logging.debug ('File passed validation')
             return True
     except Exception as e:
         return f"Error: {e}"
@@ -532,9 +538,9 @@ def write_results(file_located_data):
         # the varchar for ffmpeg_encoding_string is 999 characters.  This is to keep the db write from failing at 1000 characters
         ffmpeg_encoding_string = ffmpeg_encoding_string[:999]
 
-    logger.debug('Writing results')
+    logging.debug('Writing results')
     insert_record(unique_identifier, file_name, file_path, config_name, new_file_size, new_file_size_difference, old_file_size, watch_folder, ffmpeg_encoding_string)
-    logger.debug('Writing results complete')
+    logging.debug('Writing results complete')
 
 
 def insert_record(unique_identifier, file_name, file_path, config_name, new_file_size, new_file_size_difference, old_file_size, watch_folder, ffmpeg_encoding_string):
@@ -566,14 +572,14 @@ def insert_record(unique_identifier, file_name, file_path, config_name, new_file
             
             cursor.execute(insert_query, record)
             connection.commit()
-            logger.debug("Record inserted successfully")
+            logging.debug("Record inserted successfully")
             
     except Error as e:
-        logger.debug(f"Error while connecting to MariaDB: {e}")
+        logging.debug(f"Error while connecting to MariaDB: {e}")
     
     finally:
         if connection.is_connected():
             cursor.close()
             connection.close()
-            logger.debug("MariaDB connection is closed")
+            logging.debug("MariaDB connection is closed")
 
