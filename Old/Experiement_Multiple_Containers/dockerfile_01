@@ -67,4 +67,4 @@ USER appuser
 
 # Start supervisord
 #CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
-CMD ["celery", "-A", "searcher_tasks", "worker", "--loglevel=info", "-Q", "searcher_queue"]
+CMD ["celery", "-A", "01_searcher_tasks", "worker", "--loglevel=info", "-Q", "searcher_queue"]

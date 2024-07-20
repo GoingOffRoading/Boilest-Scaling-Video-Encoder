@@ -67,4 +67,5 @@ EXPOSE 5555
 USER appuser
 
 # Start supervisord
-CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+#CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+CMD ["celery", "-A", "tasks", "worker"]
