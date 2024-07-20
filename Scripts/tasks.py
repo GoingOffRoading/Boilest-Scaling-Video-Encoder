@@ -178,7 +178,7 @@ def requires_encoding(file_located_data):
 
 def get_ffmpeg_processing_priority(old_file_size,stream_info):
     priority = 10
-    adjustments_for_file_size = adjust_priority_based_on_filesize_f(file_size_kb, priority)
+    adjustments_for_file_size = adjust_priority_based_on_filesize_f(old_file_size)
     adjustments_for_container = adjustments_for_container_f(stream_info)
     adjustments_for_codec = adjustments_for_codec_f(stream_info)
     priority = priority - adjustments_for_file_size - adjustments_for_container - adjustments_for_codec
@@ -186,32 +186,29 @@ def get_ffmpeg_processing_priority(old_file_size,stream_info):
     return priority
 
 
-def adjust_priority_based_on_filesize_f(file_size_kb, priority):
+def adjust_priority_based_on_filesize_f(file_size_kb):
+    file_size_adjustment = 0
     # Wanting to prioritize larger files first
     file_size_gb = file_size_kb // (1024 * 1024)
-    points_to_subtract = min(file_size_gb, 5)
-    priority -= points_to_subtract
-    logging.debug('Priority increasing by: ' + str(priority))
-    return priority
+    file_size_adjustment = min(file_size_gb, 4)
+    logging.debug('Based on file size, priority increasing by: ' + str(file_size_adjustment))
+    return file_size_adjustment
 
 
 def adjustments_for_container_f(stream_info):
     container_adjustment = 0
     if stream_info['format'].get('format_name') != "matroska,webm":
         container_adjustment = 1
-    else:
-        container_adjustment = 0
+        logging.debug('Based on the files container, priority increasing by: ' + str(container_adjustment))
     return container_adjustment
 
 
 def adjustments_for_codec_f(stream_info):
-    container_adjustment = 0
-    if stream_info["streams"][0]["codec_name"] != "av1":
-        container_adjustment = 1
-        logging.debug('Priority increasing by: ' + str(priority))
-    else:
-        container_adjustment = 0
-    return container_adjustment
+    codec_adjustment = 0
+    if stream_info["streams"][0]["codec_name"] == "h264":
+        codec_adjustment = 2
+        logging.debug('Based on the files container, priority increasing by: ' + str(codec_adjustment))
+    return codec_adjustment
 
 
 def file_size_kb(file_path):
