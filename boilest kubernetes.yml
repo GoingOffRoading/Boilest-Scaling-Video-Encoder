@@ -1,62 +1,4 @@
 ---
-kind: Deployment
-apiVersion: apps/v1
-metadata:
-  name: boilest
-  labels:
-    app: boilest
-    boil: manager
-spec:
-  replicas: 1
-  strategy:
-    type: Recreate
-  selector:
-    matchLabels:
-      app: boilest
-  template:
-    metadata:
-      labels:
-        app: boilest
-    spec:
-      containers:
-        - name: boilest
-          image: TBD
-          imagePullPolicy: Always
-          env:
-            - name: Manager
-              value: "Yes"
-            - name: Worker
-              value: "No"
-          ports:
-            - containerPort: 5555
-          volumeMounts:
-            - name: boilestmedia
-              mountPath: "/boil_watch"
-      imagePullSecrets:
-      - name: azureacr
-      nodeName: node101-desktop
-      volumes:
-        - name: boilestmedia
-          nfs:
-            server: SERVER_IP_HERE
-            path: "/SERVER/PATH/HERE"
-
----
-  apiVersion: v1
-  kind: Service
-  metadata:
-    name: boilest
-  spec:
-    ports:
-      - name: http
-        protocol: TCP
-        port: 5555
-        nodePort: 31555
-    selector:
-      app: boilest
-    type: NodePort
-
----
 kind: Daemonset
 apiVersion: apps/v1
 metadata:
@@ -80,11 +22,6 @@ spec:
         - name: boilest
           image: TBD
           imagePullPolicy: Always
-          env:
-            - name: Manager
-              value: "No"
-            - name: Worker
-              value: "Yes"
           volumeMounts:
             - name: boilestmedia
               mountPath: "/boil_watch"
