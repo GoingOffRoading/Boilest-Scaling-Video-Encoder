@@ -14,13 +14,13 @@ Because I am terrible at naming things, and it was the first agreeable thing to 
 ---
 # What about Tdarr, Unmanic, or other existing distributed solutions??
 
-[Tdarr](https://home.tdarr.io/) is a great platform, but didn't setup or scale as well as I would have liked.  I also found it dificult to under documented, closed source, had some design oddities, and hid features behind a paywall.
+[Tdarr](https://home.tdarr.io/) is a great platform, but didn't setup or scale as well as I would have liked.  I also found it comfortably to under documented, closed source, had some design oddities, and hid features behind a paywall.
 
 As frenzied as Tdarr fans are on Reddit, I just can't commit/subscribe to a service like that.
 
 [Unmanic](https://github.com/Unmanic/unmanic/tree/master) is magic...  I am a big fan, and Unmanuc is comftorably the inspiration of this project.
 
-I would be using Unmanic today, instead of writing spagetti code, but Josh5 had previously [hardcoded the platform on an older version of FFmpeg](https://github.com/Unmanic/unmanic/blob/master/docker/Dockerfile#L82), doesn't currently support AV1, [has some complexities to build the container](https://github.com/Unmanic/unmanic/blob/master/docker/README.md) that make it dificult to code my own support, and doesn't seem to be keeping up on the repo or accepting PRs.
+I would be using Unmanic today, instead of writing spagetti code, but Josh5 had previously [hardcoded the platform on an older version of FFmpeg](https://github.com/Unmanic/unmanic/blob/master/docker/Dockerfile#L82), doesn't currently support AV1, [has some complexities to build the container](https://github.com/Unmanic/unmanic/blob/master/docker/README.md) that make it difficult to code my own support, and doesn't seem to be keeping up on the repo or accepting PRs.
 
 ---
 # Why not Handbrake?
@@ -50,7 +50,7 @@ Handbrake is awesome, but:
  | Video | Video streams that are not AV1 are encoded to AV1
  | Audio | No changes to audio streams at this time.  Audio streams are copied.
  | Subtitles | No changes to subtitle streams at this time.  subtitle streams are copied.
- | Attachments | No changes to Attachmentsat this time.  Attachments are copied.
+ | Attachments | No changes to Attachments at this time.  Attachments are copied.
 
  Once I make some final decisions around what is optimal for TV/device streaming, there will become targets to audio, subtitles, and attachments.
 
@@ -58,7 +58,7 @@ Handbrake is awesome, but:
 # How to deploy
 
 - Create your deployment (Docker/Kubernetes/etc) with the ghcr.io/goingoffroading/boilest-worker:latest container image.
-- Change the container variables to reflect your enviorment:
+- Change the container variables to reflect your environment:
 
 | ENV                 | Defaul Value  |
 |---------------------|---------------|
@@ -95,7 +95,7 @@ RabbitMQ will need to be deployed with it's management plugin.
 ---
 ## MariaDB
 
-Technically, the workflow works fine (at this time) without access to MariaDB (mysql).  MariaDB is where the results of the encoding are tracked.  If Maria is not deployed, the final task will fail, and this will only be noticable in the logs.
+Technically, the workflow works fine (at this time) without access to MariaDB (mysql).  MariaDB is where the results of the encoding are tracked.  If Maria is not deployed, the final task will fail, and this will only be noticeable in the logs.
 
 In Maria, create a database called 'boilest'.
 
@@ -119,24 +119,20 @@ In a huture itteration, I'll include a python script that populates database and
 ---
 # Q&A
 
-  * If Celery can use Reddis or RabbitMQ for it's message transport, can Boilest use Reddis?
+  * If Celery can use Redis or RabbitMQ for it's message transport, can Boilest use Redis?
 
-    Not in Boilest's current state, and probably never.  Reddis doesn't 'support' prioritization of messages technically at all or as well as rabbit does.  Boilest currently uses RabbitMQ's prioritization of messages to encode the video files with the highest ROI for encoding time.
-
-- Why does Boilest use RabbitMQ over Reddis?
-
-    I happened to have RabbitMQ with the management plugin already installed.
+    Not in Boilest's current state, and probably never.  Redis doesn't 'support' prioritization of messages technically at all or as well as rabbit does.  Boilest currently uses RabbitMQ's prioritization of messages to encode the video files with the highest ROI for encoding time.
 
 - What's in /Old?
 
-  A lot of previous itterations/experiments with this project:
+  A lot of previous iterations/experiments with this project:
   - Different containers for tasks
   - Different queues
   - FFprobe via configuration files
   - Experiments with Flask font end
   - And more
   
-  They're worth keeping around for refrences/discussion on [r/learnpython](https://www.reddit.com/r/learnpython/)
+  They're worth keeping around for references/discussion on [r/learnpython](https://www.reddit.com/r/learnpython/)
 
 ---
 # Todo List
@@ -145,12 +141,17 @@ In a huture itteration, I'll include a python script that populates database and
 - [x] Setup the function to write the results to the DB
 - [x] Replace the prints with logging
 - [ ] Made decisions on audio codec
-- [ ] Makde decisions on subtitle codec
+- [ ] Make decisions on subtitle codec
 - [ ] Research ffprobe flags for HDR content
-- [x] Figure out how to pass the wath folder forward for the SQL write
+- [x] Figure out how to pass the watch folder forward for the SQL write
 - [x] Figure out how to pass the ffmpeg string forward for the SQL write
 - [ ] Stand up repo for management UI
 - [ ] Make tweaks to the priotiziation scoring
 - [ ] Create a 'create database, table' script
-- [ ] Having write_results be it's own task is stupid.  Incoporate it into process_ffmpeg.
+- [ ] Having write_results be it's own task is stupid.  Incorporate it into process_ffmpeg.
 - [ ] Tasks.py is stupidly big.  Break it up into different files for readability/management.
+- [ ] Revisit string formatting i.e. f"Name: {name}, Age: {age}" instead of  name + ", Age:" + str(age)
+- [ ] Explore using the Pydantic Model 
+- [ ] Remove hard-coding related 
+- [ ] Move UniqueID in the SQL to a GUID
+- [ ] Explore using pathlib instead of OS
