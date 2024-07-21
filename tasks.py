@@ -9,7 +9,7 @@ from datetime import datetime
 
 # create logger
 logger = logging.getLogger('boilest_logs')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 # create console handler and set level to debug
 ch = logging.StreamHandler()
@@ -116,8 +116,8 @@ def locate_files(arg):
     directories = ['/anime', '/tv', '/movies']
     extensions = ['.mp4', '.mkv', '.avi']
 
-    logger.debug(f'Searching directories: {directories}')
-    logger.debug(f'File extensions: {extensions}')
+    logger.info(f'Searching directories: {directories}')
+    logger.info(f'File extensions: {extensions}')
 
     for file_located in find_files(directories, extensions):
         logger.debug('File located, sending to ffprobe function')
@@ -339,6 +339,7 @@ def process_ffmpeg(file_located_data):
                 logger.debug(file + ' has passed ffmpeg_postlaunch_checks')
                 if move_media(file_located_data) == True:
                     logger.debug(file + ' has passed move_media')
+                    logger.info ('ffmpeg is done')
                     file_path = file_located_data['file_path']
                     ffmepg_output_file_name = file_located_data['ffmepg_output_file_name'] 
                     file_located_data['new_file_size'] = get_file_size_kb(destination_file_name_function(file_path, ffmepg_output_file_name))
@@ -397,8 +398,8 @@ def run_ffmpeg(file_located_data):
     ffmpeg_stringffmpeg_command = file_located_data['ffmpeg_command']
     ffmpeg_stringffmepg_output_file_name = file_located_data['ffmepg_output_file_name']
     output_ffmpeg_command = f"{ffmpeg_string_settings} \"{ffmpeg_stringfile_path}\" {ffmpeg_stringffmpeg_command} \"{ffmpeg_stringffmepg_output_file_name}\""
-    logger.debug ('ffmpeg_command is: ' + output_ffmpeg_command)
-    logger.debug ('running ffmpeg now')
+    logger.info ('ffmpeg_command is: ' + output_ffmpeg_command)
+    logger.info ('running ffmpeg now')
     try:
         process = subprocess.Popen(output_ffmpeg_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,universal_newlines=True)
         for line in process.stdout:
@@ -567,9 +568,9 @@ def write_results(file_located_data):
         # the varchar for ffmpeg_encoding_string is 999 characters.  This is to keep the db write from failing at 1000 characters
         ffmpeg_encoding_string = ffmpeg_encoding_string[:999]
 
-    logger.debug('Writing results')
+    logger.info('Writing results')
     insert_record(unique_identifier, file_name, file_path, config_name, new_file_size, new_file_size_difference, old_file_size, watch_folder, ffmpeg_encoding_string)
-    logger.debug('Writing results complete')
+    logger.info('Writing results complete')
 
 
 def insert_record(unique_identifier, file_name, file_path, config_name, new_file_size, new_file_size_difference, old_file_size, watch_folder, ffmpeg_encoding_string):

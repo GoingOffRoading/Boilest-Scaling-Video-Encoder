@@ -1,4 +1,7 @@
 ---
+# Kubernetes deployment example using a Daemonset and labeled nodes.
+# Label a node 'boilest':'worker' and Boilest will automatically deploy to it
+# Respository here is Azure Container Registry (ARC) so 
 kind: Daemonset
 apiVersion: apps/v1
 metadata:
@@ -20,15 +23,13 @@ spec:
     spec:
       containers:
         - name: boilest
-          image: TBD
+          image: ghcr.io/goingoffroading/boilest-worker:latest
           imagePullPolicy: Always
           volumeMounts:
             - name: boilestmedia
               mountPath: "/boil_watch"
       nodeSelector:
         boilest: worker
-      imagePullSecrets:
-      - name: azureacr
       nodeName: node101-desktop
       volumes:
         - name: boilestmedia

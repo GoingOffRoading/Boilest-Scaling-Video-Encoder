@@ -52,5 +52,4 @@ ENV sql_pswd boilest
 USER appuser
 
 # Start supervisord
-#CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
 CMD ["celery", "-A", "tasks", "worker"]
