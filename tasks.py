@@ -316,12 +316,11 @@ def check_subtitle_stream(encoding_decision, i, stream_info, ffmpeg_command):
 
 def check_attachmeent_stream(encoding_decision, i, stream_info, ffmpeg_command):
     # Checks the attachment stream from check_codecs to determine if the stream needs encoding
-    codec_name = stream_info['streams'][i]['codec_name'] 
     # This will be populated at a later date
     #desired_attachment_codec = '???'
     #if codec_name != desired_attachment_codec:
     #    encoding_decision = True
-    logger.debug('Steam ' + str(i) + ' codec is: ' + codec_name)
+    # Note, attachments may not have a codec name if the attachment is an image
     ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:t copy'
     return encoding_decision, ffmpeg_command
 
