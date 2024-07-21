@@ -1,1 +1,0 @@
-docker build -t manager -f 01_Manager/Dockerfile .

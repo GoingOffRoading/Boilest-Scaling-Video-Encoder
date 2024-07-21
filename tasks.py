@@ -159,6 +159,8 @@ def requires_encoding(file_located_data):
     stream_info = ffprobe_function(file_located_data['file_path'])
     encoding_decision = False
     old_file_size = file_size_kb(file_located_data['file_path'])
+    file_name = file_located_data['file']
+    logger.info(file_name + ' started requires_encoding')
     processing_priority = get_ffmpeg_processing_priority(old_file_size,stream_info)
     logger.debug('processing_priority is: ' + str(processing_priority))
     encoding_decision, ffmepg_output_file_name = check_container_type(stream_info, encoding_decision, file_located_data['file'])
@@ -174,6 +176,7 @@ def requires_encoding(file_located_data):
         logger.debug ('file does not need encoding')
     logger.debug (encoding_decision)
     logger.debug (ffmpeg_command)
+    logger.info(file_name + ' ended requires_encoding')
 
 
 def get_ffmpeg_processing_priority(old_file_size,stream_info):
@@ -339,7 +342,7 @@ def process_ffmpeg(file_located_data):
                 logger.debug(file + ' has passed ffmpeg_postlaunch_checks')
                 if move_media(file_located_data) == True:
                     logger.debug(file + ' has passed move_media')
-                    logger.info ('ffmpeg is done')
+                    logger.info ('ffmpeg is done with: ' + file)
                     file_path = file_located_data['file_path']
                     ffmepg_output_file_name = file_located_data['ffmepg_output_file_name'] 
                     file_located_data['new_file_size'] = get_file_size_kb(destination_file_name_function(file_path, ffmepg_output_file_name))
@@ -363,29 +366,29 @@ def ffmpeg_prelaunch_checks(file_located_data):
 def prelaunch_file_exists(file_path):
     #  Checks to see if the input file still exists, returns True on existance
     if file_exists(file_path):
-        logger.debug(str(file_path) + ' Exists')
+        logger.debug(str(file_path) + ' Passed prelaunch_file_exists')
         return True
     else:
-        logger.debug(str(file_path) + ' Does Not Exists')
+        logger.error(str(file_path) + ' Failed prelaunch_file_exists')
         return False
 
 
 def prelaunch_hash_match(file_path, pre_launch_old_file_size):
     current_file_hash = get_file_size_kb(file_path)
     if pre_launch_old_file_size == current_file_hash:
-        logger.debug(str(file_path) + ' matches its hash')
+        logger.debug(str(file_path) + ' passed prelaunch_hash_match')
         return True
     else:
-        logger.debug (str(file_path) + ' does not match its hash')
+        logger.error (str(file_path) + ' failed prelaunch_hash_match')
         return False
 
 
 def prelaunch_file_validation(file_path):
     if validate_video(file_path):
-        logger.debug(str(file_path) + ' passed validation')
+        logger.debug(str(file_path) + ' passed prelaunch_file_validation')
         return True
     else:
-        logger.debug(str(file_path) + ' failed validation')
+        logger.error(str(file_path) + ' failed prelaunch_file_validation')
         return False    
 
 
@@ -406,7 +409,7 @@ def run_ffmpeg(file_located_data):
             logger.debug(line)
         return True
     except Exception as e:
-        logger.debug(f"Error: {e}")
+        logger.error(f"Error: {e}")
         return False  # Return a non-zero exit code to indicate an error
 
 
@@ -418,9 +421,10 @@ def ffmpeg_postlaunch_checks(file_located_data):
     post_launch_encoded_file = file_located_data['ffmepg_output_file_name']
     if post_launch_file_check(post_launch_original_file, post_launch_encoded_file):
         if post_launch_file_validation(post_launch_encoded_file):
+            logger.debug(str(post_launch_encoded_file) + 'failed ffmpeg_postlaunch_checks failed')
             return True
     else:
-        logger.debug('ffmpeg_postlaunch_checks failed')
+        logger.error(str(post_launch_encoded_file) + 'failed ffmpeg_postlaunch_checks failed')
         return False
 
 
@@ -430,7 +434,7 @@ def post_launch_file_check(post_launch_original_file, post_launch_encoded_file):
         logger.debug(str(post_launch_encoded_file) + ' passed post_launch_file_check')
         return True
     else:
-        logger.debug(str(post_launch_encoded_file) + ' failed post_launch_file_check')
+        logger.error(str(post_launch_encoded_file) + ' failed post_launch_file_check')
         return False
     
 
@@ -440,7 +444,7 @@ def post_launch_file_validation(post_launch_encoded_file):
         logger.debug(str(post_launch_encoded_file) + ' passed post_launch_file_validation')
         return True
     else:
-        logger.debug(str(post_launch_encoded_file) + ' failed post_launch_file_validation')
+        logger.error(str(post_launch_encoded_file) + ' failed post_launch_file_validation')
         return False
 
 
@@ -605,7 +609,7 @@ def insert_record(unique_identifier, file_name, file_path, config_name, new_file
             logger.debug("Record inserted successfully")
             
     except Error as e:
-        logger.debug(f"Error while connecting to MariaDB: {e}")
+        logger.error(f"Error while connecting to MariaDB: {e}")
     
     finally:
         if connection.is_connected():
