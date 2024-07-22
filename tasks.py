@@ -345,7 +345,7 @@ def process_ffmpeg(file_located_data):
                     file_path = file_located_data['file_path']
                     ffmepg_output_file_name = file_located_data['ffmepg_output_file_name'] 
                     file_located_data['new_file_size'] = get_file_size_kb(destination_file_name_function(file_path, ffmepg_output_file_name))
-                    write_results.apply_async(kwargs={'file_located_data': file_located_data}, priority=1)
+                    write_results(file_located_data)
                     logger.debug(json.dumps(file_located_data, indent=4))
 
 

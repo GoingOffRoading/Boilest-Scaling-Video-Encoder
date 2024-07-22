@@ -156,3 +156,4 @@ In a huture itteration, I'll include a python script that populates database and
 - [ ] Move UniqueID in the SQL to a GUID
 - [ ] Explore using pathlib instead of OS
 - [x] Remove the archive
+- [ ] Some day...  Remove the celery task function for write_resultes
