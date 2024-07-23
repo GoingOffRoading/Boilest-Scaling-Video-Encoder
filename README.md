@@ -1,4 +1,4 @@
-# Boilest
+# Abstraction
 
 Boilest is my solution to:
 
@@ -18,9 +18,9 @@ Because I am terrible at naming things, and it was the first agreeable thing to 
 
 As frenzied as Tdarr fans are on Reddit, I just can't commit/subscribe to a service like that.
 
-[Unmanic](https://github.com/Unmanic/unmanic/tree/master) is magic...  I am a big fan, and Unmanuc is comftorably the inspiration of this project.
+[Unmanic](https://github.com/Unmanic/unmanic/tree/master) is magic...  I am a big fan, and Unmanic is comfortably the inspiration of this project.
 
-I would be using Unmanic today, instead of writing spagetti code, but Josh5 had previously [hardcoded the platform on an older version of FFmpeg](https://github.com/Unmanic/unmanic/blob/master/docker/Dockerfile#L82), doesn't currently support AV1, [has some complexities to build the container](https://github.com/Unmanic/unmanic/blob/master/docker/README.md) that make it difficult to code my own support, and doesn't seem to be keeping up on the repo or accepting PRs.
+I would be using Unmanic today, instead of writing spaghetti code, but Josh5 had previously [hardcoded the platform on an older version of FFmpeg](https://github.com/Unmanic/unmanic/blob/master/docker/Dockerfile#L82), doesn't currently support AV1, [has some complexities to build the container](https://github.com/Unmanic/unmanic/blob/master/docker/README.md) that make it difficult to code my own support, and doesn't seem to be keeping up on the repo or accepting PRs.
 
 ---
 # Why not Handbrake?
@@ -55,35 +55,7 @@ Handbrake is awesome, but:
  Once I make some final decisions around what is optimal for TV/device streaming, there will become targets to audio, subtitles, and attachments.
 
 ---
-# How to deploy
-
-- Create your deployment (Docker/Kubernetes/etc) with the ghcr.io/goingoffroading/boilest-worker:latest container image.
-- Change the container variables to reflect your environment:
-
-| ENV                 | Defaul Value  |
-|---------------------|---------------|
-| user                | celery        |
-| password            | celery        |
-| celery_host         | 192.168.1.110 |
-| celery_port         | 31672         |
-| celery_vhost        | celery        |
-| rabbitmq_host       | 192.168.1.110 |
-| rabbitmq_port       | 32311         |
-| sql_host            | 192.168.1.110 |
-| sql_port            | 32053         |
-| sql_database        | boilest       |
-| sql_user            | boilest       |
-| sql_pswd            | boilest       |
-
-- Deploy the container.
-- SSH into any one of the containers and run 'python start.sh'.  This will kick off all of the workflows.
-
-Done.
-
-- See 'boilest_kubernetes.yml' for an example of a Kubernetes deployment
-
----
-# Prerequisit 
+# Prerequisites  
 
 ---
 ## RabbitMQ
@@ -114,7 +86,36 @@ In the 'boilest' database, create a table called 'ffmpeghistory' with the follow
 | watch_folder             | varchar(100)                    |
 | ffmpeg_encoding_string   | varchar(1000)                   |
 
-In a huture itteration, I'll include a python script that populates database and table into Maria automatically.
+In a future iteration, I'll include a python script that populates database and table into Maria automatically.
+
+---
+# How to deploy
+
+- Create your deployment (Docker/Kubernetes/etc) with the ghcr.io/goingoffroading/boilest-worker:latest container image.
+- Change the container variables to reflect your environment:
+
+| ENV                             | Default Value           | Notes                                               |
+|---------------------------------|-------------------------|-----------------------------------------------------|
+| celery_user                     | celery                  | The user setup for Celery in your RabbitMQ          |
+| celery_password                 | celery                  | The password setup for Celery in your RabbitMQ      |
+| celery_host                     | 192.168.1.110           | The IP address of RabbitMQ                          |
+| celery_port                     | 31672                   | The port RabbitMQ's port 5672 or 5673 are mapped to |
+| celery_vhost                    | celery                  | The RabbitMQ vhost setup for Boilest                |
+| rabbitmq_host                   | 192.168.1.110           | The IP address of RabbitMQ management UI            |
+| rabbitmq_port                   | 32311                   | The port of RabbitMQ management UI                  |
+| sql_host                        | 192.168.1.110           | The IP address of MariaDB                           |
+| sql_port                        | 32053                   | The port mapped to MariaDB's port 3306              |
+| sql_database                    | boilest                 | The database name setup for Boilest                 |
+| sql_user                        | boilest                 | The username setup for Boilest                      |
+| sql_pswd                        | boilest                 | The password setup for Boilest                      |
+
+- Deploy the container.
+- SSH into any one of the containers and run 'python start.sh'.  This will kick off all of the workflows.
+
+Done.
+
+- See 'boilest_kubernetes.yml' for an example of a Kubernetes deployment
+
 
 ---
 # Q&A
