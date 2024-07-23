@@ -1,5 +1,5 @@
 from celery import Celery
-import json, os, logging, subprocess, requests, shutil, mysql.connector
+import json, os, logging, subprocess, shutil, mysql.connector
 from mysql.connector import Error
 from datetime import datetime
 
@@ -53,59 +53,8 @@ app.conf.task_queues = {
 app.conf.task_routes = {
     'locate_files': {'queue': 'worker_queue'},
     'requires_encoding': {'queue': 'worker_queue'},
-    'process_ffmpeg': {'queue': 'worker_queue'},
-    'write_results': {'queue': 'worker_queue'},
+    'process_ffmpeg': {'queue': 'worker_queue'}
 }
-
-
-# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-# >>>>>>>>>>>>>>> Check queue depth >>>>>>>>>>>>>>>
-# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-@app.task
-def queue_workers_if_queue_empty(arg):
-    try:
-        queue_depth = check_queue('worker_queue')        
-        logger.debug(f'Current Worker queue depth is: {queue_depth}')       
-        if queue_depth == 0:
-            logger.info('Starting locate_files')
-            # >>>>>>>>>>><<<<<<<<<<<<<<<<
-            # >>>>>>>>>>><<<<<<<<<<<<<<<<
-            locate_files.apply_async(kwargs={'arg': arg}, priority=1)
-            # >>>>>>>>>>><<<<<<<<<<<<<<<<
-            # >>>>>>>>>>><<<<<<<<<<<<<<<<
-        elif queue_depth > 0:
-            logger.debug(f'{queue_depth} tasks in queue. No rescan needed at this time.')
-        else:
-            logger.error('Something went wrong checking the Worker Queue')
-    
-    except Exception as e:
-        logger.error(f"Error in queue_workers_if_queue_empty: {e}")
-
-
-def check_queue(queue_name):
-    try:
-        rabbitmq_host = 'http://' + os.environ.get('rabbitmq_host','192.168.1.110')
-        rabbitmq_port = os.environ.get('rabbitmq_port','32311')
-        user = os.environ.get('user','celery')
-        password = os.environ.get('password','celery')
-        celery_vhost = os.environ.get('celery_vhost','celery')
-
-        url = f"{rabbitmq_host}:{rabbitmq_port}/api/queues/{celery_vhost}/{queue_name}"
-        logger.debug(f'Checking RabbitMQ queue depth for: {queue_name}')
-
-        response = requests.get(url, auth=(user, password))
-        response.raise_for_status()  # Ensure we raise an exception for HTTP errors
-
-        worker_queue = response.json()
-        queue_depth = worker_queue.get("messages_unacknowledged", 0)
-
-        logger.debug (f'check_queue queue depth is: ' + str(queue_depth))
-        return queue_depth
-    except Exception as e:
-        logger.error(f"Error getting active tasks count: {e}")
-        return -1 # Return -1 to indicate an error
-
 
 # >>>>>>>>>>>>>>>>>>>>>> <<<<<<<<<<<<<<<<<<<<<< 
 # This section starts the discovery of the files by searching directories
@@ -555,7 +504,6 @@ def validate_video(filepath):
 # This section starts the discovery of the files by searching directories
 # >>>>>>>>>>>>>>>>>>>>>> <<<<<<<<<<<<<<<<<<<<<<
 
-@app.task
 def write_results(file_located_data):
     unique_identifier = file_located_data['file'] + str(datetime.now().microsecond)
     file_name = file_located_data['file']

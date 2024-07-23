@@ -158,4 +158,4 @@ Done.
 - [ ] Explore using pathlib instead of OS
 - [x] Remove the archive
 - [ ] Some day...  Remove the celery task function for write_results
-- [ ] Consider moving queue_workers_if_queue_empty to the manager container
+- [x] Consider moving queue_workers_if_queue_empty to the manager container
