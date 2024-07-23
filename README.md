@@ -64,6 +64,12 @@ The backbone of Boilest is a distributed task Python library called [Celery](htt
 
 RabbitMQ will need to be deployed with it's management plugin.
 
+From the management plugin:
+
+- Create a 'celery' vhost
+- Create a user with the user/pwd of celery/celery
+- Give the celery .* configure, write, read permissions in the celery vhost
+
 ---
 ## MariaDB
 
@@ -116,6 +122,28 @@ Done.
 
 - See 'boilest_kubernetes.yml' for an example of a Kubernetes deployment
 
+---
+# How to start the Boilest/video encoding workflow
+Either:
+- Deploy the [Boilest Management GUI](https://github.com/GoingOffRoading/Boilest_Manager_GUI) container and either wait for the cron, or SSH into the container and start start.py
+- SSH into one of the Boilest-Worker containers and run start.py:
+
+In both SSH cases, literally run
+```
+python start.py  
+```
+SSH in Kuberentes is:
+
+```
+kubectl exec -it (your pod name) -- /bin/sh
+```
+
+SSH in Docker is:
+
+```
+docker exec -it (container ID) /bin/sh
+```
+Starting the workflow only needs to be done once from any one of the relevant containers.  That start will trickle into the other containers via the RabbitMQ broker.
 
 ---
 # Q&A
@@ -124,16 +152,6 @@ Done.
 
     Not in Boilest's current state, and probably never.  Redis doesn't 'support' prioritization of messages technically at all or as well as rabbit does.  Boilest currently uses RabbitMQ's prioritization of messages to encode the video files with the highest ROI for encoding time.
 
-- What's in /Old?
-
-  A lot of previous iterations/experiments with this project:
-  - Different containers for tasks
-  - Different queues
-  - FFprobe via configuration files
-  - Experiments with Flask font end
-  - And more
-  
-  They're worth keeping around for references/discussion on [r/learnpython](https://www.reddit.com/r/learnpython/)
 
 ---
 # Todo List
@@ -146,7 +164,7 @@ Done.
 - [ ] Research ffprobe flags for HDR content
 - [x] Figure out how to pass the watch folder forward for the SQL write
 - [x] Figure out how to pass the ffmpeg string forward for the SQL write
-- [ ] Stand up repo for management UI
+- [x] Stand up repo for management UI
 - [ ] Make tweaks to the prioritization scoring
 - [ ] Create a 'create database, table' script
 - [ ] Having write_results be it's own task is stupid.  Incorporate it into process_ffmpeg.
