@@ -146,7 +146,7 @@ In a huture itteration, I'll include a python script that populates database and
 - [x] Figure out how to pass the watch folder forward for the SQL write
 - [x] Figure out how to pass the ffmpeg string forward for the SQL write
 - [ ] Stand up repo for management UI
-- [ ] Make tweaks to the priotiziation scoring
+- [ ] Make tweaks to the prioritization scoring
 - [ ] Create a 'create database, table' script
 - [ ] Having write_results be it's own task is stupid.  Incorporate it into process_ffmpeg.
 - [ ] Tasks.py is stupidly big.  Break it up into different files for readability/management.
@@ -156,4 +156,5 @@ In a huture itteration, I'll include a python script that populates database and
 - [ ] Move UniqueID in the SQL to a GUID
 - [ ] Explore using pathlib instead of OS
 - [x] Remove the archive
-- [ ] Some day...  Remove the celery task function for write_resultes
+- [ ] Some day...  Remove the celery task function for write_results
+- [ ] Consider moving queue_workers_if_queue_empty to the manager container
