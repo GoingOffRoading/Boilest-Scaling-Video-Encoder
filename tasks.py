@@ -41,6 +41,8 @@ app = Celery('worker_queue', broker = celery_url_path('amqp://') )
 
 app.conf.task_default_queue = 'worker_queue'
 app.conf.worker_concurrency = 1
+app.conf.worker_prefetch_multiplier=1
+
 app.conf.task_queues = {
     'worker_queue': {
         'exchange': 'tasks',
