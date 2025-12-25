@@ -1,3 +1,0 @@
-from tasks_manager import queue_workers_if_queue_empty
-
-queue_workers_if_queue_empty('farts')

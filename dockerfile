@@ -1,38 +1,36 @@
-FROM alpine
-RUN apk add --no-cache python3 py3-pip ffmpeg sqlite bash tzdata
-RUN pip install --no-cache-dir --root-user-action=ignore celery flower requests Flask
+# Use the official Python image based on Alpine
+FROM python:3.9-alpine
 
-ENV TZ=US/Pacific
+# Install dependencies and supervisor
+RUN apk update && \
+    apk add --no-cache \
+        build-base \
+        linux-headers \
+        supervisor \
+        ffmpeg && \
+    pip install --no-cache-dir celery requests mysql-connector-python && \
+    apk upgrade
 
-RUN apk update
-RUN apk upgrade
-
-# Need to set UID/GID since we're likely interfacing with files owned by a non-root user
+# Create a non-root user and group
 ARG UID=1000
 ARG GID=1000
+RUN addgroup -g $GID appgroup && \
+    adduser -D -u $UID -G appgroup appuser
 
-RUN mkdir -p /boil_hold
-RUN mkdir -p /Boilest
-RUN mkdir -p /Scripts
+# Create additional directories without setting ownership
+RUN mkdir -p /tv /anime /moviles /boil_hold
 
-RUN mkdir -p /media
-RUN mkdir -p /anime
-RUN mkdir -p /tv
-RUN mkdir -p /movies
+# Create application directory and set ownership
+WORKDIR /app
+COPY . /app
+RUN chown -R appuser:appgroup /app /boil_hold
 
-COPY /Scripts /Scripts
-#COPY /Scripts/DB /Boilest/DB
-WORKDIR "/Scripts"
+# Create log directory and set ownership
+RUN mkdir -p /app/logs && \
+    chown -R appuser:appgroup /app/logs
 
-# Used in Celery.sh
-ENV Manager No
-
-# User in Flower: https://flower.readthedocs.io/en/latest/config.html
-ENV FLOWER_FLOWER_BASIC_AUTH celery:celery
-ENV FLOWER_persistent true
-ENV FLOWER_db /Boilest/flower_db
-ENV FLOWER_purge_offline_workers 60
-ENV FLOWER_UNAUTHENTICATED_API true
+# Environment variables
+ENV TZ=US/Pacific
 
 # Used in celery and rabbitmq
 ENV user celery
@@ -43,25 +41,15 @@ ENV celery_vhost celery
 ENV rabbitmq_host 192.168.1.110
 ENV rabbitmq_port 32311
 
-# USed in FFmpeg
-ENV ffmpeg_settings "-hide_banner -loglevel 16 -stats -stats_period 10"
+# Used in celery and rabbitmq
+ENV sql_host 192.168.1.110
+ENV sql_port 32053
+ENV sql_database boilest
+ENV sql_user boilest
+ENV sql_pswd boilest
 
+# Run as non-root user
+USER appuser
 
-# Add a user that is the same user group as the data being read
-# Is this clean?  Not really...  Will need to revisit this later
-
-RUN addgroup -g 1000 boil 
-RUN adduser -D boil -G boil -u 1000
-RUN chown -R boil:boil /boil_hold /Scripts /Boilest
-
-#RUN chmod +x /Scripts/Celery.sh /Scripts/container_start.py
-
-USER boil
-
-EXPOSE 5000
-EXPOSE 5555
-
-ENTRYPOINT ["/bin/sh"]
-CMD ["/Scripts/Celery.sh"]
-
-
+# Start supervisord
+CMD ["celery", "-A", "tasks", "worker"]
