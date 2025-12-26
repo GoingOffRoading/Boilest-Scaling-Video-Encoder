@@ -1,3 +1,16 @@
+# EDIT
+
+Hey fun people.  I ran this pipeline for close to two years, and it shaved nearly 10Tb out of my NAS.  Awesome!  But there is clearly room for improvement so a V2 is on the way:
+
+- Moving from an external MySql database to an internal SQLite database
+- Startup scripts to check for RabbitMQ setup, DB setup, etc
+- Propper HDR support in V2.1
+- Audio optimization
+- Status US
+
+This is a work in progress in the dev branch.
+
+
 # Abstraction
 
 Boilest is my solution to:
