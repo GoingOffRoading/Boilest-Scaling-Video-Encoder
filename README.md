@@ -156,24 +156,6 @@ Starting the workflow only needs to be done once from any one of the relevant co
 ---
 # Todo List
 
-- [x] Setup a set_priority function for ffprobe based on container, file size, and video codec (I.E. the things that have the greatest impact on ROI)
-- [x] Setup the function to write the results to the DB
-- [x] Replace the prints with logging
-- [ ] Made decisions on audio codec
-- [ ] Make decisions on subtitle codec
-- [ ] Research ffprobe flags for HDR content
-- [x] Figure out how to pass the watch folder forward for the SQL write
-- [x] Figure out how to pass the ffmpeg string forward for the SQL write
-- [x] Stand up repo for management UI
-- [ ] Make tweaks to the prioritization scoring
-- [ ] Create a 'create database, table' script
-- [ ] Having write_results be it's own task is stupid.  Incorporate it into process_ffmpeg.
-- [ ] Tasks.py is stupidly big.  Break it up into different files for readability/management.
-- [ ] Revisit string formatting i.e. f"Name: {name}, Age: {age}" instead of  name + ", Age:" + str(age)
-- [ ] Explore using the Pydantic Model 
-- [ ] Remove hard-coding related 
-- [ ] Move UniqueID in the SQL to a GUID
-- [ ] Explore using pathlib instead of OS
-- [x] Remove the archive
-- [ ] Some day...  Remove the celery task function for write_results
-- [x] Consider moving queue_workers_if_queue_empty to the manager container
+- [ ] Get end to end running in a notebook
+- [ ] Decide on API vs Celery
+- [ ] Containerize 
