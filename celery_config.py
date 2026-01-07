@@ -1,28 +1,26 @@
 import os
 
 TASK_QUEUES = {
-    'worker_queue': {
+    'database_operation ': {
         'exchange': 'tasks',
         'exchange_type': 'direct',
-        'routing_key': 'worker_queue',
+        'routing_key': 'database_operation ',
         'queue_arguments': {'x-max-priority': 10},
     },
-    'manager_queue': {
+    'encode_queue ': {
         'exchange': 'tasks',
         'exchange_type': 'direct',
-        'routing_key': 'manager_queue',
+        'routing_key': 'encode_queue ',
         'queue_arguments': {'x-max-priority': 10},
     }
 }
 
 TASK_ROUTES = {
-    'locate_files': {'queue': 'manager_queue'},
-    'requires_encoding': {'queue': 'worker_queue'},
-    'process_ffmpeg': {'queue': 'worker_queue'}
+    'encode_queue': {'queue': 'encode_queue'},
+    'database_operation': {'queue': 'database_operation'}
 }
 
 def configure_celery(app):
-    app.conf.task_default_queue = 'worker_queue'
     app.conf.worker_concurrency = 1
     app.conf.worker_prefetch_multiplier = 1
 
