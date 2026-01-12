@@ -1,27 +1,20 @@
-"""
-File Scanner Module
-Scans directories for video files and adds them to the database
-Extracted from 01_search_files.ipynb
-"""
-
 import sqlite3
 import os
-import uuid
 from pathlib import Path
-
+import uuid
 
 def write_file_to_database(db_path, directory_guid, file_path, file_name):
     """
-    Write a file record to the database
+    Write a file record to the database if it doesn't already exist
     
     Args:
-        db_path: Path to the database file
-        directory_guid: GUID of the parent directory
-        file_path: Full path to the file
-        file_name: Name of the file
-        
+        db_path (str): Path to the database file
+        directory_guid (str): GUID of the parent directory
+        file_path (str): Full path to the file
+        file_name (str): Name of the file
+    
     Returns:
-        dict: Result containing success status and guid or error message
+        dict: Result with success status and guid
     """
     try:
         conn = sqlite3.connect(str(db_path))
@@ -58,21 +51,21 @@ def write_file_to_database(db_path, directory_guid, file_path, file_name):
         return {'success': False, 'error': f'Database error: {str(e)}'}
 
 
-def scan_directories_and_enqueue(db_path):
+def scan_directories_and_write(db_path='boilest.db'):
     """
-    Scan all directories in the database for video files
+    Scan directories from database and write file records for matching video files
     
     Args:
-        db_path: Path to the database file
-        
+        db_path (str): Path to the database file
+    
     Returns:
-        dict: Summary of scan results including files found, written, skipped, and errors
+        dict: Summary with files_found, files_written, files_skipped, errors
     """
     extensions = ['.mp4', '.mkv', '.avi', '.mov', '.flv', '.wmv', '.ts']
-
+    
     conn = sqlite3.connect(str(db_path))
     cur = conn.cursor()
-
+    
     try:
         # Get all directories with their GUIDs
         cur.execute("SELECT guid, path FROM directories")
@@ -135,4 +128,5 @@ def scan_directories_and_enqueue(db_path):
     print(f"Scan complete: {files_found} files found, {files_written} written, {files_skipped} skipped")
     if errors:
         print(f"Errors: {len(errors)}")
+    
     return summary
