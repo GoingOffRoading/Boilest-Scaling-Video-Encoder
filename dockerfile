@@ -8,7 +8,7 @@ RUN apk update && \
         linux-headers \
         supervisor \
         ffmpeg && \
-    pip install --no-cache-dir celery requests mysql-connector-python pika && \
+    pip install --no-cache-dir celery requests mysql-connector-python pika jupyter nbconvert && \
     apk upgrade
 
 # Create a non-root user and group
@@ -23,8 +23,7 @@ RUN mkdir -p /tv /anime /moviles /boil_hold
 # Create application directory and set ownership
 WORKDIR /app
 COPY . /app
-RUN chown -R appuser:appgroup /app /boil_hold && \
-    chmod +x /app/start.sh
+RUN chown -R appuser:appgroup /app /boil_hold
 
 # Create log directory and set ownership
 RUN mkdir -p /app/logs && \
@@ -33,19 +32,14 @@ RUN mkdir -p /app/logs && \
 
 # Environment variables
 ENV TZ=US/Pacific
-ENV ROLE=worker
-
-# Used in celery and rabbitmq
-ENV user celery
-ENV password celery
-ENV celery_host 192.168.1.110
-ENV celery_port 31672
-ENV celery_vhost celery
-ENV rabbitmq_host 192.168.1.110
-ENV rabbitmq_port 32311
+ENV Role=worker
 
 # Run as non-root user
 USER appuser
 
-# Start the application
-CMD ["/app/start.sh"]
+# Entrypoint will choose manager or worker based on the `Manager` environment variable
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
+CMD [""]
