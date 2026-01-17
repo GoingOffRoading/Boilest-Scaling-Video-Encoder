@@ -34,12 +34,13 @@ RUN mkdir -p /app/logs && \
 ENV TZ=US/Pacific
 ENV Role=worker
 
-# Run as non-root user
-USER appuser
-
 # Entrypoint will choose manager or worker based on the `Manager` environment variable
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
-RUN chmod +x /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh && \
+    chown appuser:appgroup /app/docker-entrypoint.sh
+
+# Run as non-root user (after permissions are set)
+USER appuser
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD [""]
