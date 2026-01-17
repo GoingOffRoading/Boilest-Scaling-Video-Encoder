@@ -9,30 +9,26 @@ set -e
 if [ "${Role}" = "Manager" ]; then
     echo "[ENTRYPOINT] Manager mode detected (Role=${Role}). Running manager startup steps"
     # Restore DB if missing
-    if [ ! -f /app/data/boilest.db ]; then
-        if [ -f /boil_hold/boilest.db ]; then
-            echo "[ENTRYPOINT] Restoring boilest.db to /app/data/"
-            cp /boil_hold/boilest.db /app/data/
-        else
-            echo "[ENTRYPOINT] No /boil_hold/boilest.db to restore"
-        fi
+    if [ ! -f /boil/app/boilest.db ]; then
+        echo "[ENTRYPOINT] No /boil/app/boilest.db found"
+        cp /boil/scripts/boilest.db /boil/app/boilest.db
     fi
 
     # Run start script (non-blocking expected)
-    echo "[ENTRYPOINT] Running start.py"
-    python start.py || echo "[ENTRYPOINT] start.py failed"
+    echo "[ENTRYPOINT] Running manager.py"
+    python /boil/manager.py || echo "[ENTRYPOINT] manager.py failed"
 
 else
     echo "[ENTRYPOINT] Worker mode detected. Converting and running 04_ffmpeg_worker.ipynb"
     # Convert notebook to script
-    jupyter nbconvert --to script /app/04_ffmpeg_worker.ipynb --output /app/04_ffmpeg_worker.py || {
+    jupyter nbconvert --to script /boil/04_ffmpeg_worker.ipynb --output /boil/04_ffmpeg_worker.py || {
         echo "[ENTRYPOINT] Failed to convert notebook to script"
         exec /bin/sh
     }
 
     # Ensure executable permissions
-    chmod +x /app/04_ffmpeg_worker.py || true
+    chmod +x /boil/04_ffmpeg_worker.py || true
 
     # Run the generated script (it should start the worker loop)
-    exec python /app/04_ffmpeg_worker.py
+    exec python /boil/04_ffmpeg_worker.py
 fi
