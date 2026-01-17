@@ -1,5 +1,5 @@
 # Use the official Python image based on Alpine
-FROM python:3.9-alpine
+FROM python:3.13-alpine
 
 # Install dependencies and supervisor
 RUN apk update && \
@@ -36,7 +36,7 @@ COPY . /boil/scripts
 RUN chown -R appuser:appgroup /boil 
 
 # Create log directory and set ownership
-WORKDIR /boil
+#WORKDIR /boil
 
 # Environment variables
 ENV TZ=US/Pacific
