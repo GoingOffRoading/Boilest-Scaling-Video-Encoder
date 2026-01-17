@@ -3,15 +3,12 @@ import sqlite3
 from pathlib import Path
 from scripts.db_status import get_database_status
 from scripts.queue import scan_db_directories_and_write
+from scripts.db_path import get_db_path
 
 app = Flask(__name__)
 
 # Global flag to disable database operations
 DB_DISABLED = False
-
-def get_db_path():
-    """Get the path to the boilest.db database"""
-    return Path.cwd() / 'boilest.db'
 
 
 @app.route('/', methods=['GET'])
@@ -21,13 +18,13 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/api/encode/largest', methods=['GET'])
-def get_largest_encode():
+@app.route('/api/queue/largest', methods=['GET'])
+def get_largest_queue():
     """
-    Query the encode table and return one row sorted by before_file_size DESC limit 1
+    Query the queue table and return one row sorted by before_file_size DESC limit 1
     """
     print("\n" + "="*80)
-    print("[REQUEST] GET /api/encode/largest")
+    print("[REQUEST] GET /api/queue/largest")
     print("="*80)
 
     # Check if database operations are disabled
@@ -53,18 +50,16 @@ def get_largest_encode():
         query = """
             SELECT 
                 guid,
-                directory_path,
-                input_file_name,
+                directory_guid,
+                file_path,
                 output_file_name,
                 before_file_size,
-                decision,
-                ffmpeg_string,
-                date_added
-            FROM encode
+                ffmpeg_string
+            FROM queue
             ORDER BY before_file_size DESC
             LIMIT 1
         """
-        print("[QUERY] Executing query to fetch largest encode by before_file_size...")
+        print("[QUERY] Executing query to fetch largest queue by before_file_size...")
         cur.execute(query)
 
         row = cur.fetchone()
@@ -77,19 +72,19 @@ def get_largest_encode():
         if row:
             # Convert row to dictionary
             result = dict(row)
-            print(f"[RESULT] Returning encode record with before_file_size: {result['before_file_size']} bytes")
+            print(f"[RESULT] Returning queue record with before_file_size: {result['before_file_size']} bytes")
             print("="*80 + "\n")
             return jsonify({
                 'success': True,
                 'data': result
             }), 200
         else:
-            print("[RESULT] No records found in encode table")
+            print("[RESULT] No records found in queue table")
             print("="*80 + "\n")
             return jsonify({
                 'success': True,
                 'data': None,
-                'message': 'No records found in encode table'
+                'message': 'No records found in queue table'
             }), 200
 
     except Exception as e:
@@ -212,11 +207,14 @@ def create_encoded():
         }), 500
 
 
-def check_queue_completion(db_path='boilest.db'):
+def check_queue_completion(db_path=None):
     """
     Check if all queue items have been completed.
     Returns False if there are queue items not in completed table, True otherwise.
     """
+    if db_path is None:
+        db_path = get_db_path()
+    
     try:
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
@@ -383,4 +381,4 @@ if __name__ == '__main__':
     print("  - GET  /api/db/status       (Check database status)")
     print("  - GET  /health              (Health check)")
     print("="*80 + "\n")
-    app.run(debug=False, port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)

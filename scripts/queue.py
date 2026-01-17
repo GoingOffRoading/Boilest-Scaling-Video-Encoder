@@ -6,12 +6,14 @@ import subprocess
 import json
 from pathlib import Path
 import logging
+from scripts.db_path import get_db_path
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
 
 logging.debug("Libraries imported successfully")
 
+db_path = get_db_path()
 
 # =============================================================================
 # Get Directories
@@ -19,7 +21,7 @@ logging.debug("Libraries imported successfully")
 # Todo:
 # - [ ] Figure out better connection open/close logic 
 
-def get_all_directories(db_path='boilest.db'):
+def get_all_directories(db_path):
     """Return all rows from the `directories` table as a list of (guid, path)."""
     conn = None
     try:
@@ -242,7 +244,6 @@ def write_to_queue(directory_guid, file_path, output_file_name, before_file_size
         date_added = datetime.now().isoformat()
         input_file_name = os.path.basename(file_path)
 
-        db_path = 'boilest.db'
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
 
@@ -302,7 +303,7 @@ def write_to_db (file_path, directory_guid):
 #write_to_db(file_path, None)
 
 
-def scan_db_directories_and_write(db_path='boilest.db', extensions=None):
+def scan_db_directories_and_write(db_path=None, extensions=None):
     """Scan all directories stored in the `directories` table and for each file found
     call `write_to_db` with the file path. Returns the number of files processed.
     """
@@ -330,4 +331,4 @@ def scan_db_directories_and_write(db_path='boilest.db', extensions=None):
 
 if __name__ == '__main__':
     # Example usage (uncomment to run):
-    scan_db_directories_and_write('boilest.db')
+    scan_db_directories_and_write(db_path)
