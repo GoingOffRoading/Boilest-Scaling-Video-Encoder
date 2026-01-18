@@ -7,7 +7,7 @@ RUN apk update && \
         build-base \
         linux-headers \
         ffmpeg && \
-    pip install --no-cache-dir flask && \
+    pip install --no-cache-dir flask requests && \
     apk upgrade
 
 # Create a non-root user and group
@@ -43,6 +43,8 @@ ENV FLASK_RUN_PORT=5000
 # Environment variables
 ENV TZ=US/Pacific
 ENV Role=Worker
+ENV FFMPEG_SETTINGS='ffmpeg -hide_banner -loglevel 16 -stats -stats_period 10 -y -i'
+ENV POLL_INTERVAL=60
 
 # Entrypoint will choose manager or worker based on the `Manager` environment variable
 RUN chmod +x /Boil/Scripts/entrypoint.sh && \

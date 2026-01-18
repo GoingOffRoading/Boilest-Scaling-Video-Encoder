@@ -4,9 +4,9 @@ import os
 import uuid
 import subprocess
 import json
-from pathlib import Path
 import logging
 from scripts.db_path import get_db_path
+from scripts.get_file_size_kb import get_file_size_kb
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
@@ -219,18 +219,7 @@ def output_file_name(file_path, encoding_decision):
 # =============================================================================
 # Get File Size Function
 # =============================================================================
-
-def get_file_size_kb(file_path):
-    try:
-        file_size_bytes = Path(file_path).stat().st_size
-        file_size_kb = int(file_size_bytes / 1024)
-        return file_size_kb
-    except FileNotFoundError:
-        logging.debug(f"✗ File not found: {file_path}")
-        return 0
-    except Exception as e:
-        logging.debug(f"✗ Error getting file size: {e}")
-        return 0
+# Moved to scripts.get_file_size_kb.get_file_size_kb and imported above.
 
 
 # =============================================================================

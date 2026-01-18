@@ -21,16 +21,6 @@ if [ "${Role}" = "Manager" ]; then
     python /Boil/Scripts/manager.py || echo "[ENTRYPOINT] manager.py failed"
 
 else
-    echo "[ENTRYPOINT] Worker mode detected. Converting and running 04_ffmpeg_worker.ipynb"
-    # Convert notebook to script
-    jupyter nbconvert --to script /boil/04_ffmpeg_worker.ipynb --output /boil/04_ffmpeg_worker.py || {
-        echo "[ENTRYPOINT] Failed to convert notebook to script"
-        exec /bin/sh
-    }
-
-    # Ensure executable permissions
-    chmod +x /boil/04_ffmpeg_worker.py || true
-
-    # Run the generated script (it should start the worker loop)
-    exec python /boil/04_ffmpeg_worker.py
+    echo "[ENTRYPOINT] Worker mode detected (Role=${Role}). Running worker.py"
+    python /Boil/Scripts/worker.py || echo "[ENTRYPOINT] worker.py failed"
 fi
