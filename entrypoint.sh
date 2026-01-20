@@ -16,7 +16,7 @@ if [ "${Role}" = "Manager" ]; then
             cp /Boil/Scripts/Boilest.db /Boil/App/Boilest.db
         else
             echo "[ENTRYPOINT] No template database found, creating new database"
-            python3 /Boil/Scripts/init_database.py /Boil/App/Boilest.db
+            python3 /Boil/Scripts/scripts/init_database.py /Boil/App/Boilest.db
         fi
         # Ensure proper permissions on the database file
         chmod 664 /Boil/App/Boilest.db
