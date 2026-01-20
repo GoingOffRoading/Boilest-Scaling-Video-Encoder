@@ -8,19 +8,12 @@ set -e
 # If Manager env var exists and is non-empty -> manager
 if [ "${Role}" = "Manager" ]; then
     echo "[ENTRYPOINT] Manager mode detected (Role=${Role}). Running manager startup steps"
-    # Restore DB if missing
+    
+    # Check if database exists, if not copy from /Boil/Scripts
     if [ ! -f /Boil/App/Boilest.db ]; then
-        echo "[ENTRYPOINT] No /Boil/App/Boilest.db found"
-        if [ -f /Boil/Scripts/Boilest.db ]; then
-            echo "[ENTRYPOINT] Copying template database from /Boil/Scripts/Boilest.db"
-            cp /Boil/Scripts/Boilest.db /Boil/App/Boilest.db
-        else
-            echo "[ENTRYPOINT] No template database found, creating new database"
-            python3 /Boil/Scripts/scripts/init_database.py /Boil/App/Boilest.db
-        fi
-        # Ensure proper permissions on the database file
+        echo "[ENTRYPOINT] No /Boil/App/Boilest.db found.  Copying template database from /Boil/Scripts/Boilest.db"
+        cp /Boil/Scripts/Boilest.db /Boil/App/Boilest.db
         chmod 664 /Boil/App/Boilest.db
-        echo "[ENTRYPOINT] Database permissions set"
     else
         echo "[ENTRYPOINT] /Boil/App/Boilest.db found"
     fi

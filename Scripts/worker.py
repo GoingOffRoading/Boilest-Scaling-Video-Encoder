@@ -12,10 +12,10 @@ import subprocess
 import time
 import os
 from pathlib import Path
-from scripts.file_exists import file_exists
-from scripts.validate_video import validate_video
-from scripts.get_file_size_kb import get_file_size_kb
-from scripts.output_path import get_output_path
+from .file_exists import file_exists
+from .worker_validate_video import validate_video
+from .get_file_size_kb import get_file_size_kb
+from .worker_output_path import get_output_path
 
 
 # API Configuration

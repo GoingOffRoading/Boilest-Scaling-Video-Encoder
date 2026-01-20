@@ -1,5 +1,5 @@
 import sqlite3
-from scripts.db_path import get_db_path
+from .db_path import get_db_path
 
 __all__ = ["get_largest_queue_logic"]
 

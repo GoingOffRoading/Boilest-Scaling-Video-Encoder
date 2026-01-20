@@ -29,7 +29,7 @@ RUN mkdir -p /Boil/Media/TV && \
     mkdir -p /Boil/Boil_Hold
 
 # Create application directory and set ownership
-COPY . /Boil/Scripts
+COPY Scripts /Boil/Scripts
 
 # Create directories for unpersisted application data 
 RUN chown -R appuser:appgroup /Boil 
