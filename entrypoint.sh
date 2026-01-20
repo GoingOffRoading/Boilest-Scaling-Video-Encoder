@@ -16,49 +16,7 @@ if [ "${Role}" = "Manager" ]; then
             cp /Boil/Scripts/Boilest.db /Boil/App/Boilest.db
         else
             echo "[ENTRYPOINT] No template database found, creating new database"
-            python3 << 'EOF'
-import sqlite3
-from pathlib import Path
-
-db_path = Path('/Boil/App/Boilest.db')
-conn = sqlite3.connect(db_path)
-cur = conn.cursor()
-
-cur.execute("""CREATE TABLE IF NOT EXISTS directories (
-    guid TEXT PRIMARY KEY,
-    path TEXT NOT NULL UNIQUE,
-    added_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-);""")
-
-cur.execute("""CREATE TABLE IF NOT EXISTS queue (
-    guid TEXT PRIMARY KEY,
-    directory_guid TEXT NOT NULL,
-    file_path TEXT NOT NULL,
-    output_file_name TEXT,
-    before_file_size INTEGER NOT NULL,
-    ffmpeg_string TEXT,
-    date_added TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-);""")
-
-cur.execute("""CREATE TABLE IF NOT EXISTS completed (
-    guid TEXT PRIMARY KEY,
-    queued_file_guid TEXT NOT NULL,
-    after_file_size INTEGER NOT NULL,
-    date_added TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-);""")
-
-cur.execute("""CREATE TABLE IF NOT EXISTS error (
-    guid TEXT PRIMARY KEY,
-    queued_file_guid TEXT NOT NULL,
-    reason TEXT NOT NULL,
-    additional_detail TEXT,
-    date_added TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-);""")
-
-conn.commit()
-conn.close()
-print("[ENTRYPOINT] Database created successfully")
-EOF
+            python3 /Boil/Scripts/init_database.py /Boil/App/Boilest.db
         fi
         # Ensure proper permissions on the database file
         chmod 664 /Boil/App/Boilest.db
