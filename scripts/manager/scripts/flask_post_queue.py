@@ -1,25 +1,24 @@
-from datetime import datetime
+"""
+flask_post_queue.py
+
+This script scans directories from the database and queues video files for encoding.
+"""
+
 import sqlite3
 import os
 import uuid
 import subprocess
 import json
 import logging
-from db.db_path import get_db_path
-from shared.scripts.get_file_size_kb import get_file_size_kb
+from pathlib import Path
+from datetime import datetime
+from db_path import get_db_path
 
 # Configure logging
-logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
 logging.debug("Libraries imported successfully")
 
-db_path = get_db_path()
-
-# =============================================================================
-# Get Directories
-# =============================================================================
-# Todo:
-# - [ ] Figure out better connection open/close logic 
 
 def get_all_directories(db_path):
     """Return all rows from the `directories` table as a list of (guid, path)."""
@@ -41,41 +40,52 @@ def get_all_directories(db_path):
         return []
 
 
-# =============================================================================
-# Directory Scanner
-# =============================================================================
+def find_video_files(directory_path, extensions=None):
+    """Yield (directory, filename) tuples for video files under `directory_path`.
 
-# Note: `write_file_to_database` removed from this cell. Use central database utilities instead.
-
-def scan_directories_and_enqueue(directory_path, directory_guid=None, extensions=None):
+    `extensions` should be a list of extensions (with leading dot).
+    If not provided a sensible default set will be used.
+    """
     if extensions is None:
         extensions = ['.mp4', '.mkv', '.avi', '.mov', '.flv', '.wmv', '.ts']
+    # Normalize to lowercase for comparison
+    lower_exts = {e.lower() for e in extensions}
+
     directory_path = os.path.expanduser(directory_path)
     if not os.path.isdir(directory_path):
-        logging.debug(f'Directory not found: {directory_path}')
+        logging.debug(f'Not a directory: {directory_path}')
         return
+
     for root, dirs, files in os.walk(directory_path):
-        for file in files:
-            for ext in extensions:
-                if file.lower().endswith(ext.lower()):
-                    file_path = os.path.join(root, file)
-                    yield {
-                        'directory_guid': directory_guid,
-                        'root': root,
-                        'file': file,
-                        'file_path': file_path
-                    }
-                    break  # Only match one extension per file
+        for file_name in files:
+            _, ext = os.path.splitext(file_name)
+            if ext.lower() in lower_exts:
+                # Yield directory path (root) and filename separately
+                yield root, file_name
 
 
-# =============================================================================
-# FFProbe Function
-# =============================================================================
-# Todo:
-# - [ ] Research expanding the entries on the ffprobe string for HDR and other criteria
-
-def run_ffprobe(file_path):
+def is_file_unpulled_in_queue(input_file_name: str, directory_path: str, db_path: str) -> bool:
+    """Check if file is already in queue and not yet encoded."""
+    conn = sqlite3.connect(db_path)
     try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT 1 FROM queue WHERE input_file_name = ? AND directory_path = ? AND datetime_encoded IS NULL LIMIT 1",
+            (input_file_name, directory_path),
+        )
+        return cur.fetchone() is not None
+    finally:
+        conn.close()
+
+
+def run_ffprobe(directory_path, filename):
+    """Run ffprobe for a file.
+
+    Backwards-compatible: if `filename` is None, `path_or_dir` is treated as a full file path.
+    Otherwise `path_or_dir` is a directory and `filename` is joined to it."""
+    try:
+        file_path = os.path.join(directory_path, filename)
+
         cmd = [
             'ffprobe',
             '-loglevel', 'quiet',
@@ -106,25 +116,11 @@ def run_ffprobe(file_path):
         return {'error': str(e)}
 
 
-# =============================================================================
-# Check Codecs
-# =============================================================================
-# Loops through the streams in stream_info from requires_encoding, then calls 
-# functions to determine if the steam needs encoding based on stream type conditions 
-#
-# Todo:
-# - [x] Copy over the stream looping function from Boilest v1.0
-# - [ ] Research SVT-AV1 best practices for various media types
-# - [ ] Store SVT-AV1 best practice presets in the DB
-# - [ ] Call best-practive presets in check_video_stream
-# - [ ] Determine what audio codec to go with
-# - [ ] Determine what the compromises will be if ASS subtitles are re-encoded as SubRip
-# - [ ] Determine if there are consequences for deleting attachments 
-
-def check_codecs(encoding_decision,stream_info, ffmpeg_command):
+def check_codecs(encoding_decision, stream_info, ffmpeg_command):
+    """Check codecs in streams and build ffmpeg command."""
     streams_count = stream_info['format']['nb_streams']
     
-    for i in range (0,streams_count):
+    for i in range(0, streams_count):
         codec_type = stream_info['streams'][i]['codec_type'] 
         if codec_type == 'video':
             logging.debug('Stream ' + str(i) + ' is video')
@@ -142,8 +138,9 @@ def check_codecs(encoding_decision,stream_info, ffmpeg_command):
     logging.debug(ffmpeg_command)
     return encoding_decision, ffmpeg_command
 
+
 def check_video_stream(encoding_decision, i, stream_info, ffmpeg_command):
-    # Checks the video stream from check_codecs to determine if the stream needs encoding
+    """Checks the video stream from check_codecs to determine if the stream needs encoding."""
     codec_name = stream_info['streams'][i]['codec_name'] 
     desired_video_codec = 'av1'
     logging.debug('Steam ' + str(i) + ' codec is: ' + codec_name)
@@ -161,7 +158,7 @@ def check_video_stream(encoding_decision, i, stream_info, ffmpeg_command):
 
 
 def check_audio_stream(encoding_decision, i, stream_info, ffmpeg_command):
-    # Checks the audio stream from check_codecs to determine if the stream needs encoding
+    """Checks the audio stream from check_codecs to determine if the stream needs encoding."""
     codec_name = stream_info['streams'][i]['codec_name'] 
     # This will be populated at a later date
     #desired_audio_codec = 'aac'
@@ -173,7 +170,7 @@ def check_audio_stream(encoding_decision, i, stream_info, ffmpeg_command):
 
 
 def check_subtitle_stream(encoding_decision, i, stream_info, ffmpeg_command):
-    # Checks the subtitle stream from check_codecs to determine if the stream needs encoding
+    """Checks the subtitle stream from check_codecs to determine if the stream needs encoding."""
     codec_name = stream_info['streams'][i]['codec_name'] 
     # This will be populated at a later date
     #desired_subtitle_codec = 'srt'
@@ -185,7 +182,7 @@ def check_subtitle_stream(encoding_decision, i, stream_info, ffmpeg_command):
 
 
 def check_attachmeent_stream(encoding_decision, i, stream_info, ffmpeg_command):
-    # Checks the attachment stream from check_codecs to determine if the stream needs encoding
+    """Checks the attachment stream from check_codecs to determine if the stream needs encoding."""
     # This will be populated at a later date
     #desired_attachment_codec = '???'
     #if codec_name != desired_attachment_codec:
@@ -195,224 +192,129 @@ def check_attachmeent_stream(encoding_decision, i, stream_info, ffmpeg_command):
     return encoding_decision, ffmpeg_command
 
 
-# =============================================================================
-# File Output Naming Function
-# =============================================================================
-
-def output_file_name(file_path, encoding_decision):
-    # Get the filename and current extension
-    filename = os.path.basename(file_path)
-    name_without_ext = os.path.splitext(filename)[0]
-    current_ext = os.path.splitext(filename)[1]
+def output_file_name_fx(input_file_name, encoding_decision):
+    """Generate output filename with .mkv extension if needed."""
+    # Get the current extension from the filename
+    name_without_ext = os.path.splitext(input_file_name)[0]
+    current_ext = os.path.splitext(input_file_name)[1]
     
     # Change extension to .mkv if it's not already
     if current_ext.lower() != '.mkv':
-        new_filename = name_without_ext + '.mkv'
+        output_file_name = name_without_ext + '.mkv'
         encoding_decision = True
     else:
-        new_filename = filename
+        output_file_name = input_file_name
     
     # Return just the new filename without any directory path
-    return new_filename, encoding_decision
+    return output_file_name, encoding_decision
 
 
-# =============================================================================
-# Get File Size Function
-# =============================================================================
-# Moved to scripts.get_file_size_kb.get_file_size_kb and imported above.
-
-
-# =============================================================================
-# Write to Queue Function
-# =============================================================================
-
-def write_to_queue(directory_guid, file_path, output_file_name, before_file_size, ffmpeg_string):
-    """Write an entry into the `queue` table in boilest.db."""
+def get_file_size_kb(directory_path, filename):
+    """Get file size in KB."""
     try:
-        guid = str(uuid.uuid4())
-        date_added = datetime.now().isoformat()
-        input_file_name = os.path.basename(file_path)
+        file_path = os.path.join(directory_path, filename)
+        file_size_bytes = Path(file_path).stat().st_size
+        file_size_kb = int(file_size_bytes / 1024)
+        return file_size_kb
+    except FileNotFoundError:
+        logging.debug(f"✗ File not found: {file_path}")
+        return 0
+    except Exception as e:
+        logging.debug(f"✗ Error getting file size: {e}")
+        return 0
+
+
+def write_to_queue(directory_guid, directory_path, input_file_name, output_file_name, before_file_size, ffmpeg_string, db_path):
+    """Write a row into `queue` using the updated schema.
+
+    Schema columns inserted:
+      directory_guid, file_guid, directory_path, input_file_name,
+      output_file_name, before_file_size, after_file_size, ffmpeg_string,
+      datetime_added, datetime_pulled, datetime_encoded
+
+    Parameters:
+      - directory_guid (str)
+      - directory_path (str)
+      - input_file_name (str)
+      - output_file_name (str)
+      - before_file_size (int)
+      - ffmpeg_string (str)
+      - after_file_size (int|None) optional
+      - db_path (str|None) optional DB path; falls back to global `db_path` variable
+    """
+    try:
+        file_guid = str(uuid.uuid4())
+        datetime_added = datetime.now().isoformat()
+        after_file_size = None
+        datetime_pulled = None
+        datetime_encoded = None
 
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
 
-        # Resolve directory path from provided directory GUID if possible
-        directory_path = None
-        try:
-            cur.execute("SELECT path FROM directories WHERE guid = ?", (directory_guid,))
-            row = cur.fetchone()
-            if row:
-                directory_path = row[0]
-        except Exception:
-            directory_path = None
-
-        # Fallback to dirname of file_path if directory_path not found
-        if not directory_path:
-            directory_path = os.path.dirname(file_path)
-
-        cur.execute("INSERT INTO queue (guid, directory_guid, file_path, output_file_name, before_file_size, ffmpeg_string, date_added) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    (guid, directory_guid, file_path, output_file_name, before_file_size, ffmpeg_string, date_added))
+        cur.execute(
+            "INSERT INTO queue (directory_guid, file_guid, directory_path, input_file_name, output_file_name, before_file_size, after_file_size, ffmpeg_string, datetime_added, datetime_pulled, datetime_encoded) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                directory_guid,
+                file_guid,
+                directory_path,
+                input_file_name,
+                output_file_name,
+                before_file_size,
+                after_file_size,
+                ffmpeg_string,
+                datetime_added,
+                datetime_pulled,
+                datetime_encoded,
+            ),
+        )
         conn.commit()
         conn.close()
-        logging.debug(f"✓ Wrote queue entry {guid} for {input_file_name}")
-        return guid
+
+        logging.debug(f"✓ Wrote queue entry {file_guid} for {input_file_name}")
+        return file_guid
+
     except Exception as e:
         logging.debug(f"✗ Error writing to queue: {e}")
         try:
             conn.close()
-        except:
+        except Exception:
             pass
         return None
 
 
-# =============================================================================
-# Pulling it all together
-# =============================================================================
+def run_queue_workflow(db_path=None, extensions=None):
+    """Main workflow to scan directories and queue files for encoding."""
+    db_path = get_db_path()
 
-def write_to_db (file_path, directory_guid):
-    logging.debug(file_path)
-    default_encoding_decision = False
-    logging.debug(default_encoding_decision)
-    file_size = get_file_size_kb(file_path)
-    logging.debug(file_size)
-    new_filename_value, new_encoding_decision = output_file_name(file_path, default_encoding_decision)
-    logging.debug(new_filename_value)
-    logging.debug(new_encoding_decision)
-    stream_info = run_ffprobe(file_path)
-    ffmpeg_command = ''
-    final_encoding_decision, new_ffmpeg_command = check_codecs(new_encoding_decision, stream_info, ffmpeg_command)
-    logging.debug(final_encoding_decision)
-    logging.debug(new_ffmpeg_command)
-    if final_encoding_decision == True:
-        logging.debug('Queue file for encoding')
-        write_to_queue(directory_guid, file_path, new_filename_value, file_size, new_ffmpeg_command)
-    else:
-        logging.debug('Do not queue file for encoding')
+    print(db_path)
 
-#write_to_db(file_path, None)
-
-
-def scan_db_directories_and_write(db_path=None, extensions=None):
-    """Scan all directories stored in the `directories` table and for each file found
-    call `write_to_db` with the file path. Returns the number of files processed.
-    """
-    rows = get_all_directories(db_path)
-    if not rows:
-        logging.debug('No directories found in DB.')
-        return 0
-    total = 0
-    for guid, path in rows:
-        logging.debug(f'Scanning directory {path} (guid={guid})')
-        for item in scan_directories_and_enqueue(path, directory_guid=guid, extensions=extensions):
-            # Each yielded item is expected to be a dict with a 'file_path' key
-            file_path = item.get('file_path') if isinstance(item, dict) else None
-            if not file_path:
-                logging.debug(f'✗ Skipping item without file_path: {item}')
-                continue
-            try:
-                write_to_db(file_path,guid)
-                total += 1
-            except Exception as e:
-                logging.debug(f'✗ Error processing {file_path}: {e}')
-    logging.debug(f'Done. Total files processed: {total}')
-    return total
-
-
-if __name__ == '__main__':
-    # Example usage (uncomment to run):
-    scan_db_directories_and_write(db_path)
-
-
-# =============================================================================
-# Flask Scan Logic Functions
-# =============================================================================
-
-def check_queue_completion(db_path=None):
-    """
-    Check if all queue items have been completed.
-    Returns False if there are queue items not in completed table, True otherwise.
-    """
-    if db_path is None:
-        db_path = get_db_path()
+    directories = get_all_directories(db_path)
     
-    try:
-        conn = sqlite3.connect(db_path)
-        cur = conn.cursor()
-        
-        # LEFT JOIN to find queue items that don't have a matching completed entry
-        query = """
-            SELECT COUNT(*) 
-            FROM queue q
-            LEFT JOIN completed c ON q.guid = c.queued_file_guid
-            WHERE c.guid IS NULL
-        """
-        
-        cur.execute(query)
-        uncompleted_count = cur.fetchone()[0]
-        conn.close()
-        
-        # Return False if there are uncompleted items, True otherwise
-        return uncompleted_count == 0
-        
-    except Exception as e:
-        print(f"[ERROR] Error checking queue completion: {e}")
-        return False
+    for directory_guid, directory_path in directories:
+        print(f"\nScanning directory {directory_path} (guid={directory_guid})")
+        for directory, input_file_name in find_video_files(directory_path):
+            file_path = os.path.join(directory, input_file_name)
+            print(f"  Found: {file_path}")
+            if is_file_unpulled_in_queue(input_file_name, directory, db_path) == False:
+                print(f"    Adding to queue: {input_file_name}")
+                default_encoding_decision = False
+                ffmpeg_command = ''
+                probe_data = run_ffprobe(directory, input_file_name)
+                output_file_name, file_encoding_decision = output_file_name_fx(input_file_name, default_encoding_decision)
+                final_encoding_decision, ffmpeg_command = check_codecs(file_encoding_decision, probe_data, ffmpeg_command)
+                
+                print(final_encoding_decision)
+                print(ffmpeg_command)
+                print(output_file_name)
+
+                if final_encoding_decision == True:
+                    before_file_size = get_file_size_kb(directory, input_file_name)
+                    file_guid = write_to_queue(directory_guid, directory, input_file_name, output_file_name, before_file_size, ffmpeg_command, db_path)
+                    print(f"    Queued file_guid: {file_guid}")
+            else:
+                print(f"    Skiping: {input_file_name}")
 
 
-def scan_logic(db_disabled_ref):
-    """
-    Scan directories for video files and probe them to populate queue table
-    Uses the scan_db_directories_and_write function from queue.py
-    
-    Args:
-        db_disabled_ref (dict): Dictionary with 'value' key containing current DB_DISABLED state
-        
-    Returns:
-        tuple: (response_data: dict, status_code: int)
-    """
-    print("\n" + "="*80)
-    print("[REQUEST] POST /api/scan")
-    print("="*80)
-
-    db_path = str(get_db_path())
-
-    # Only proceed if queue is already cleared/completed
-    if not check_queue_completion(db_path):
-        print("[SCAN] Queue still has uncompleted items; aborting scan.")
-        return {
-            'success': False,
-            'error': 'Queue contains items not yet completed. Finish current queue before scanning again.'
-        }, 409
-
-    prev_db_disabled = db_disabled_ref['value']
-    db_disabled_ref['value'] = True
-    print("[DB] Database operations temporarily disabled for scan")
-
-    try:
-        # Scan directories and write to queue
-        print("[SCAN] Scanning directories and processing files...")
-        total_files = scan_db_directories_and_write(db_path)
-
-        print(f"[SCAN] Complete: {total_files} files processed")
-
-        return {
-            'success': True,
-            'message': 'Scan and queue completed',
-            'results': {
-                'files_processed': total_files
-            }
-        }, 200
-
-    except Exception as e:
-        print(f"[ERROR] Exception occurred: {type(e).__name__}")
-        print(f"[ERROR] Error message: {str(e)}")
-        return {
-            'success': False,
-            'error': str(e)
-        }, 500
-
-    finally:
-        db_disabled_ref['value'] = prev_db_disabled
-        state = 'disabled' if db_disabled_ref['value'] else 'enabled'
-        print(f"[DB] Database operations restored to {state}")
-        print("="*80 + "\n")
+if __name__ == "__main__":
+    run_queue_workflow()
