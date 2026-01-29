@@ -1,6 +1,6 @@
 import sqlite3
 from datetime import datetime
-from ..db.db_path import get_db_path
+from db_path import get_db_path
 
 __all__ = ["post_completed_encode_logic"]
 

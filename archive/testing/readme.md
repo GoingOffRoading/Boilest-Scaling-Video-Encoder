@@ -1,1 +1,0 @@
-Lots go wrong and I am stashing diagnostic scripts here

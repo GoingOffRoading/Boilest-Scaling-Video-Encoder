@@ -1,19 +1,10 @@
 import sqlite3
-from ..db.db_path import get_db_path
+from db_path import get_db_path
 
 __all__ = ["get_largest_queue_logic"]
 
 
 def get_largest_queue_logic(db_disabled):
-    """
-    Query the queue table and return one row sorted by before_file_size DESC limit 1
-    
-    Args:
-        db_disabled (bool): Whether database operations are currently disabled
-        
-    Returns:
-        tuple: (response_data: dict, status_code: int)
-    """
     print("\n" + "="*80)
     print("[REQUEST] GET /api/queue/largest")
     print("="*80)
@@ -30,7 +21,6 @@ def get_largest_queue_logic(db_disabled):
     try:
         db_path = get_db_path()
         print(f"[DB] Database path: {db_path}")
-        print(f"[DB] Database exists: {db_path.exists()}")
 
         conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row  # This allows accessing columns by name
@@ -40,13 +30,13 @@ def get_largest_queue_logic(db_disabled):
         # Query the encode table sorted by before_file_size descending, limit 1
         query = """
             SELECT 
-                guid,
-                directory_guid,
-                file_path,
+                file_guid,
+                directory_path,
+                input_file_name,
                 output_file_name,
-                before_file_size,
-                ffmpeg_string
-            FROM queue
+                before_file_size
+            FROM queue q
+            WHERE datetime_pulled IS NULL AND datetime_encoded IS NULL
             ORDER BY before_file_size DESC
             LIMIT 1
         """
@@ -56,6 +46,15 @@ def get_largest_queue_logic(db_disabled):
         row = cur.fetchone()
         print(f"[QUERY] Query executed successfully")
         print(f"[RESULT] Row found: {row is not None}")
+
+        if row:
+            update_query = """
+                UPDATE queue
+                SET datetime_pulled = CURRENT_TIMESTAMP
+                WHERE file_guid = ?
+            """
+            cur.execute(update_query, (row["file_guid"],))
+            conn.commit()
 
         conn.close()
         print("[DB] Connection closed")
