@@ -14,7 +14,7 @@ import os
 from pathlib import Path
 from .worker.file_exists import file_exists
 from .scripts.worker_validate_video import validate_video
-from ..shared.scripts.get_file_size_kb import get_file_size_kb
+from .scripts.get_file_size_kb import get_file_size_kb
 from .scripts.worker_output_path import get_output_path
 
 

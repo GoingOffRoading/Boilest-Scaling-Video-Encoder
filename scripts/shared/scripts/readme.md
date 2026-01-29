@@ -1,1 +1,0 @@
-Scripts and etc for setting up the infrastructure 
