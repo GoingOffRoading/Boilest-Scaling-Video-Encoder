@@ -1,9 +1,9 @@
 from flask import Flask, jsonify, request, render_template
-from .db_status import get_database_status
-from .flask_get_largest_queue import get_largest_queue_logic
-from .flask_post_completed_encode import post_completed_encode_logic
-from .flask_post_queue import scan_logic
-from .flask_post_toggle_database import toggle_database_logic
+from .db.db_status import get_database_status
+from .scripts.flask_get_largest_queue import get_largest_queue_logic
+from .scripts.flask_post_completed_encode import post_completed_encode_logic
+from .scripts.flask_post_queue import scan_logic
+from .scripts.flask_post_toggle_database import toggle_database_logic
 
 app = Flask(__name__)
 

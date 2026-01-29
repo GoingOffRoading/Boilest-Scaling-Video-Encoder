@@ -5,8 +5,8 @@ import uuid
 import subprocess
 import json
 import logging
-from .db_path import get_db_path
-from .get_file_size_kb import get_file_size_kb
+from db.db_path import get_db_path
+from shared.scripts.get_file_size_kb import get_file_size_kb
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')

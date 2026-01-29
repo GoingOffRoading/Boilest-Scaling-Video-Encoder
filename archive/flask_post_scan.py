@@ -1,5 +1,5 @@
 import sqlite3
-from .db_path import get_db_path
+from ..scripts.manager.db.db_path import get_db_path
 from .queue import scan_db_directories_and_write
 
 __all__ = ["scan_logic", "check_queue_completion"]

@@ -1,13 +1,13 @@
-from .get_file_size_kb import get_file_size_kb
-from .file_exists import file_exists
+from .shared.scripts.get_file_size_kb import get_file_size_kb
+from .worker.file_exists import file_exists
 from .validate_video import validate_video
 from .output_path import get_output_path
-from .db_path import get_db_path
-from .db_status import get_database_status
-from .flask_get_largest_queue import get_largest_queue_logic
-from .flask_post_completed_encode import post_completed_encode_logic
-from .flask_post_scan import scan_logic, check_queue_completion
-from .flask_post_toggle_database import toggle_database_logic
+from .manager.db.db_path import get_db_path
+from .manager.db.db_status import get_database_status
+from .manager.scripts.flask_get_largest_queue import get_largest_queue_logic
+from .manager.scripts.flask_post_completed_encode import post_completed_encode_logic
+from ..archive.flask_post_scan import scan_logic, check_queue_completion
+from .manager.scripts.flask_post_toggle_database import toggle_database_logic
 from .queue import (
     get_all_directories,
     scan_directories_and_enqueue,
