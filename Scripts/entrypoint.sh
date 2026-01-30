@@ -24,7 +24,7 @@ if [ "${Role}" = "Manager" ]; then
         echo "manager.py found"
     fi
 
-    python -m /Boil/Scripts/Manager/scripts/manager.py || echo "[ENTRYPOINT] manager.py failed"
+    python /Boil/Scripts/Manager/scripts/manager.py || echo "[ENTRYPOINT] manager.py failed"
 
 else
     echo "[ENTRYPOINT] Worker mode detected (Role=${Role}). Running worker.py"

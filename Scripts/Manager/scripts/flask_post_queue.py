@@ -6,7 +6,7 @@ import json
 import logging
 from pathlib import Path
 from datetime import datetime
-from .db_path import get_db_path
+from db_path import get_db_path
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
