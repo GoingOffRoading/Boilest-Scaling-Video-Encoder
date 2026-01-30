@@ -12,7 +12,7 @@ if [ "${Role}" = "Manager" ]; then
     # Check if database exists, if not copy from /Boil/Scripts
     if [ ! -f /Boil/App/boilest.db ]; then
         echo "[ENTRYPOINT] No /Boil/App/boilest.db found.  Copying template database from /Boil/Scripts/boilest.db"
-        cp /Boil/Scripts/Manager/boilest.db /Boil/App/boilest.db
+        cp /Boil/Scripts/Manager/scripts/boilest.db /Boil/App/boilest.db
         chmod 664 /Boil/App/boilest.db
     else
         echo "[ENTRYPOINT] /Boil/App/boilest.db found"
