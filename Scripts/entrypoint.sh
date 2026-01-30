@@ -22,6 +22,7 @@ if [ "${Role}" = "Manager" ]; then
     echo "[ENTRYPOINT] Running manager.py"
     if [-f /Boil/Scripts/Manager/scripts/manager.py ]; then
         echo "manager.py found"
+    fi
 
     python -m /Boil/Scripts/Manager/scripts/manager.py || echo "[ENTRYPOINT] manager.py failed"
 
