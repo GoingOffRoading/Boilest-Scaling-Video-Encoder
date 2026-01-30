@@ -1,7 +1,7 @@
 import os
 
 def get_db_path():
-    if os.environ.get("role") == "manger":
+    if os.environ.get("Role") == "Manger":
         db_path = "/Boil/App/boilest.db"
     else:
         db_path = 'boilest.db'

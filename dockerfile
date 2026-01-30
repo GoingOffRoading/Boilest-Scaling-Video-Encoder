@@ -17,20 +17,25 @@ RUN addgroup -g $GID appgroup && \
     adduser -D -u $UID -G appgroup appuser
 
 # Create directories for the persisted application data
-RUN mkdir -p /Boil/App 
+RUN mkdir -p /boil/app 
 
 # Create directories for the unpersisted persisted application data
-RUN mkdir -p /Boil/Scripts
+RUN mkdir -p /boil/manager
+RUN mkdir -p /boil/worker
+RUN mkdir -p /boil/boil_hold
+RUN mkdir -p /boil/templates
 
-# Create directories for Media files
-RUN mkdir -p /Media
-RUN mkdir -p /Boil/Boil_Hold
+# Create directories for media data
+RUN mkdir -p /boilmedia
 
 # Create application directory and set ownership
-COPY Scripts /Boil/Scripts
+COPY manager /boil/manager
+COPY worker /boil/worker
+COPY templates /boil/templates
+COPY entrypoint.sh /boil/entrypoint.sh
 
 # Create directories for unpersisted application data 
-RUN chown -R appuser:appgroup /Boil 
+RUN chown -R appuser:appgroup /boil 
 
 # Used in Flask
 ENV FLASK_APP=Flask.py
@@ -45,8 +50,8 @@ ENV FFMPEG_SETTINGS='ffmpeg -hide_banner -loglevel 16 -stats -stats_period 10 -y
 ENV POLL_INTERVAL=60
 
 # Entrypoint will choose manager or worker based on the `Manager` environment variable
-RUN chmod +x /Boil/Scripts/entrypoint.sh && \
-    chown appuser:appgroup /Boil/Scripts/entrypoint.sh
+RUN chmod +x /boil/entrypoint.sh && \
+    chown appuser:appgroup /boil/entrypoint.sh
 
 # Run as non-root user (after permissions are set)
 USER appuser
@@ -54,5 +59,5 @@ USER appuser
 #Exposes port 5000 for Flask by default
 EXPOSE 5000
 
-ENTRYPOINT ["/Boil/Scripts/entrypoint.sh"]
+ENTRYPOINT ["/boil/entrypoint.sh"]
 CMD [""]
