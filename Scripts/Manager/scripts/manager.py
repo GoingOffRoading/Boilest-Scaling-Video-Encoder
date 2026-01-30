@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request, render_template
 from .db_status import get_database_status
 from .flask_get_largest_queue import get_largest_queue_logic
 from .flask_post_completed_encode import post_completed_encode_logic
-from .flask_post_queue import scan_logic
+from .flask_post_queue import run_queue_workflow
 from .flask_post_toggle_database import toggle_database_logic
 
 app = Flask(__name__)
@@ -45,10 +45,12 @@ def scan():
     Uses the scan_db_directories_and_write function from queue.py
     """
     global DB_DISABLED
-    db_disabled_ref = {'value': DB_DISABLED}
-    response_data, status_code = scan_logic(db_disabled_ref)
-    DB_DISABLED = db_disabled_ref['value']
-    return jsonify(response_data), status_code
+    DB_DISABLED = True
+    try:
+        run_queue_workflow()
+    finally:
+        DB_DISABLED = False
+    return jsonify({"status": "scan_completed", "db_disabled": DB_DISABLED}), 200
 
 
 @app.route('/api/db/toggle', methods=['POST'])
@@ -97,4 +99,4 @@ if __name__ == '__main__':
     print("  - GET  /api/db/status       (Check database status)")
     print("  - GET  /health              (Health check)")
     print("="*80 + "\n")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, use_reloader=False, host='0.0.0.0', port=5000)
