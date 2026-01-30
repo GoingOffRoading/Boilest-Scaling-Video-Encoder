@@ -11,7 +11,7 @@ if [ "${Role}" = "Manager" ]; then
     
     # Check if database exists, if not copy from /Boil/Scripts
     if [ ! -f /Boil/App/boilest.db ]; then
-        echo "[ENTRYPOINT] No /Boil/App/boilest.db found.  Copying template database from /Boil/Scripts/boilest.db"
+        echo "[ENTRYPOINT] No /Boil/App/boilest.db found.  Copying template database from /Boil/Scripts/Manager/scripts/boilest.db"
         cp /Boil/Scripts/Manager/scripts/boilest.db /Boil/App/boilest.db
         chmod 664 /Boil/App/boilest.db
     else
@@ -20,7 +20,7 @@ if [ "${Role}" = "Manager" ]; then
 
     # Run start script (non-blocking expected)
     echo "[ENTRYPOINT] Running manager.py"
-    python /Boil/Scripts/manager.py || echo "[ENTRYPOINT] manager.py failed"
+    python /Boil/Scripts/Manager/scripts/manager.py || echo "[ENTRYPOINT] manager.py failed"
 
 else
     echo "[ENTRYPOINT] Worker mode detected (Role=${Role}). Running worker.py"
