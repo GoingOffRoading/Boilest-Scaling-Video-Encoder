@@ -20,10 +20,6 @@ if [ "${Role}" = "Manager" ]; then
 
     # Run start script (non-blocking expected)
     echo "[ENTRYPOINT] Running manager.py"
-    if [-f /boil/manager/manager.py ]; then
-        echo "manager.py found"
-    fi
-
     python /boil/manager/manager.py || echo "[ENTRYPOINT] manager.py failed"
 else
     echo "[ENTRYPOINT] Worker mode detected (Role=${Role}). Running worker.py"
