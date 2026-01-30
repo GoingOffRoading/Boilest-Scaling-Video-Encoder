@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request, render_template
-from .db.db_status import get_database_status
+from .db_status import get_database_status
 from .flask_get_largest_queue import get_largest_queue_logic
 from .flask_post_completed_encode import post_completed_encode_logic
 from .flask_post_queue import scan_logic
