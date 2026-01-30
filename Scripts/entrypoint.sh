@@ -10,12 +10,12 @@ if [ "${Role}" = "Manager" ]; then
     echo "[ENTRYPOINT] Manager mode detected (Role=${Role}). Running manager startup steps"
     
     # Check if database exists, if not copy from /Boil/Scripts
-    if [ ! -f /Boil/App/Boilest.db ]; then
-        echo "[ENTRYPOINT] No /Boil/App/Boilest.db found.  Copying template database from /Boil/Scripts/Boilest.db"
-        cp /Boil/Scripts/Boilest.db /Boil/App/Boilest.db
-        chmod 664 /Boil/App/Boilest.db
+    if [ ! -f /Boil/App/boilest.db ]; then
+        echo "[ENTRYPOINT] No /Boil/App/boilest.db found.  Copying template database from /Boil/Scripts/boilest.db"
+        cp /Boil/Scripts/Manager/boilest.db /Boil/App/boilest.db
+        chmod 664 /Boil/App/boilest.db
     else
-        echo "[ENTRYPOINT] /Boil/App/Boilest.db found"
+        echo "[ENTRYPOINT] /Boil/App/boilest.db found"
     fi
 
     # Run start script (non-blocking expected)
