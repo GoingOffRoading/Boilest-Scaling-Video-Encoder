@@ -23,10 +23,8 @@ RUN mkdir -p /Boil/App
 RUN mkdir -p /Boil/Scripts
 
 # Create directories for Media files
-RUN mkdir -p /Boil/Media/TV && \
-    mkdir -p /Boil/Media/Anime && \
-    mkdir -p /Boil/Media/Movies && \
-    mkdir -p /Boil/Boil_Hold
+RUN mkdir -p /Media
+RUN mkdir -p /Boil/Boil_Hold
 
 # Create application directory and set ownership
 COPY Scripts /Boil/Scripts
