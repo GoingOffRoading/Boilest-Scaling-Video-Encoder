@@ -31,7 +31,6 @@ RUN mkdir -p /boilmedia
 # Create application directory and set ownership
 COPY manager /boil/manager
 COPY worker /boil/worker
-COPY templates /boil/templates
 COPY entrypoint.sh /boil/entrypoint.sh
 
 # Create directories for unpersisted application data 
