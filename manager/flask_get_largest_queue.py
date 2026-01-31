@@ -34,7 +34,8 @@ def get_largest_queue_logic(db_disabled):
                 directory_path,
                 input_file_name,
                 output_file_name,
-                before_file_size
+                before_file_size,
+                ffmpeg_string
             FROM queue q
             WHERE datetime_pulled IS NULL AND datetime_encoded IS NULL
             ORDER BY before_file_size DESC
