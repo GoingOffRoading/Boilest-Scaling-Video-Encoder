@@ -21,7 +21,8 @@ RUN mkdir -p /boil/app
 
 # Create directories for the unpersisted persisted application data
 RUN mkdir -p /boil/manager
-RUN mkdir -p /boil/worker
+RUN mkdir -p /boil/local_worker
+RUN mkdir -p /boil/cloud_worker
 RUN mkdir -p /boil/boil_hold
 RUN mkdir -p /boil/templates
 
@@ -30,7 +31,8 @@ RUN mkdir -p /boilmedia
 
 # Create application directory and set ownership
 COPY manager /boil/manager
-COPY worker /boil/worker
+COPY local_worker /boil/local_worker
+COPY cloud_worker /boil/cloud_worker
 COPY entrypoint.sh /boil/entrypoint.sh
 
 # Create directories for unpersisted application data 

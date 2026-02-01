@@ -23,5 +23,5 @@ if [ "${Role}" = "Manager" ]; then
     python /boil/manager/manager.py || echo "[ENTRYPOINT] manager.py failed"
 else
     echo "[ENTRYPOINT] Worker mode detected (Role=${Role}). Running worker.py"
-    python /boil/worker/worker.py || echo "[ENTRYPOINT] worker.py failed"
+    python /boil/local_worker/local_worker.py || echo "[ENTRYPOINT] worker.py failed"
 fi
