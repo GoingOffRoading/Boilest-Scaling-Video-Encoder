@@ -38,17 +38,18 @@ COPY entrypoint.sh /boil/entrypoint.sh
 # Create directories for unpersisted application data 
 RUN chown -R appuser:appgroup /boil 
 
-# Used in Flask
+# Manager Variables
 ENV FLASK_APP=Flask.py
 ENV FLASK_ENV=development
 ENV FLASK_RUN_HOST=0.0.0.0
 ENV FLASK_RUN_PORT=5000
 
-# Environment variables
+# Worker Variables
 ENV TZ=US/Pacific
 ENV Role=Worker
 ENV FFMPEG_SETTINGS='ffmpeg -hide_banner -loglevel 16 -stats -stats_period 10 -y -i'
 ENV POLL_INTERVAL=60
+ENV MANAGER_BASE_URL='http://localhost:5000'
 
 # Entrypoint will choose manager or worker based on the `Manager` environment variable
 RUN chmod +x /boil/entrypoint.sh && \

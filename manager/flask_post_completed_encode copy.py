@@ -22,15 +22,15 @@ def post_completed_encode_logic(request_data):
                 'error': 'No JSON data provided'
             }, 400
 
-        file_guid = request_data.get('file_guid')
+        queued_file_guid = request_data.get('queued_file_guid')
         after_file_size = request_data.get('after_file_size')
-        datetime_encoded = datetime.now().isoformat()
+        date_added = datetime.now().isoformat()
 
-        if not file_guid:
-            print("[ERROR] Missing required field: file_guid")
+        if not queued_file_guid:
+            print("[ERROR] Missing required field: queued_file_guid")
             return {
                 'success': False,
-                'error': 'Missing required field: file_guid'
+                'error': 'Missing required field: queued_file_guid'
             }, 400
 
         if after_file_size is None:
@@ -47,50 +47,50 @@ def post_completed_encode_logic(request_data):
         cur = conn.cursor()
         print("[DB] Connected to database successfully")
 
-        # Update queue table with encoded status and file size
-        update_query = """
-            UPDATE queue
-            SET datetime_encoded = ?, after_file_size = ?, status = 'encoded'
-            WHERE file_guid = ?
+        # Insert into completed table with current datetime
+        query = """
+            INSERT INTO completed (queued_file_guid, after_file_size, date_added)
+            VALUES (?, ?, ?)
         """
-        print(f"[UPDATE] Updating queue - file_guid: {file_guid}, after_file_size: {after_file_size}, datetime_encoded: {datetime_encoded}")
-        cur.execute(update_query, (datetime_encoded, after_file_size, file_guid))
+        print(f"[INSERT] Inserting record - queued_file_guid: {queued_file_guid}, after_file_size: {after_file_size}, date_added: {date_added}")
+        cur.execute(query, (queued_file_guid, after_file_size, date_added))
         
-        rows_affected = cur.rowcount
         conn.commit()
 
-        # Get the updated record to return it
-        cur.execute("SELECT file_guid, directory_path, input_file_name, output_file_name, before_file_size, after_file_size, datetime_encoded, status FROM queue WHERE file_guid = ?", (file_guid,))
+        # Get the inserted record to return it
+        cur.execute("SELECT guid, queued_file_guid, after_file_size, date_added FROM completed WHERE queued_file_guid = ?", (queued_file_guid,))
         row = cur.fetchone()
 
-        cur.close()
         conn.close()
-        print(f"[DB] Updated {rows_affected} row(s)")
+        print("[DB] Record inserted successfully")
         print("[DB] Connection closed")
         print("="*80 + "\n")
 
         if row:
             result = {
-                'file_guid': row[0],
-                'directory_path': row[1],
-                'input_file_name': row[2],
-                'output_file_name': row[3],
-                'before_file_size': row[4],
-                'after_file_size': row[5],
-                'datetime_encoded': row[6],
-                'status': row[7]
+                'guid': row[0],
+                'queued_file_guid': row[1],
+                'after_file_size': row[2],
+                'date_added': row[3]
             }
             return {
                 'success': True,
-                'message': 'Queue record updated successfully',
+                'message': 'Record created successfully',
                 'data': result
-            }, 200
+            }, 201
         else:
             return {
                 'success': False,
-                'error': f'No queue record found with file_guid: {file_guid}'
-            }, 404
+                'error': 'Record created but could not be retrieved'
+            }, 500
 
+    except sqlite3.IntegrityError as e:
+        print(f"[ERROR] Integrity error: {str(e)}")
+        print("="*80 + "\n")
+        return {
+            'success': False,
+            'error': f'Database integrity error: {str(e)} (queued_file_guid may already exist)'
+        }, 409
     except Exception as e:
         print(f"[ERROR] Exception occurred: {type(e).__name__}")
         print(f"[ERROR] Error message: {str(e)}")

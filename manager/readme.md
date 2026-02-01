@@ -1,7 +1,3 @@
-Scripts and etc for setting up the infrastructure 
-
-
-
 ## Manager ToDo List
 
 - [ ] Interactive UI
