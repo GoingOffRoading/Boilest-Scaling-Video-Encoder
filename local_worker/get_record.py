@@ -1,9 +1,10 @@
+import os
 import json
 import urllib.request
 from urllib.error import URLError, HTTPError
 
 # API Configuration
-API_BASE_URL = "http://192.168.1.110:31500"  # Update this to match your Flask server
+API_BASE_URL = os.environ.get("MANAGER_BASE_URL", "http://192.168.1.110:31500")  # Get from container env var
 GET_TASK_ENDPOINT = f"{API_BASE_URL}/api/queue/largest"
 
 
