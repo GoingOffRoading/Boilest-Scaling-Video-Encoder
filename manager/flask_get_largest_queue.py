@@ -51,7 +51,7 @@ def get_largest_queue_logic(db_disabled):
         if row:
             update_query = """
                 UPDATE queue
-                SET datetime_pulled = CURRENT_TIMESTAMP
+                SET datetime_pulled = CURRENT_TIMESTAMP, status = 'pulled'
                 WHERE file_guid = ?
             """
             cur.execute(update_query, (row["file_guid"],))
