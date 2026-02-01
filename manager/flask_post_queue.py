@@ -242,12 +242,13 @@ def write_to_queue(directory_guid, directory_path, input_file_name, output_file_
         after_file_size = None
         datetime_pulled = None
         datetime_encoded = None
+        status = 'queued'
 
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
 
         cur.execute(
-            "INSERT INTO queue (directory_guid, file_guid, directory_path, input_file_name, output_file_name, before_file_size, after_file_size, ffmpeg_string, datetime_added, datetime_pulled, datetime_encoded) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO queue (directory_guid, file_guid, directory_path, input_file_name, output_file_name, before_file_size, after_file_size, ffmpeg_string, datetime_added, datetime_pulled, datetime_encoded, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 directory_guid,
                 file_guid,
@@ -260,7 +261,7 @@ def write_to_queue(directory_guid, directory_path, input_file_name, output_file_
                 datetime_added,
                 datetime_pulled,
                 datetime_encoded,
-            ),
+                status,
         )
         conn.commit()
         conn.close()
