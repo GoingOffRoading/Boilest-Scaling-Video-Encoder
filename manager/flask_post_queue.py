@@ -262,6 +262,7 @@ def write_to_queue(directory_guid, directory_path, input_file_name, output_file_
                 datetime_pulled,
                 datetime_encoded,
                 status,
+            ),
         )
         conn.commit()
         conn.close()
