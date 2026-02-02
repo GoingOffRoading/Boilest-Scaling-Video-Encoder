@@ -2,7 +2,11 @@
 
 - [ ] The file move workflow assumes that the file move will be susesful.  It really should be rename source file, and only delete if the move is sucsesful.  I may not get to that in this itteration.  After Edit: Validate video output probably shouldn't start until the encoded file is moved.  After after edit: That might be too heavy on the NAS bandwidth...  Need to rethink this a bit
 - [ ] Add a preflight check for video exists
-- [ ] Improve logging messages.  Including posting messages when steps start, not just end.  New line breaks.
+- [ ] Add a postflight check for video exists
+- [x] Improve logging messages.  Including posting messages when steps start, not just end.  New line breaks.
 - [ ] Debate if queueing with nothing in queue after so many instances should trigger a scan
 - [ ] Debate if worker should loop through attempts to send results until a 200
-- [ ] Add additional messaging on hash mismatch
+- [x] Add additional messaging on hash mismatch
+- [ ] Refactor both pipelines so that /boilemdia/ isn't used in the directory path... I.E. Appear more like the actual URL
+- [ ] Refactor logging so that line breaks more intuiity break up the lines in the logs
+- [ ] Figure out why in isloated cases, the original file does not get replaced
