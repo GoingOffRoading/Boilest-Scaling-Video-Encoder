@@ -53,59 +53,61 @@ def run_local_worker_loop():
             logging.info("Running preflight check...")
             
             # Step 3: Validate file size hasn't changed
+            logging.info(f"Validating filehash for: {input_file_name}...")
             if not validate_hash(before_file_size_file_path, before_file_size):
-                logging.error("Preflight check failed: Video Hash check failed")
+                logging.error(f"Preflight video hash check: {input_file_name} FAILED")
                 report_encoding_completed(file_guid, 'Failed: Hash mismatch')
                 continue
-            logging.info("✓ Video integrity check passed")
+            logging.info(f"✓ Preflight video hash check: {input_file_name} PASSED")
             
             # Step 4: Validate video integrity
+            logging.info(f"Validating video integrity for: {input_file_name}...")
             if not validate_video(before_file_size_file_path):
-                logging.error("Preflight check failed: File size mismatch")
+                logging.error(f"Preflight video integrity check: {input_file_name} FAILED")
                 report_encoding_completed(file_guid, 'Failed: Input Integrity')
                 continue
-            logging.info("✓ Video integrity check passed")
+            logging.info(f"✓ Preflight video integrity check: {input_file_name} PASSED")
             
             # Step 5: Run ffmpeg encoding
-            logging.info("Starting ffmpeg encoding...")
+            logging.info(f"Starting ffmpeg encoding for: {input_file_name}...")
             if not run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path):
-                logging.error("FFmpeg encoding failed")
+                logging.error(f"FFmpeg encoding: {input_file_name} FAILED")
                 report_encoding_completed(file_guid, 'Failed: FFmpeg failure')
                 continue
-            logging.info("✓ FFmpeg encoding completed")
+            logging.info(f"✓ FFmpeg encoding: {input_file_name} PASSED")
             
             # Step 6: Postflight check - validate output video integrity
-            logging.info("Running postflight check...")
-            if not validate_post_flight_video(before_file_size_file_path):
-                logging.error("Postflight check failed: Video integrity check failed")
+            logging.info(f"Running postflight check for: {input_file_name}...")
+            if not validate_post_flight_video(templorary_file_path):
+                logging.error(f"Postflight video integrity check: {input_file_name} FAILED")
                 report_encoding_completed(file_guid, 'Failed: Postflight Integrity')
                 continue
-            logging.info("✓ Postflight check passed")
+            logging.info(f"✓ Postflight video integrity check: {input_file_name} PASSED")
 
             # Step 7: Get output file size
-            logging.info("Getting output file size")
+            logging.info(f"Getting output file size for: {input_file_name}...")
             after_file_size = get_file_size_kb(templorary_file_path)
             if after_file_size == 0:
-                logging.error("Postflight file size check failed")
+                logging.error(f"Postflight file size check: {input_file_name} FAILED")
                 report_encoding_completed(file_guid, 'Failed: Postflight file size check')
                 continue
             logging.info(f"✓ Output file size: {after_file_size} KB")
 
             # Step 8: Delete source
-            logging.info("Deleting source file...")
+            logging.info(f"Deleting source file: {input_file_name}...")
             if not delete_file(before_file_size_file_path):
-                logging.error("Postflight delete source file failed")
+                logging.error(f"Postflight delete source file: {input_file_name} FAILED")
                 report_encoding_completed(file_guid, 'Failed: Postflight delete source file')
                 continue
-            logging.info("✓ Postflight check passed")
+            logging.info(f"✓ Postflight delete source: {input_file_name} PASSED")
 
             # Step 9: Move temporary file to final destination
-            logging.info("Moving temporary file to final destination...")
+            logging.info(f"Moving temporary file to final destination for: {input_file_name}...")
             if not move_file(templorary_file_path, after_file_path):
-                logging.error("Failed to move temporary file to final destination")
-                report_encoding_completed(file_guid, 'Failed: Move temporary file to final destination')
+                logging.error(f"Postflight move temporary file to final destination: {input_file_name} FAILED")
+                report_encoding_completed(file_guid, 'Failed: Postflight move temporary file to final destination')
                 continue
-            logging.info("✓ File moved successfully")
+            logging.info(f"✓ Postflight move temporary file to final destination: {input_file_name} PASSED")
 
             # Step 10: Report completion to manager
             logging.info("Reporting completion to manager...")

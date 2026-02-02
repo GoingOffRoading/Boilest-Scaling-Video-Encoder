@@ -233,7 +233,7 @@ def report_encoding_completed(file_guid, status, after_file_size=None):
             if isinstance(response_data, dict) and 'data' in response_data:
                 data = response_data['data']
                 if 'after_file_size' in data:
-                    logging.info(f"[RESULT] Encoded file size confirmed: {data['after_file_size']} KB")
+                    logging.debug(f"[RESULT] Encoded file size confirmed: {data['after_file_size']} KB")
             
             return status_code, response_data
             
