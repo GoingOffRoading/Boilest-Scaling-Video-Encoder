@@ -24,7 +24,7 @@ def run_local_worker_loop():
             status, response = get_largest_task()
             
             if status != 200:
-                logging.error(f"Failed to get task. Status: {status}, Response: {response}")
+                logging.error(f"✗ Failed to get task. Status: {status}, Response: {response}")
                 continue
             
             if not response.get('success') or response.get('data') is None:
@@ -55,7 +55,7 @@ def run_local_worker_loop():
             # Step 3: Validate file size hasn't changed
             logging.info(f"Validating filehash for: {input_file_name}...")
             if not validate_hash(before_file_size_file_path, before_file_size):
-                logging.error(f"Preflight video hash check: {input_file_name} FAILED")
+                logging.error(f"✗ Preflight video hash check: {input_file_name} FAILED")
                 report_encoding_completed(file_guid, 'Failed: Hash mismatch')
                 continue
             logging.info(f"✓ Preflight video hash check: {input_file_name} PASSED")
@@ -63,7 +63,7 @@ def run_local_worker_loop():
             # Step 4: Validate video integrity
             logging.info(f"Validating video integrity for: {input_file_name}...")
             if not validate_video(before_file_size_file_path):
-                logging.error(f"Preflight video integrity check: {input_file_name} FAILED")
+                logging.error(f"✗ Preflight video integrity check: {input_file_name} FAILED")
                 report_encoding_completed(file_guid, 'Failed: Input Integrity')
                 continue
             logging.info(f"✓ Preflight video integrity check: {input_file_name} PASSED")
@@ -71,7 +71,7 @@ def run_local_worker_loop():
             # Step 5: Run ffmpeg encoding
             logging.info(f"Starting ffmpeg encoding for: {input_file_name}...")
             if not run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path):
-                logging.error(f"FFmpeg encoding: {input_file_name} FAILED")
+                logging.error(f"✗ FFmpeg encoding: {input_file_name} FAILED")
                 report_encoding_completed(file_guid, 'Failed: FFmpeg failure')
                 continue
             logging.info(f"✓ FFmpeg encoding: {input_file_name} PASSED")
@@ -79,7 +79,7 @@ def run_local_worker_loop():
             # Step 6: Postflight check - validate output video integrity
             logging.info(f"Running postflight check for: {input_file_name}...")
             if not validate_post_flight_video(templorary_file_path):
-                logging.error(f"Postflight video integrity check: {input_file_name} FAILED")
+                logging.error(f"✗ Postflight video integrity check: {input_file_name} FAILED")
                 report_encoding_completed(file_guid, 'Failed: Postflight Integrity')
                 continue
             logging.info(f"✓ Postflight video integrity check: {input_file_name} PASSED")
@@ -88,7 +88,7 @@ def run_local_worker_loop():
             logging.info(f"Getting output file size for: {input_file_name}...")
             after_file_size = get_file_size_kb(templorary_file_path)
             if after_file_size == 0:
-                logging.error(f"Postflight file size check: {input_file_name} FAILED")
+                logging.error(f"✗ Postflight file size check: {input_file_name} FAILED")
                 report_encoding_completed(file_guid, 'Failed: Postflight file size check')
                 continue
             logging.info(f"✓ Output file size: {after_file_size} KB")
@@ -96,7 +96,7 @@ def run_local_worker_loop():
             # Step 8: Delete source
             logging.info(f"Deleting source file: {input_file_name}...")
             if not delete_file(before_file_size_file_path):
-                logging.error(f"Postflight delete source file: {input_file_name} FAILED")
+                logging.error(f"✗ Postflight delete source file: {input_file_name} FAILED")
                 report_encoding_completed(file_guid, 'Failed: Postflight delete source file')
                 continue
             logging.info(f"✓ Postflight delete source: {input_file_name} PASSED")
@@ -104,7 +104,7 @@ def run_local_worker_loop():
             # Step 9: Move temporary file to final destination
             logging.info(f"Moving temporary file to final destination for: {input_file_name}...")
             if not move_file(templorary_file_path, after_file_path):
-                logging.error(f"Postflight move temporary file to final destination: {input_file_name} FAILED")
+                logging.error(f"✗ Postflight move temporary file to final destination: {input_file_name} FAILED")
                 report_encoding_completed(file_guid, 'Failed: Postflight move temporary file to final destination')
                 continue
             logging.info(f"✓ Postflight move temporary file to final destination: {input_file_name} PASSED")
@@ -113,7 +113,7 @@ def run_local_worker_loop():
             logging.info("Reporting completion to manager...")
             report_status, report_response = report_encoding_completed(file_guid, 'encoded', after_file_size)
             if report_status != 200:
-                logging.error(f"Failed to report completion. Status: {report_status}, Response: {report_response}")
+                logging.error(f"✗ Failed to report completion. Status: {report_status}, Response: {report_response}")
                 # Note: Even if reporting fails, the file has been processed successfully
             else:
                 logging.info("✓ Completion reported successfully")
