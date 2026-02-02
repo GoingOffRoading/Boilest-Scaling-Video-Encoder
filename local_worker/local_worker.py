@@ -47,7 +47,6 @@ def run_local_worker_loop():
 
             logging.info(f"Task received: {file_guid}")
             logging.info(f"  Input: {directory_path}/{input_file_name}")
-            logging.info(f"  Output: {output_file_name}")
             
             # Step 2: Preflight check - validate file hasn't changed and has integrity
             logging.info("Running preflight check...")
