@@ -110,19 +110,19 @@ def run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path)
     try:
         ffmpeg_settings = 'ffmpeg -hide_banner -loglevel 16 -stats -stats_period 10 -y -i'
 
-        print(before_file_size_file_path)
-        print(templorary_file_path)
+        logging.debug(before_file_size_file_path)
+        logging.debug(templorary_file_path)
         
         command = f"{ffmpeg_settings} \"{before_file_size_file_path}\" {ffmpeg_command} \"{templorary_file_path}\""
 
-        print(command)
+        logging.debug(command)
 
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
         for line in process.stdout:
-            print(line)
+            logging.debug(line.rstrip())
         return True
     except Exception as exc:
-        print(f"Error: {exc}")
+        logging.error(f"Error: {exc}")
         return False
 
 
@@ -136,7 +136,7 @@ def run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path)
 
 def delete_file(file_path):
     try:
-        print(f"Deleting file: {file_path}")
+        logging.debug(f"Deleting file: {file_path}")
         os.remove(file_path)
         logging.debug(f"✓ File deleted successfully: {file_path}")
         return True
@@ -162,7 +162,7 @@ def validate_post_flight_video(after_file_path):
 
 def move_file(source_path, destination_path):
     try:
-        print(f"Moving file from {source_path} to {destination_path}")
+        logging.debug(f"Moving file from {source_path} to {destination_path}")
         shutil.move(source_path, destination_path)
         logging.debug(f"✓ File moved successfully: {source_path} -> {destination_path}")
         return True
@@ -202,11 +202,11 @@ def report_encoding_completed(file_guid, status, after_file_size=None):
     if after_file_size is not None:
         request_data["after_file_size"] = after_file_size
     
-    print(f"\n[REPORT] Calling {endpoint}")
-    print(f"[REPORT] File GUID: {file_guid}")
-    print(f"[REPORT] Status: {status}")
+    logging.info(f"\n[REPORT] Calling {endpoint}")
+    logging.debug(f"[REPORT] File GUID: {file_guid}")
+    logging.debug(f"[REPORT] Status: {status}")
     if after_file_size is not None:
-        print(f"[REPORT] Encoded file size: {after_file_size} KB")
+        logging.debug(f"[REPORT] Encoded file size: {after_file_size} KB")
     
     try:
         # Create and send the POST request
@@ -226,25 +226,25 @@ def report_encoding_completed(file_guid, status, after_file_size=None):
             except json.JSONDecodeError:
                 response_data = body
             
-            print(f"[SUCCESS] Status: {status_code}")
-            print(f"[RESPONSE] {json.dumps(response_data, indent=2)}")
+            logging.info(f"[SUCCESS] Status: {status_code}")
+            logging.debug(f"[RESPONSE] {json.dumps(response_data, indent=2)}")
             
             # Extract and report the new file size if available
             if isinstance(response_data, dict) and 'data' in response_data:
                 data = response_data['data']
                 if 'after_file_size' in data:
-                    print(f"[RESULT] Encoded file size confirmed: {data['after_file_size']} KB")
+                    logging.info(f"[RESULT] Encoded file size confirmed: {data['after_file_size']} KB")
             
             return status_code, response_data
             
     except HTTPError as exc:
         status_code = exc.code
         error_body = exc.read().decode('utf-8')
-        print(f"[ERROR] HTTP Error {status_code}: {error_body}")
+        logging.error(f"[ERROR] HTTP Error {status_code}: {error_body}")
         return status_code, error_body
     except URLError as exc:
-        print(f"[ERROR] Connection error: {exc}")
+        logging.error(f"[ERROR] Connection error: {exc}")
         return None, f"Connection error: {exc}"
     except Exception as e:
-        print(f"[ERROR] Exception: {type(e).__name__}: {str(e)}")
+        logging.error(f"[ERROR] Exception: {type(e).__name__}: {str(e)}")
         return None, str(e)

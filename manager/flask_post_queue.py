@@ -283,33 +283,33 @@ def run_queue_workflow(db_path=None, extensions=None):
     """Main workflow to scan directories and queue files for encoding."""
     db_path = get_db_path()
 
-    print(db_path)
+    logging.debug(db_path)
 
     directories = get_all_directories(db_path)
     
     for directory_guid, directory_path in directories:
-        print(f"\nScanning directory {directory_path} (guid={directory_guid})")
+        logging.info(f"\nScanning directory {directory_path} (guid={directory_guid})")
         for directory, input_file_name in find_video_files(directory_path):
             file_path = os.path.join(directory, input_file_name)
-            print(f"  Found: {file_path}")
+            logging.debug(f"  Found: {file_path}")
             if is_file_unpulled_in_queue(input_file_name, directory, db_path) == False:
-                print(f"    Adding to queue: {input_file_name}")
+                logging.info(f"    Adding to queue: {input_file_name}")
                 default_encoding_decision = False
                 ffmpeg_command = ''
                 probe_data = run_ffprobe(directory, input_file_name)
                 output_file_name, file_encoding_decision = output_file_name_fx(input_file_name, default_encoding_decision)
                 final_encoding_decision, ffmpeg_command = check_codecs(file_encoding_decision, probe_data, ffmpeg_command)
                 
-                print(final_encoding_decision)
-                print(ffmpeg_command)
-                print(output_file_name)
+                logging.debug(final_encoding_decision)
+                logging.debug(ffmpeg_command)
+                logging.debug(output_file_name)
 
                 if final_encoding_decision == True:
                     before_file_size = get_file_size_kb(directory, input_file_name)
                     file_guid = write_to_queue(directory_guid, directory, input_file_name, output_file_name, before_file_size, ffmpeg_command, db_path)
-                    print(f"    Queued file_guid: {file_guid}")
-            else:
-                print(f"    Skiping: {input_file_name}")
+                    logging.info(f"    Queued file_guid: {file_guid}")
+                else:
+                    logging.debug(f"    Skiping: {input_file_name}")
 
 
 if __name__ == "__main__":

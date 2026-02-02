@@ -3,7 +3,9 @@ import time
 import logging
 from local_worker_functions import *
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Get log level from environment variable (default: INFO)
+log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(level=getattr(logging, log_level), format='%(asctime)s - %(levelname)s - %(message)s')
 
 __all__ = ["run_local_worker_loop"]
 

@@ -47,6 +47,7 @@ ENV FLASK_RUN_PORT=5000
 # Worker Variables
 ENV TZ=US/Pacific
 ENV Role=Worker
+ENV LOG_LEVEL=INFO
 ENV FFMPEG_SETTINGS='ffmpeg -hide_banner -loglevel 16 -stats -stats_period 10 -y -i'
 ENV POLL_INTERVAL=60
 ENV MANAGER_BASE_URL='http://localhost:5000'

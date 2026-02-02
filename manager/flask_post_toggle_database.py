@@ -1,4 +1,5 @@
 __all__ = ["toggle_database_logic"]
+import logging
 
 
 def toggle_database_logic(request_data, db_disabled_ref):
@@ -13,13 +14,13 @@ def toggle_database_logic(request_data, db_disabled_ref):
     Returns:
         tuple: (response_data: dict, status_code: int)
     """
-    print("\n" + "="*80)
-    print("[REQUEST] POST /api/db/toggle")
-    print("="*80)
+    logging.info("\n" + "="*80)
+    logging.info("[REQUEST] POST /api/db/toggle")
+    logging.info("="*80)
 
     try:
         if not request_data or 'enabled' not in request_data:
-            print("[ERROR] Missing 'enabled' field in request")
+            logging.error("[ERROR] Missing 'enabled' field in request")
             return {
                 'success': False,
                 'error': "Missing required field: 'enabled' (boolean)"
@@ -28,7 +29,7 @@ def toggle_database_logic(request_data, db_disabled_ref):
         enabled = request_data.get('enabled')
 
         if not isinstance(enabled, bool):
-            print("[ERROR] 'enabled' field must be a boolean")
+            logging.error("[ERROR] 'enabled' field must be a boolean")
             return {
                 'success': False,
                 'error': "'enabled' field must be a boolean"
@@ -39,8 +40,8 @@ def toggle_database_logic(request_data, db_disabled_ref):
         db_disabled_ref['value'] = not enabled
 
         status = "enabled" if enabled else "disabled"
-        print(f"[DB] Database operations {status}")
-        print("="*80 + "\n")
+        logging.info(f"[DB] Database operations {status}")
+        logging.info("="*80 + "\n")
 
         return {
             'success': True,
@@ -49,9 +50,9 @@ def toggle_database_logic(request_data, db_disabled_ref):
         }, 200
 
     except Exception as e:
-        print(f"[ERROR] Exception occurred: {type(e).__name__}")
-        print(f"[ERROR] Error message: {str(e)}")
-        print("="*80 + "\n")
+        logging.error(f"[ERROR] Exception occurred: {type(e).__name__}")
+        logging.error(f"[ERROR] Error message: {str(e)}")
+        logging.error("="*80 + "\n")
         return {
             'success': False,
             'error': str(e)

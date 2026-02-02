@@ -5,14 +5,15 @@ __all__ = ["get_largest_queue_logic"]
 
 
 def get_largest_queue_logic(db_disabled):
-    print("\n" + "="*80)
-    print("[REQUEST] GET /api/queue/largest")
-    print("="*80)
+    import logging
+    logging.info("\n" + "="*80)
+    logging.info("[REQUEST] GET /api/queue/largest")
+    logging.info("="*80)
 
     # Check if database operations are disabled
     if db_disabled:
-        print("[DB] Database operations are currently disabled")
-        print("="*80 + "\n")
+        logging.error("[DB] Database operations are currently disabled")
+        logging.error("="*80 + "\n")
         return {
             'success': False,
             'error': 'Database operations are temporarily disabled'
@@ -20,12 +21,12 @@ def get_largest_queue_logic(db_disabled):
 
     try:
         db_path = get_db_path()
-        print(f"[DB] Database path: {db_path}")
+        logging.debug(f"[DB] Database path: {db_path}")
 
         conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row  # This allows accessing columns by name
         cur = conn.cursor()
-        print("[DB] Connected to database successfully")
+        logging.info("[DB] Connected to database successfully")
 
         # Query the encode table sorted by before_file_size descending, limit 1
         query = """
@@ -41,12 +42,12 @@ def get_largest_queue_logic(db_disabled):
             ORDER BY before_file_size DESC
             LIMIT 1
         """
-        print("[QUERY] Executing query to fetch largest queue by before_file_size...")
+        logging.debug("[QUERY] Executing query to fetch largest queue by before_file_size...")
         cur.execute(query)
 
         row = cur.fetchone()
-        print(f"[QUERY] Query executed successfully")
-        print(f"[RESULT] Row found: {row is not None}")
+        logging.debug(f"[QUERY] Query executed successfully")
+        logging.debug(f"[RESULT] Row found: {row is not None}")
 
         if row:
             update_query = """
@@ -58,20 +59,20 @@ def get_largest_queue_logic(db_disabled):
             conn.commit()
 
         conn.close()
-        print("[DB] Connection closed")
+        logging.debug("[DB] Connection closed")
 
         if row:
             # Convert row to dictionary
             result = dict(row)
-            print(f"[RESULT] Returning queue record with before_file_size: {result['before_file_size']} bytes")
-            print("="*80 + "\n")
+            logging.info(f"[RESULT] Returning queue record with before_file_size: {result['before_file_size']} bytes")
+            logging.info("="*80 + "\n")
             return {
                 'success': True,
                 'data': result
             }, 200
         else:
-            print("[RESULT] No records found in queue table")
-            print("="*80 + "\n")
+            logging.info("[RESULT] No records found in queue table")
+            logging.info("="*80 + "\n")
             return {
                 'success': True,
                 'data': None,
@@ -79,9 +80,9 @@ def get_largest_queue_logic(db_disabled):
             }, 200
 
     except Exception as e:
-        print(f"[ERROR] Exception occurred: {type(e).__name__}")
-        print(f"[ERROR] Error message: {str(e)}")
-        print("="*80 + "\n")
+        logging.error(f"[ERROR] Exception occurred: {type(e).__name__}")
+        logging.error(f"[ERROR] Error message: {str(e)}")
+        logging.error("="*80 + "\n")
         return {
             'success': False,
             'error': str(e)

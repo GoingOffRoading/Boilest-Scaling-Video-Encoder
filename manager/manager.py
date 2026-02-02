@@ -1,9 +1,15 @@
+import os
+import logging
 from flask import Flask, jsonify, request, render_template
 from db_status import get_database_status
 from flask_get_largest_queue import get_largest_queue_logic
 from flask_post_completed_encode import post_completed_encode_logic
 from flask_post_queue import run_queue_workflow
 from flask_post_toggle_database import toggle_database_logic
+
+# Get log level from environment variable (default: INFO)
+log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(level=getattr(logging, log_level), format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__)
 
@@ -14,7 +20,7 @@ DB_DISABLED = False
 @app.route('/', methods=['GET'])
 def index():
     """Serve the main UI page"""
-    print("[UI] Serving main page")
+    logging.info("[UI] Serving main page")
     return render_template('index.html')
 
 
@@ -72,7 +78,7 @@ def database_status():
     """
     Get the current status of database operations
     """
-    print("[REQUEST] GET /api/db/status")
+    logging.info("[REQUEST] GET /api/db/status")
 
     status_data = get_database_status(DB_DISABLED)
 
@@ -82,21 +88,21 @@ def database_status():
 @app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint"""
-    print("[HEALTH CHECK] Endpoint called")
+    logging.info("[HEALTH CHECK] Endpoint called")
     return jsonify({'status': 'healthy'}), 200
 
 
 if __name__ == '__main__':
-    print("\n" + "="*80)
-    print("Starting Encode API Server...")
-    print("="*80)
-    print("Available endpoints:")
-    print("  - GET  /                    (Main UI page)")
-    print("  - GET  /api/encode/largest  (Get largest encode by file size)")
-    print("  - POST /api/encoded         (Create new encoded record)")
-    print("  - POST /api/scan            (Scan directories and probe files)")
-    print("  - POST /api/db/toggle       (Enable/disable database operations)")
-    print("  - GET  /api/db/status       (Check database status)")
-    print("  - GET  /health              (Health check)")
-    print("="*80 + "\n")
+    logging.info("\n" + "="*80)
+    logging.info("Starting Encode API Server...")
+    logging.info("="*80)
+    logging.info("Available endpoints:")
+    logging.info("  - GET  /                    (Main UI page)")
+    logging.info("  - GET  /api/encode/largest  (Get largest encode by file size)")
+    logging.info("  - POST /api/encoded         (Create new encoded record)")
+    logging.info("  - POST /api/scan            (Scan directories and probe files)")
+    logging.info("  - POST /api/db/toggle       (Enable/disable database operations)")
+    logging.info("  - GET  /api/db/status       (Check database status)")
+    logging.info("  - GET  /health              (Health check)")
+    logging.info("="*80 + "\n")
     app.run(debug=True, use_reloader=False, host='0.0.0.0', port=5000)
