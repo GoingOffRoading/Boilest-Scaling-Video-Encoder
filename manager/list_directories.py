@@ -13,8 +13,8 @@ def list_directories_rows(db_path: str = None) -> Union[List[Dict], Dict]:
     On success: returns List[Dict] where each dict represents a row.
     On error: returns Dict containing an "error" key with the exception message.
     """
-    if db_path is None:
-        db_path = get_db_path()
+    
+    db_path = get_db_path()
 
     try:
         conn = sqlite3.connect(db_path)
