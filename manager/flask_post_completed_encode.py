@@ -96,7 +96,7 @@ def post_completed_encode_logic(request_data):
     except Exception as e:
         logging.error(f"[ERROR] Exception occurred: {type(e).__name__}")
         logging.error(f"[ERROR] Error message: {str(e)}")
-        logging.error("="*80 + "\n"
+        logging.error("="*80 + "\n")
         return {
             'success': False,
             'error': str(e)
