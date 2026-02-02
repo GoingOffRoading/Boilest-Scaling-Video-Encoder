@@ -1,315 +1,129 @@
-"""
-FFmpeg Worker Loop
-
-This worker implements a loop that:
-1. Fetches encoding tasks from `/api/queue/largest`
-2. Builds and executes the ffmpeg command
-3. Reports results back to `/api/encoded`
-"""
-
-import requests
-import subprocess
-import time
 import os
-from pathlib import Path
-from .file_exists import file_exists
-from .worker_validate_video import validate_video
-from .get_file_size_kb import get_file_size_kb
-from .worker_output_path import get_output_path
+import time
+import logging
+from local_worker_functions import *
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# API Configuration
-API_BASE_URL = os.getenv('API_BASE_URL', 'http://localhost:5000')  # Update this to match your Flask server
-GET_TASK_ENDPOINT = f"{API_BASE_URL}/api/queue/largest"
-POST_RESULT_ENDPOINT = f"{API_BASE_URL}/api/encoded"
+__all__ = ["run_local_worker_loop"]
 
-# Worker Configuration
-POLL_INTERVAL = int(os.getenv('POLL_INTERVAL', 60))  # Seconds to wait between polls when no task is available
-ffmpeg_settings = os.getenv('FFMPEG_SETTINGS', 'ffmpeg -hide_banner -loglevel 16 -stats -stats_period 10 -y -i')
-
-
-def fetch_encoding_task():
-    """
-    Fetch the largest encoding task from the API
-    Returns: tuple (success, data/error_message)
-    """
-    try:
-        print(f"[FETCH] Requesting task from {GET_TASK_ENDPOINT}")
-        response = requests.get(GET_TASK_ENDPOINT, timeout=10)
-        response.raise_for_status()
-        
-        result = response.json()
-        
-        if result.get('success') and result.get('data'):
-            print(f"[FETCH] Task received - GUID: {result['data'].get('guid')}")
-            print(f"[FETCH] File: {result['data'].get('input_file_name')}")
-            print(f"[FETCH] Size: {result['data'].get('before_file_size')} bytes")
-            return True, result['data']
-        else:
-            print("[FETCH] No tasks available")
-            return False, result.get('message', 'No tasks available')
+def run_local_worker_loop():
+    poll_interval = int(os.environ.get("POLL_INTERVAL", "300"))
+    logging.info(f"Worker started. Poll interval: {poll_interval} seconds")
+    
+    while True:
+        try:
+            logging.info("=" * 80)
+            logging.info("Polling for new task...")
             
-    except requests.exceptions.RequestException as e:
-        print(f"[ERROR] Failed to fetch task: {e}")
-        return False, str(e)
-
-
-def validate_hash(filepath, before_file_size):
-    """
-    Validate file hasn't changed since scan
-    It's possible other processes have modified the file since it was first scanned by the manager.
-    This function checks the file size to ensure it matches what was originally recorded.
-    Returns: True if the file size matches from the original scan
-    """
-    try:
-        current_file_size = get_file_size_kb(filepath)
-        if current_file_size == before_file_size:
-            print("File passed expected size check")
-            return True
-        else:
-            print(f"File mismatch: expected {before_file_size} KB, got {current_file_size} KB")
-            return False
-    except Exception as e:
-        print(f"Error during hash validation: {e}")
-        return False
-
-
-def pre_launch_checks(filepath, before_file_size):
-    """
-    Run all pre-launch validation checks
-    Pulls everything together
-    """
-    exists_check = file_exists(filepath)
-    video_check = validate_video(filepath) 
-    hash_check = validate_hash(filepath, before_file_size)
-     
-    if exists_check and video_check and hash_check:
-        print("\n✓ All pre-launch validation checks PASSED!")
-        return True
-    else:
-        print("\n✗ One or more pre-launch validation checks FAILED!")
-        return False
-
-
-def build_ffmpeg_command(ffmpeg_settings, filepath, ffmpeg_string, temp_file):
-    """
-    Build ffmpeg command in correct order: ffmpeg [global_options] -i input_file [encoding_options] output_file
-    """
-    ffmpeg_cmd = f'ffmpeg {ffmpeg_settings} -i "{filepath}" {ffmpeg_string} "{temp_file}"'
-    return ffmpeg_cmd
-
-
-def execute_ffmpeg(ffmpeg_settings, filepath, ffmpeg_string, temp_file):
-    """
-    Execute the FFmpeg command
-    Returns: tuple (success, result_dict)
-    """
-    try:
-        ffmpeg_cmd = build_ffmpeg_command(ffmpeg_settings, filepath, ffmpeg_string, temp_file)
-
-        print(f"[FFMPEG] Executing: {ffmpeg_cmd}")
-        print("[FFMPEG] Starting encoding...")
-        
-        # Run ffmpeg command
-        result = subprocess.run(
-            ffmpeg_cmd,
-            shell=True,
-            capture_output=True,
-            text=True
-        )
-        
-        if result.returncode != 0:
-            print(f"[ERROR] FFmpeg failed with return code {result.returncode}")
-            print(f"[ERROR] stderr: {result.stderr[:500]}")
-            return False, {
-                'returncode': result.returncode,
-                'stdout': result.stdout,
-                'stderr': result.stderr
-            }
-        
-        print("[FFMPEG] Encoding complete!")
-        return True, {
-            'returncode': result.returncode,
-            'stdout': result.stdout,
-            'stderr': result.stderr
-        }
-        
-    except Exception as e:
-        print(f"[ERROR] Exception during ffmpeg execution: {e}")
-        return False, {'error': str(e)}
-
-
-def post_launch_checks(temp_file):
-    """
-    Run all post-launch validation checks
-    Pulls everything together
-    """
-    exists_check = file_exists(temp_file)
-    video_check = validate_video(temp_file) 
-     
-    if exists_check and video_check:
-        print("\n✓ All post launch validation checks PASSED!")
-        return True
-    else:
-        print("\n✗ One or more post launch validation checks FAILED!")
-        return False
-
-
-def delete_file(filepath):
-    """
-    Delete a file from the filesystem
-    Returns: True if successful, False otherwise
-    """
-    try:
-        os.remove(filepath)
-        print(f"[CLEANUP] Deleted file: {filepath}")
-        return True
-    except Exception as e:
-        print(f"[ERROR] Failed to delete file: {e}")
-        return False
-
-
-def generate_destination_path(temp_file, filepath):
-    """
-    Generate destination path by combining directory from filepath and filename from temp_file
-    Returns: destination path string
-    """
-    # Get directory from filepath
-    source_dir = os.path.dirname(filepath)
-    # Get filename from temp_file
-    temp_filename = os.path.basename(temp_file)
-    # Combine them to create destination
-    destination = os.path.join(source_dir, temp_filename)
-    return destination
-
-
-def move_temp_to_source(temp_file, filepath):
-    """
-    Move the temp file to the source file location
-    Gets directory path from filepath and filename from temp_file to create destination
-    Then deletes the original filepath
-    Returns: True if successful, False otherwise
-    """
-    try:
-        # Generate destination path
-        destination = generate_destination_path(temp_file, filepath)
-        
-        print(f"[MOVE] Destination: {destination}")
-
-        if delete_file(filepath) == True:
-            os.rename(temp_file, destination)
-            print(f"[MOVE] Moved {temp_file} to {destination}")
-            return True
-        else:
-            print('Failed to delete original file')
-            return False      
+            # Step 1: Get largest task from queue
+            status, response = get_largest_task()
             
-    except Exception as e:
-        print(f"[ERROR] Failed to move temp file: {e}")
-        return False
-
-
-def report_results(queued_file_guid, after_file_size):
-    """
-    Report encoding results back to the API
-    Returns: tuple (success, response_data/error_message)
-    """
-    try:
-        payload = {
-            'queued_file_guid': queued_file_guid,
-            'after_file_size': after_file_size
-        }
-        
-        print(f"[REPORT] Posting results to {POST_RESULT_ENDPOINT}")
-        print(f"[REPORT] Queued File GUID: {queued_file_guid}, After size: {after_file_size} bytes")
-        
-        response = requests.post(
-            POST_RESULT_ENDPOINT,
-            json=payload,
-            timeout=10
-        )
-        response.raise_for_status()
-        
-        result = response.json()
-        
-        if result.get('success'):
-            print(f"[REPORT] Results reported successfully!")
-            return True, result
-        else:
-            print(f"[ERROR] API returned error: {result.get('error')}")
-            return False, result.get('error', 'Unknown error')
+            if status != 200:
+                logging.error(f"Failed to get task. Status: {status}, Response: {response}")
+                continue
             
-    except requests.exceptions.RequestException as e:
-        print(f"[ERROR] Failed to report results: {e}")
-        return False, str(e)
-
-
-def worker_loop():
-    """
-    Main worker loop that processes encoding tasks
-    """
-    print("="*80)
-    print("FFmpeg Worker Started")
-    print("="*80)
-    print(f"API Base URL: {API_BASE_URL}")
-    print(f"Poll Interval: {POLL_INTERVAL}s")
-    print("="*80)
-
-    try:
-        while True:
-            print(f"{'='*80}")
-            print('Starting Loop')
-            print(f"{'='*80}")
+            if not response.get('success') or response.get('data') is None:
+                logging.info("No tasks available in queue")
+                continue
             
-            # Step 1: Fetch a task
-            task_retrieval_status, task_data = fetch_encoding_task()
+            task_data = response['data']
+            file_guid = task_data.get('file_guid')
+            directory_path = task_data.get('directory_path')
+            input_file_name = task_data.get('input_file_name')
+            output_file_name = task_data.get('output_file_name')
+            before_file_size = task_data.get('before_file_size')
+            ffmpeg_command = task_data.get('ffmpeg_string')
 
-            print(task_data)
-           
-            queue_file_guid = task_data['guid']
-            file_path = task_data['file_path']
-            output_file_name = task_data['output_file_name']
-            before_file_size = task_data['before_file_size']
-            ffmpeg_string = task_data['ffmpeg_string']
+            after_file_size = 0
 
-            print(queue_file_guid)
-            print(file_path)
-            print(output_file_name)
-            print(before_file_size)
-            print(ffmpeg_string)
+            before_file_size_file_path = os.path.join(directory_path, input_file_name)
+            templorary_file_path = os.path.join("/boil/boil_hold/", output_file_name)
+            after_file_path = os.path.join(directory_path, output_file_name)
 
-            if task_retrieval_status == True:
-                print('Step 1: Task Retrieved Successfully')
-                if pre_launch_checks(file_path, before_file_size) == True:
-                    print('Step 2: Pre-launch checks passed successfully')
-                    if execute_ffmpeg(ffmpeg_settings, file_path, ffmpeg_string, get_output_path(file_path, output_file_name)) == True:
-                        print('Step 3: FFmpeg executed successfully')
-                        if post_launch_checks(get_output_path(file_path, output_file_name)) == True:
-                            print('Step 4: Post-launch checks passed successfully')
-                            if move_temp_to_source(get_output_path(file_path, output_file_name), file_path) == True:
-                                print('Step 5: Moved temp file to source location successfully')
-                            after_file_size = get_file_size_kb(get_output_path(file_path, output_file_name))
-                            report_status, report_data = report_results(queue_file_guid, after_file_size)
-                            if report_status == True:
-                                print('Step 5: Results reported successfully')
-                            else:
-                                print('Step 5: Failed to report results')
-                        else:
-                            print('Step 4: Post-launch checks failed')
-                    else:
-                        print('Step 3: FFmpeg execution failed')
-                else:
-                    print("Pre-launch checks failed, skipping this task.")
+            logging.info(f"Task received: {file_guid}")
+            logging.info(f"  Input: {directory_path}/{input_file_name}")
+            logging.info(f"  Output: {output_file_name}")
+            
+            # Step 2: Preflight check - validate file hasn't changed and has integrity
+            logging.info("Running preflight check...")
+            
+            # Step 3: Validate file size hasn't changed
+            if not validate_hash(before_file_size_file_path, before_file_size):
+                logging.error("Preflight check failed: Video Hash check failed")
+                report_encoding_completed(file_guid, 'Failed: Hash mismatch')
+                continue
+            logging.info("✓ Video integrity check passed")
+            
+            # Step 4: Validate video integrity
+            if not validate_video(before_file_size_file_path):
+                logging.error("Preflight check failed: File size mismatch")
+                report_encoding_completed(file_guid, 'Failed: Input Integrity')
+                continue
+            logging.info("✓ Video integrity check passed")
+            
+            # Step 5: Run ffmpeg encoding
+            logging.info("Starting ffmpeg encoding...")
+            if not run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path):
+                logging.error("FFmpeg encoding failed")
+                report_encoding_completed(file_guid, 'Failed: FFmpeg failure')
+                continue
+            logging.info("✓ FFmpeg encoding completed")
+            
+            # Step 6: Postflight check - validate output video integrity
+            logging.info("Running postflight check...")
+            if not validate_post_flight_video(before_file_size_file_path):
+                logging.error("Postflight check failed: Video integrity check failed")
+                report_encoding_completed(file_guid, 'Failed: Postflight Integrity')
+                continue
+            logging.info("✓ Postflight check passed")
+
+            # Step 7: Get output file size
+            logging.info("Getting output file size")
+            after_file_size = get_file_size_kb(templorary_file_path)
+            if after_file_size == 0:
+                logging.error("Postflight file size check failed")
+                report_encoding_completed(file_guid, 'Failed: Postflight file size check')
+                continue
+            logging.info(f"✓ Output file size: {after_file_size} KB")
+
+            # Step 8: Delete source
+            logging.info("Processing files...")
+            if not delete_file(after_file_path):
+                logging.error("Postflight delete source file failed")
+                report_encoding_completed(file_guid, 'Failed: Postflight delete source file')
+                continue
+            logging.info("✓ Postflight check passed")
+
+            # Step 9: Move temporary file to final destination
+            logging.info("Moving temporary file to final destination...")
+            if not move_file(templorary_file_path, after_file_path):
+                logging.error("Failed to move temporary file to final destination")
+                report_encoding_completed(file_guid, 'Failed: Move temporary file to final destination')
+                continue
+            logging.info("✓ File moved successfully")
+
+            # Step 10: Report completion to manager
+            logging.info("Reporting completion to manager...")
+            report_status, report_response = report_encoding_completed(file_guid, 'encoded', after_file_size)
+            if report_status != 200:
+                logging.error(f"Failed to report completion. Status: {report_status}, Response: {report_response}")
+                # Note: Even if reporting fails, the file has been processed successfully
             else:
-                print("No task retrieved, waiting for next poll.")            
-
-            print('Loop completed')
-            time.sleep(POLL_INTERVAL)
-    except KeyboardInterrupt:
-        print("\n[WORKER] Interrupted by user, shutting down...")
-    finally:
-        print("[WORKER] Worker stopped")
+                logging.info("✓ Completion reported successfully")
+            
+            logging.info(f"Task {file_guid} completed successfully!")
+            logging.info("=" * 80)
+            
+        except KeyboardInterrupt:
+            logging.info("Worker stopped by user")
+            break
+        except Exception as e:
+            logging.error(f"Unexpected error in worker loop: {type(e).__name__}: {str(e)}")
+        
+        # Wait before next poll
+        time.sleep(poll_interval)
 
 
 if __name__ == "__main__":
-    worker_loop()
+    run_local_worker_loop()
