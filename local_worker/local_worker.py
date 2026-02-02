@@ -92,8 +92,8 @@ def run_local_worker_loop():
             logging.info(f"✓ Output file size: {after_file_size} KB")
 
             # Step 8: Delete source
-            logging.info("Processing files...")
-            if not delete_file(after_file_path):
+            logging.info("Deleting source file...")
+            if not delete_file(before_file_size_file_path):
                 logging.error("Postflight delete source file failed")
                 report_encoding_completed(file_guid, 'Failed: Postflight delete source file')
                 continue

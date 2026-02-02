@@ -293,7 +293,6 @@ def run_queue_workflow(db_path=None, extensions=None):
             file_path = os.path.join(directory, input_file_name)
             logging.debug(f"  Found: {file_path}")
             if is_file_unpulled_in_queue(input_file_name, directory, db_path) == False:
-                logging.info(f"    Adding to queue: {input_file_name}")
                 default_encoding_decision = False
                 ffmpeg_command = ''
                 probe_data = run_ffprobe(directory, input_file_name)
@@ -305,6 +304,7 @@ def run_queue_workflow(db_path=None, extensions=None):
                 logging.debug(output_file_name)
 
                 if final_encoding_decision == True:
+                    logging.info(f"    Adding to queue: {input_file_name}")
                     before_file_size = get_file_size_kb(directory, input_file_name)
                     file_guid = write_to_queue(directory_guid, directory, input_file_name, output_file_name, before_file_size, ffmpeg_command, db_path)
                     logging.info(f"    Queued file_guid: {file_guid}")
