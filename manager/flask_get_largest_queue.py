@@ -27,7 +27,7 @@ def get_largest_queue_logic(db_disabled):
         conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row  # This allows accessing columns by name
         cur = conn.cursor()
-        logging.info("[DB] Connected to database successfully")
+        logging.debug("[DB] Connected to database successfully")
 
         # Query the encode table sorted by before_file_size descending, limit 1
         query = """
@@ -66,7 +66,7 @@ def get_largest_queue_logic(db_disabled):
         if row:
             # Convert row to dictionary
             result = dict(row)
-            logging.info(f"[RESULT] Returning queue record with before_file_size: {result['before_file_size']} bytes")
+            logging.info(f"[RESULT] Queued for encoding: {result['input_file_name']} ")
             logging.info("="*80 + "\n")
             return {
                 'success': True,
