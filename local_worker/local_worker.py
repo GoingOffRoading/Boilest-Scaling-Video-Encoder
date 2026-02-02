@@ -15,6 +15,8 @@ def run_local_worker_loop():
     
     while True:
         try:
+            time.sleep(poll_interval)
+            
             logging.info("=" * 80)
             logging.info("Polling for new task...")
             
@@ -123,9 +125,6 @@ def run_local_worker_loop():
         except Exception as e:
             logging.error(f"Unexpected error in worker loop: {type(e).__name__}: {str(e)}")
         
-        # Wait before next poll
-        time.sleep(poll_interval)
-
 
 if __name__ == "__main__":
     run_local_worker_loop()
