@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime
 from db_path import get_db_path
 
 __all__ = ["get_largest_queue_logic"]
@@ -38,7 +39,7 @@ def get_largest_queue_logic(db_disabled):
                 before_file_size,
                 ffmpeg_string
             FROM queue q
-            WHERE datetime_pulled IS NULL AND datetime_encoded IS NULL
+            WHERE status = 'queued'
             ORDER BY before_file_size DESC
             LIMIT 1
         """
@@ -52,10 +53,11 @@ def get_largest_queue_logic(db_disabled):
         if row:
             update_query = """
                 UPDATE queue
-                SET datetime_pulled = CURRENT_TIMESTAMP, status = 'pulled'
+                SET datetime_pulled = ?, status = 'pulled'
                 WHERE file_guid = ?
             """
-            cur.execute(update_query, (row["file_guid"],))
+            current_time = datetime.now()
+            cur.execute(update_query, (current_time, row["file_guid"]))
             conn.commit()
 
         conn.close()

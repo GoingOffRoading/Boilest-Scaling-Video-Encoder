@@ -37,6 +37,7 @@ COPY entrypoint.sh /boil/entrypoint.sh
 
 # Create directories for unpersisted application data 
 RUN chown -R appuser:appgroup /boil 
+RUN chown appuser:appgroup /boilmedia
 
 # Manager Variables
 ENV FLASK_APP=Flask.py
