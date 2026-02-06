@@ -1,6 +1,6 @@
 ## Manager ToDo List
 
-- [ ] Interactive UI
+- [x] Interactive UI
 - [x] Add a status field to the queue DB
 - [x] Update flask_post_queue to check for the status flag, instead of checking for datetime columns
 - [ ] Maybe add another queue for largest impact.  I.E. Largest file, x264, etc.  Maybe a field like 'encode priorit' or something.  
@@ -8,10 +8,10 @@
 - [x] Logs were being printed for files being added to queue that were correctly being skipped
 - [x] Refactor both pipelines so that /boilemdia/ isn't used in the directory path... I.E. Appear more like the actual URL
 - [ ] Develop better SVT-AV1 strings
-- [ ] Add SVT-AV1 strings to /Directories in the DB
-- [ ] Use these values when encodings
+- [x] Add SVT-AV1 strings to /Directories in the DB
+- [x] Use these values when encodings
 - [ ] Add a skip for HDR content
-- [ ] Come up with a strategy for HDR content
+- [ ] Later: Come up with a strategy for HDR content
 
 
 
