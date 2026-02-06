@@ -48,93 +48,93 @@ def run_local_worker_loop():
             logging.info(f"Task received: {file_guid}")
             logging.info(f"  Input: {directory_path}/{input_file_name}")
             
-            logging.info("Running preflight checks...")
+            logging.info(f"Running preflight checks on: {input_file_name}")
 
             
             # Step 1: Validate file existence
-            logging.info(f"Step 1: Validating existence of: {input_file_name}...")
             if not file_exists(before_file_size_file_path):
                 logging.error(f"✗ Step 1: File existence validation failed for: {input_file_name}")
                 report_encoding_completed(file_guid, 'Failed: File not found')
                 continue
-            logging.info(f"✓ Step 1: File existence validated for: {input_file_name}")
+            logging.info(f"✓ Step 1: File existence validated")
 
 
             # Step 2: Validate file size hasn't changed
-            logging.info(f"Step 2: Validating file hash for: {input_file_name}...")
             if not validate_hash(before_file_size_file_path, before_file_size):
                 logging.error(f"✗ Step 2: File hash validation failed for: {input_file_name}")
                 report_encoding_completed(file_guid, 'Failed: Hash mismatch')
                 continue
-            logging.info(f"✓ Step 2: File hash validated for: {input_file_name}")
+            logging.info(f"✓ Step 2: File hash validated")
             
 
             # Step 3: Validate video integrity
-            logging.info(f"Step 3: Validating video integrity for: {input_file_name}...")
             if not validate_video(before_file_size_file_path):
                 logging.error(f"✗ Step 3: Video integrity check failed for: {input_file_name}")
                 report_encoding_completed(file_guid, 'Failed: Input Integrity')
                 continue
-            logging.info(f"✓ Step 3: Video integrity validated for: {input_file_name}")
+            logging.info(f"✓ Step 3: Video integrity validated")
             
 
+            logging.info(f"Preflight checks passed... Starting FFmpeg on: {input_file_name}")
+
+
             # Step 4: Run ffmpeg encoding
-            logging.info(f"Step 4: Starting ffmpeg encoding for: {input_file_name}...")
             if not run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path):
                 logging.error(f"✗ Step 4: FFmpeg encoding failed for: {input_file_name}")
                 report_encoding_completed(file_guid, 'Failed: FFmpeg failure')
                 continue
-            logging.info(f"✓ Step 4: FFmpeg encoding completed for: {input_file_name}")
+            logging.info(f"✓ Step 4: FFmpeg encoding completed")
+
+
+            logging.info(f"FFmpeg completed... Starting postflight checks on: {input_file_name}")
             
 
             # Step 5: Validate temporary file existence
-            logging.info(f"Step 5: Validating existence of temporary file: {output_file_name}...")
             if not file_exists(templorary_file_path):
                 logging.error(f"✗ Step 5: Temporary file existence validation failed for: {output_file_name}")
                 report_encoding_completed(file_guid, 'Failed: Temporary file not found')
                 continue
-            logging.info(f"✓ Step 5: Temporary file existence validated for: {output_file_name}")
+            logging.info(f"✓ Step 5: Temporary file existence validated")
+
 
 
             # Step 6: Postflight check - validate output video integrity
-            logging.info(f"Step 6: Validating output video integrity for: {input_file_name}...")
             if not validate_post_flight_video(templorary_file_path):
                 logging.error(f"✗ Step 6: Output video integrity check failed for: {input_file_name}")
                 report_encoding_completed(file_guid, 'Failed: Postflight Integrity')
                 continue
-            logging.info(f"✓ Step 6: Output video integrity validated for: {input_file_name}")
+            logging.info(f"✓ Step 6: Output video integrity validated")
+
+
+            logging.info(f"Postflight checks passed... Starting postflight workflow on: {input_file_name}")
 
 
             # Step 7: Get output file size
-            logging.info(f"Step 7: Getting output file size for: {input_file_name}...")
             after_file_size = get_file_size_kb(templorary_file_path)
             if after_file_size == 0:
                 logging.error(f"✗ Step 7: File size check failed for: {input_file_name}")
                 report_encoding_completed(file_guid, 'Failed: Postflight file size check')
                 continue
-            logging.info(f"✓ Step 7: Output file size: {after_file_size} KB")
+            logging.info(f"✓ Step 7: Output file size captured")
 
 
             # Step 8: Delete source
-            logging.info(f"Step 8: Deleting source file: {input_file_name}...")
             if not delete_file(before_file_size_file_path):
                 logging.error(f"✗ Step 8: Source file deletion failed for: {input_file_name}")
                 report_encoding_completed(file_guid, 'Failed: Postflight delete source file')
                 continue
-            logging.info(f"✓ Step 8: Source file deleted: {input_file_name}")
+            logging.info(f"✓ Step 8: Source file deleted")
 
 
             # Step 9: Move temporary file to final destination
-            logging.info(f"Step 9: Moving temporary file to final destination for: {input_file_name}...")
             if not move_file(templorary_file_path, after_file_path):
                 logging.error(f"✗ Step 9: File move failed for: {input_file_name}")
                 report_encoding_completed(file_guid, 'Failed: Postflight move temporary file to final destination')
                 continue
-            logging.info(f"✓ Step 9: File moved to final destination: {input_file_name}")
+            logging.info(f"✓ Step 9: File moved to final destination")
 
 
             # Step 10: Report completion to manager
-            logging.info("Step 10: Reporting completion to manager...")
             report_status, report_response = report_encoding_completed(file_guid, 'encoded', after_file_size)
             if report_status != 200:
                 logging.error(f"✗ Step 10: Failed to report completion. Status: {report_status}, Response: {report_response}")
@@ -143,7 +143,7 @@ def run_local_worker_loop():
                 logging.info("✓ Step 10: Completion reported successfully")
             
 
-            logging.info(f"Task {file_guid} completed successfully!")
+            logging.info(f"Task {input_file_name} encoded successfully!")
             logging.info("=" * 80)
             
         except KeyboardInterrupt:
