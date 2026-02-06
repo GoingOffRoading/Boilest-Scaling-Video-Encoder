@@ -26,9 +26,27 @@
             text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
             letter-spacing: 0.1em;
         }
+        
+        .metric {
+            margin-top: 2rem;
+            font-size: 1.5rem;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffd700;
+        }
     </style>
 </head>
 <body>
-    <h1>Boilest</h1>
+    <div style="text-align: center;">
+        <h1>Boilest</h1>
+        <div class="metric">
+            <span class="metric-value">{{ queued_count }}</span> items queued
+        </div>
+    </div>
 </body>
 </html>

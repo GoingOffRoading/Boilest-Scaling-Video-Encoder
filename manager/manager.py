@@ -2,6 +2,7 @@ import os
 import logging
 from flask import Flask, jsonify, request, render_template
 from db_status import get_database_status
+from flask_get_index import get_index_data
 from flask_get_largest_queue import get_largest_queue_logic
 from flask_post_completed_encode import post_completed_encode_logic
 from flask_post_queue import run_queue_workflow
@@ -21,7 +22,8 @@ DB_DISABLED = False
 def index():
     """Serve the main UI page"""
     logging.info("[UI] Serving main page")
-    return render_template('index.html')
+    index_data = get_index_data()
+    return render_template('index.html', **index_data)
 
 
 @app.route('/api/queue/largest', methods=['GET'])

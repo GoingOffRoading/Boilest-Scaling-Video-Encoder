@@ -58,6 +58,19 @@ def get_file_size_kb(file_path):
     except Exception as e:
         logging.debug(f"✗ Error getting file size: {e}")
         return 0
+
+
+def file_exists(file_path):
+    """
+    Check if a file exists at the specified path.
+    
+    Parameters:
+      - file_path (str): The path to the file to check
+    
+    Returns:
+      - bool: True if the file exists, False otherwise
+    """
+    return os.path.exists(file_path)
     
 
 def validate_hash(before_file_path, before_file_size):
@@ -248,3 +261,5 @@ def report_encoding_completed(file_guid, status, after_file_size=None):
     except Exception as e:
         logging.error(f"[ERROR] Exception: {type(e).__name__}: {str(e)}")
         return None, str(e)
+    
+

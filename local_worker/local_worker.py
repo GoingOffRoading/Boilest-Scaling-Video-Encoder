@@ -20,7 +20,7 @@ def run_local_worker_loop():
             logging.info("=" * 80)
             logging.info("Polling for new task...")
             
-            # Step 1: Get largest task from queue
+            # Step 0: Get largest task from queue
             status, response = get_largest_task()
             
             if status != 200:
@@ -48,75 +48,101 @@ def run_local_worker_loop():
             logging.info(f"Task received: {file_guid}")
             logging.info(f"  Input: {directory_path}/{input_file_name}")
             
-            # Step 2: Preflight check - validate file hasn't changed and has integrity
-            logging.info("Running preflight check...")
+            logging.info("Running preflight checks...")
+
             
-            # Step 3: Validate file size hasn't changed
-            logging.info(f"Validating filehash for: {input_file_name}...")
+            # Step 1: Validate file existence
+            logging.info(f"Step 1: Validating existence of: {input_file_name}...")
+            if not file_exists(before_file_size_file_path):
+                logging.error(f"✗ Step 1: File existence validation failed for: {input_file_name}")
+                report_encoding_completed(file_guid, 'Failed: File not found')
+                continue
+            logging.info(f"✓ Step 1: File existence validated for: {input_file_name}")
+
+
+            # Step 2: Validate file size hasn't changed
+            logging.info(f"Step 2: Validating file hash for: {input_file_name}...")
             if not validate_hash(before_file_size_file_path, before_file_size):
-                logging.error(f"✗ Preflight video hash check: {input_file_name} FAILED")
+                logging.error(f"✗ Step 2: File hash validation failed for: {input_file_name}")
                 report_encoding_completed(file_guid, 'Failed: Hash mismatch')
                 continue
-            logging.info(f"✓ Preflight video hash check: {input_file_name} PASSED")
+            logging.info(f"✓ Step 2: File hash validated for: {input_file_name}")
             
-            # Step 4: Validate video integrity
-            logging.info(f"Validating video integrity for: {input_file_name}...")
+
+            # Step 3: Validate video integrity
+            logging.info(f"Step 3: Validating video integrity for: {input_file_name}...")
             if not validate_video(before_file_size_file_path):
-                logging.error(f"✗ Preflight video integrity check: {input_file_name} FAILED")
+                logging.error(f"✗ Step 3: Video integrity check failed for: {input_file_name}")
                 report_encoding_completed(file_guid, 'Failed: Input Integrity')
                 continue
-            logging.info(f"✓ Preflight video integrity check: {input_file_name} PASSED")
+            logging.info(f"✓ Step 3: Video integrity validated for: {input_file_name}")
             
-            # Step 5: Run ffmpeg encoding
-            logging.info(f"Starting ffmpeg encoding for: {input_file_name}...")
+
+            # Step 4: Run ffmpeg encoding
+            logging.info(f"Step 4: Starting ffmpeg encoding for: {input_file_name}...")
             if not run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path):
-                logging.error(f"✗ FFmpeg encoding: {input_file_name} FAILED")
+                logging.error(f"✗ Step 4: FFmpeg encoding failed for: {input_file_name}")
                 report_encoding_completed(file_guid, 'Failed: FFmpeg failure')
                 continue
-            logging.info(f"✓ FFmpeg encoding: {input_file_name} PASSED")
+            logging.info(f"✓ Step 4: FFmpeg encoding completed for: {input_file_name}")
             
+
+            # Step 5: Validate temporary file existence
+            logging.info(f"Step 5: Validating existence of temporary file: {output_file_name}...")
+            if not file_exists(templorary_file_path):
+                logging.error(f"✗ Step 5: Temporary file existence validation failed for: {output_file_name}")
+                report_encoding_completed(file_guid, 'Failed: Temporary file not found')
+                continue
+            logging.info(f"✓ Step 5: Temporary file existence validated for: {output_file_name}")
+
+
             # Step 6: Postflight check - validate output video integrity
-            logging.info(f"Running postflight check for: {input_file_name}...")
+            logging.info(f"Step 6: Validating output video integrity for: {input_file_name}...")
             if not validate_post_flight_video(templorary_file_path):
-                logging.error(f"✗ Postflight video integrity check: {input_file_name} FAILED")
+                logging.error(f"✗ Step 6: Output video integrity check failed for: {input_file_name}")
                 report_encoding_completed(file_guid, 'Failed: Postflight Integrity')
                 continue
-            logging.info(f"✓ Postflight video integrity check: {input_file_name} PASSED")
+            logging.info(f"✓ Step 6: Output video integrity validated for: {input_file_name}")
+
 
             # Step 7: Get output file size
-            logging.info(f"Getting output file size for: {input_file_name}...")
+            logging.info(f"Step 7: Getting output file size for: {input_file_name}...")
             after_file_size = get_file_size_kb(templorary_file_path)
             if after_file_size == 0:
-                logging.error(f"✗ Postflight file size check: {input_file_name} FAILED")
+                logging.error(f"✗ Step 7: File size check failed for: {input_file_name}")
                 report_encoding_completed(file_guid, 'Failed: Postflight file size check')
                 continue
-            logging.info(f"✓ Output file size: {after_file_size} KB")
+            logging.info(f"✓ Step 7: Output file size: {after_file_size} KB")
+
 
             # Step 8: Delete source
-            logging.info(f"Deleting source file: {input_file_name}...")
+            logging.info(f"Step 8: Deleting source file: {input_file_name}...")
             if not delete_file(before_file_size_file_path):
-                logging.error(f"✗ Postflight delete source file: {input_file_name} FAILED")
+                logging.error(f"✗ Step 8: Source file deletion failed for: {input_file_name}")
                 report_encoding_completed(file_guid, 'Failed: Postflight delete source file')
                 continue
-            logging.info(f"✓ Postflight delete source: {input_file_name} PASSED")
+            logging.info(f"✓ Step 8: Source file deleted: {input_file_name}")
+
 
             # Step 9: Move temporary file to final destination
-            logging.info(f"Moving temporary file to final destination for: {input_file_name}...")
+            logging.info(f"Step 9: Moving temporary file to final destination for: {input_file_name}...")
             if not move_file(templorary_file_path, after_file_path):
-                logging.error(f"✗ Postflight move temporary file to final destination: {input_file_name} FAILED")
+                logging.error(f"✗ Step 9: File move failed for: {input_file_name}")
                 report_encoding_completed(file_guid, 'Failed: Postflight move temporary file to final destination')
                 continue
-            logging.info(f"✓ Postflight move temporary file to final destination: {input_file_name} PASSED")
+            logging.info(f"✓ Step 9: File moved to final destination: {input_file_name}")
+
 
             # Step 10: Report completion to manager
-            logging.info("Reporting completion to manager...")
+            logging.info("Step 10: Reporting completion to manager...")
             report_status, report_response = report_encoding_completed(file_guid, 'encoded', after_file_size)
             if report_status != 200:
-                logging.error(f"✗ Failed to report completion. Status: {report_status}, Response: {report_response}")
+                logging.error(f"✗ Step 10: Failed to report completion. Status: {report_status}, Response: {report_response}")
                 # Note: Even if reporting fails, the file has been processed successfully
             else:
-                logging.info("✓ Completion reported successfully")
+                logging.info("✓ Step 10: Completion reported successfully")
             
+
             logging.info(f"Task {file_guid} completed successfully!")
             logging.info("=" * 80)
             
