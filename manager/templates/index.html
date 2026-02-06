@@ -150,6 +150,57 @@
             color: #999;
             font-size: 0.9rem;
         }
+        
+        .button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .scan-button {
+            background-color: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .scan-button:hover:not(:disabled) {
+            background-color: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .scan-button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        .scan-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .status-message {
+            margin-top: 15px;
+            font-size: 0.95rem;
+            min-height: 20px;
+        }
+        
+        .status-success {
+            color: #28a745;
+        }
+        
+        .status-error {
+            color: #dc3545;
+        }
+        
+        .status-loading {
+            color: #667eea;
+        }
     </style>
 </head>
 <body>
@@ -179,6 +230,12 @@
                 <div class="metric-value">{{ space_saved_gb }}</div>
                 <div class="metric-unit">GB</div>
             </div>
+        </div>
+        
+        <!-- Scan Button -->
+        <div class="button-container">
+            <button class="scan-button" id="scanButton" onclick="triggerScan()">Scan for Files</button>
+            <div class="status-message" id="statusMessage"></div>
         </div>
         
         <!-- Queued Items Table -->
@@ -212,5 +269,44 @@
             {% endif %}
         </div>
     </div>
+    
+    <script>
+        async function triggerScan() {
+            const button = document.getElementById('scanButton');
+            const statusMessage = document.getElementById('statusMessage');
+            
+            // Disable button and show loading message
+            button.disabled = true;
+            statusMessage.className = 'status-message status-loading';
+            statusMessage.textContent = 'Scanning for files...';
+            
+            try {
+                const response = await fetch('/api/scan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    statusMessage.className = 'status-message status-success';
+                    statusMessage.textContent = '✓ Scan completed successfully! Refreshing...';
+                    
+                    // Refresh the page after 2 seconds to show updated metrics
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    statusMessage.className = 'status-message status-error';
+                    statusMessage.textContent = `✗ Scan failed with status ${response.status}`;
+                    button.disabled = false;
+                }
+            } catch (error) {
+                statusMessage.className = 'status-message status-error';
+                statusMessage.textContent = `✗ Error: ${error.message}`;
+                button.disabled = false;
+            }
+        }
+    </script>
 </body>
 </html>
