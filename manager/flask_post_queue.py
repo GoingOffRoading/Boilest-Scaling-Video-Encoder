@@ -13,14 +13,16 @@ logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
 logging.debug("Libraries imported successfully")
 
+db_path = get_db_path()
+logging.debug(f"Database path: {db_path}")
 
 def get_all_directories(db_path):
-    """Return all rows from the `directories` table as a list of (guid, path)."""
+    """Return all rows from the `directories` table as a list of (guid, path, ffmpeg_video)."""
     conn = None
     try:
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
-        cur.execute("SELECT guid, path FROM directories")
+        cur.execute("SELECT guid, path, ffmpeg_video FROM directories")
         rows = cur.fetchall()
         conn.close()
         return rows
@@ -110,7 +112,7 @@ def run_ffprobe(directory_path, filename):
         return {'error': str(e)}
 
 
-def check_codecs(encoding_decision, stream_info, ffmpeg_command):
+def check_codecs(encoding_decision, stream_info, ffmpeg_command, ffmpeg_video):
     """Check codecs in streams and build ffmpeg command."""
     streams_count = stream_info['format']['nb_streams']
     
@@ -118,7 +120,7 @@ def check_codecs(encoding_decision, stream_info, ffmpeg_command):
         codec_type = stream_info['streams'][i]['codec_type'] 
         if codec_type == 'video':
             logging.debug('Stream ' + str(i) + ' is video')
-            encoding_decision, ffmpeg_command = check_video_stream(encoding_decision, i, stream_info, ffmpeg_command)
+            encoding_decision, ffmpeg_command = check_video_stream(encoding_decision, i, stream_info, ffmpeg_command, ffmpeg_video)
         elif codec_type == 'audio':
             encoding_decision, ffmpeg_command = check_audio_stream(encoding_decision, i, stream_info, ffmpeg_command)
             logging.debug('audio stream')
@@ -133,7 +135,7 @@ def check_codecs(encoding_decision, stream_info, ffmpeg_command):
     return encoding_decision, ffmpeg_command
 
 
-def check_video_stream(encoding_decision, i, stream_info, ffmpeg_command):
+def check_video_stream(encoding_decision, i, stream_info, ffmpeg_command, ffmpeg_video):
     """Checks the video stream from check_codecs to determine if the stream needs encoding."""
     codec_name = stream_info['streams'][i]['codec_name'] 
     desired_video_codec = 'av1'
@@ -144,8 +146,7 @@ def check_video_stream(encoding_decision, i, stream_info, ffmpeg_command):
         ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:v copy'
     elif codec_name != desired_video_codec: 
         encoding_decision = True
-        svt_av1_string = "libsvtav1 -crf 25 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0:enable-qm=1:qm-min=0:qm-max=15"
-        ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:v ' + svt_av1_string
+        ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:v ' + ffmpeg_video
     else:
         logging.debug('ignoring for now')
     return encoding_decision, ffmpeg_command
@@ -287,7 +288,7 @@ def run_queue_workflow(db_path=None, extensions=None):
 
     directories = get_all_directories(db_path)
     
-    for directory_guid, directory_path in directories:
+    for directory_guid, directory_path, ffmpeg_video in directories:
         logging.info(f"\nScanning directory {directory_path} (guid={directory_guid})")
         for directory, input_file_name in find_video_files(directory_path):
             file_path = os.path.join(directory, input_file_name)
@@ -297,7 +298,7 @@ def run_queue_workflow(db_path=None, extensions=None):
                 ffmpeg_command = ''
                 probe_data = run_ffprobe(directory, input_file_name)
                 output_file_name, file_encoding_decision = output_file_name_fx(input_file_name, default_encoding_decision)
-                final_encoding_decision, ffmpeg_command = check_codecs(file_encoding_decision, probe_data, ffmpeg_command)
+                final_encoding_decision, ffmpeg_command = check_codecs(file_encoding_decision, probe_data, ffmpeg_command, ffmpeg_video)
                 
                 logging.debug(final_encoding_decision)
                 logging.debug(ffmpeg_command)
