@@ -12,6 +12,9 @@
 - [x] Use these values when encodings
 - [ ] Add a skip for HDR content
 - [ ] Later: Come up with a strategy for HDR content
+- [ ] Before allowing a filebase scan, check if queue is empty
+- [ ] Add a test directory
+- [ ] Add codec types to target in the directories table
 
 
 
