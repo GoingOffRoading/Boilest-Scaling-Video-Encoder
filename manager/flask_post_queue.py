@@ -307,7 +307,7 @@ def run_queue_workflow(db_path=None, extensions=None):
                     logging.info(f"    Adding to queue: {input_file_name}")
                     before_file_size = get_file_size_kb(directory, input_file_name)
                     file_guid = write_to_queue(directory_guid, directory, input_file_name, output_file_name, before_file_size, ffmpeg_command, db_path)
-                    logging.info(f"    Queued file_guid: {file_guid}")
+                    logging.debug(f"    Queued file_guid: {file_guid}")
                 else:
                     logging.debug(f"    Skiping: {input_file_name}")
 

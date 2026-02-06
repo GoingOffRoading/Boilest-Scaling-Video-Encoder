@@ -24,10 +24,16 @@ RUN mkdir -p /boil/manager
 RUN mkdir -p /boil/local_worker
 RUN mkdir -p /boil/cloud_worker
 RUN mkdir -p /boil/boil_hold
-RUN mkdir -p /boil/templates
 
 # Create directories for media data
-RUN mkdir -p /boilmedia
+RUN mkdir -p /tv && \
+    mkdir -p /tv_favorites && \
+    mkdir -p /movies && \
+    mkdir -p /movies_favorites && \
+    mkdir -p /anime && \
+    mkdir -p /anime_favorites && \
+    mkdir -p /home_movies && \
+    mkdir -p /youtube_archive
 
 # Create application directory and set ownership
 COPY manager /boil/manager
@@ -36,8 +42,15 @@ COPY cloud_worker /boil/cloud_worker
 COPY entrypoint.sh /boil/entrypoint.sh
 
 # Create directories for unpersisted application data 
-RUN chown -R appuser:appgroup /boil 
-RUN chown appuser:appgroup /boilmedia
+RUN chown -R appuser:appgroup /boil && \
+    chown -R appuser:appgroup /tv && \
+    chown -R appuser:appgroup /tv_favorites && \
+    chown -R appuser:appgroup /movies && \
+    chown -R appuser:appgroup /movies_favorites && \
+    chown -R appuser:appgroup /anime && \
+    chown -R appuser:appgroup /anime_favorites && \
+    chown -R appuser:appgroup /home_movies && \
+    chown -R appuser:appgroup /youtube_archive
 
 # Manager Variables
 ENV FLASK_APP=Flask.py
