@@ -15,6 +15,8 @@
 - [ ] Before allowing a filebase scan, check if queue is empty
 - [x] Add codec types to target in the directories table
 - [x] Add a display for currently queued and recently encoded
+- [ ] Rewrite repo readme
+- [ ] Come up with a decision on whether to skip previusly failed files
 
 
 
