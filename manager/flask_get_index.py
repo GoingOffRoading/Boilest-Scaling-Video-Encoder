@@ -1,5 +1,6 @@
 import sqlite3
 import logging
+from datetime import datetime
 from db_path import get_db_path
 
 __all__ = ["get_index_data"]
@@ -82,7 +83,9 @@ def get_index_data():
         cur.execute("""
             SELECT 
                 output_file_name,
+                directory_path,
                 before_file_size - after_file_size as space_saved,
+                datetime_pulled,
                 datetime_encoded
             FROM queue 
             WHERE status = 'encoded'
@@ -90,6 +93,22 @@ def get_index_data():
             LIMIT 10
         """)
         encoded_items = [dict(row) for row in cur.fetchall()]
+
+        # Compute encoding duration in minutes for each encoded item
+        for item in encoded_items:
+            dp = item.get('datetime_pulled')
+            de = item.get('datetime_encoded')
+            duration_minutes = None
+            if dp and de:
+                try:
+                    dt_pulled = datetime.fromisoformat(dp)
+                    dt_encoded = datetime.fromisoformat(de)
+                    delta = dt_encoded - dt_pulled
+                    duration_minutes = round(delta.total_seconds() / 60, 2)
+                except Exception:
+                    duration_minutes = None
+            item['duration_minutes'] = duration_minutes
+
         logging.debug(f"[UI] Retrieved {len(encoded_items)} recently encoded items")
         
         conn.close()

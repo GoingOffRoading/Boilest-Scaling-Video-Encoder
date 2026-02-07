@@ -309,8 +309,9 @@
                     <tr>
                         <th style="width: 60px;">Rank</th>
                         <th>Output Filename</th>
+                        <th>Path</th>
                         <th style="text-align: right;">Space Saved (KB)</th>
-                        <th>Encoded</th>
+                        <th>Duration (min)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -318,8 +319,9 @@
                     <tr>
                         <td><strong>{{ loop.index }}</strong></td>
                         <td>{{ item['output_file_name'] }}</td>
+                        <td>{{ item['directory_path'] }}</td>
                         <td class="file-size">{{ "{:,}".format(item['space_saved']) }}</td>
-                        <td class="time-added">{{ item['datetime_encoded'] }}</td>
+                        <td class="time-added">{{ item['duration_minutes'] if item['duration_minutes'] is not none else '—' }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
