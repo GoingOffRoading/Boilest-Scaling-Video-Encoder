@@ -109,6 +109,16 @@ def get_index_data():
                     duration_minutes = None
             item['duration_minutes'] = duration_minutes
 
+            # Convert space_saved from KB to MB for display
+            try:
+                ss = item.get('space_saved')
+                if ss is not None:
+                    item['space_saved_mb'] = round(ss / 1024, 2)
+                else:
+                    item['space_saved_mb'] = None
+            except Exception:
+                item['space_saved_mb'] = None
+
         logging.debug(f"[UI] Retrieved {len(encoded_items)} recently encoded items")
         
         conn.close()
