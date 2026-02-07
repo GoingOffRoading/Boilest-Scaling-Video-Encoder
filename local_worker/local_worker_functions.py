@@ -256,9 +256,7 @@ def report_encoding_completed(file_guid, status, after_file_size=None):
     Returns:
       - tuple: (status_code, response_data)
     """
-    # Get API base URL from environment variable
-    api_base_url = os.environ.get("API_BASE_URL", "http://192.168.1.110:31500")
-    endpoint = f"{api_base_url}/api/completed"
+    endpoint = f"{API_BASE_URL}/api/completed"
     
     # Prepare the request data
     request_data = {

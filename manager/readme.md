@@ -16,15 +16,20 @@
 - [x] Add codec types to target in the directories table
 - [x] Add a display for currently queued and recently encoded
 - [ ] Rewrite repo readme
-- [ ] Come up with a decision on whether to skip previusly failed files
+- [x] Come up with a decision on whether to skip previusly failed files
+- [ ] Add logic to the UI for when DB is disabled
+- [ ] Add logic for audio
+- [ ] Add logic for subtitles
 
 
 
 
 
 
-
+### Old
 libsvtav1 -crf 25 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0:enable-qm=1:qm-min=0:qm-max=15
+
+
 
 
 

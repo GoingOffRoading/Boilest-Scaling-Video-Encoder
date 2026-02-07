@@ -7,14 +7,14 @@ __all__ = ["get_largest_queue_logic"]
 
 def get_largest_queue_logic(db_disabled):
     import logging
-    logging.info("\n" + "="*80)
+    logging.info("="*80)
     logging.info("[REQUEST] GET /api/queue/largest")
     logging.info("="*80)
 
     # Check if database operations are disabled
     if db_disabled:
         logging.error("[DB] Database operations are currently disabled")
-        logging.error("="*80 + "\n")
+        logging.error("="*80)
         return {
             'success': False,
             'error': 'Database operations are temporarily disabled'
@@ -67,7 +67,7 @@ def get_largest_queue_logic(db_disabled):
             # Convert row to dictionary
             result = dict(row)
             logging.info(f"[RESULT] Queued for encoding: {result['input_file_name']} ")
-            logging.info("="*80 + "\n")
+            logging.info("="*80)
             return {
                 'success': True,
                 'data': result
