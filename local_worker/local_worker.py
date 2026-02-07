@@ -68,7 +68,7 @@ def run_local_worker_loop():
             
 
             # Step 3: Validate video integrity
-            if not validate_video(before_file_size_file_path):
+            if not validate_video_lite(before_file_size_file_path):
                 logging.error(f"✗ Step 3: Video integrity check failed for: {input_file_name}")
                 report_encoding_completed(file_guid, 'Failed: Input Integrity')
                 continue
@@ -99,7 +99,7 @@ def run_local_worker_loop():
 
 
             # Step 6: Postflight check - validate output video integrity
-            if not validate_post_flight_video(templorary_file_path):
+            if not validate_video_full(templorary_file_path):
                 logging.error(f"✗ Step 6: Output video integrity check failed for: {input_file_name}")
                 report_encoding_completed(file_guid, 'Failed: Postflight Integrity')
                 continue

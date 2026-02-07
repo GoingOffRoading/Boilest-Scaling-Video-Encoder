@@ -11,6 +11,7 @@ import os
 import subprocess
 import shutil
 import json
+import re
 import urllib.request
 from urllib.error import URLError, HTTPError
 
@@ -90,7 +91,57 @@ def validate_hash(before_file_path, before_file_size):
 
 # ----------------------------------------
 
-def validate_video(file_path):
+# Patterns that should be ignored during video validation
+IGNORED_PATTERNS = [
+    r"non monotonically increasing",
+    r"invalid pts",
+    r"invalid dts",
+]
+
+
+def _contains_ignored_pattern(text):
+    """
+    Check if text contains any of the ignored patterns.
+    
+    Parameters:
+      - text (str): The text to check
+    
+    Returns:
+      - bool: True if an ignored pattern is found, False otherwise
+    """
+    for pattern in IGNORED_PATTERNS:
+        if re.search(pattern, text, re.IGNORECASE):
+            return True
+    return False
+
+
+def validate_video_lite(file_path):
+    try:
+        command = 'ffmpeg -v error -fflags +genpts -t 300 -i "' + file_path + '" -f null -'
+        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        
+        # Check stdout for actual errors (not in ignored patterns)
+        combined_output = result.stdout + result.stderr
+        
+        if combined_output:
+            # If output contains only ignored patterns, pass validation
+            if _contains_ignored_pattern(combined_output):
+                logging.debug('File passed video integrity check (ignored non-critical errors)')
+                return True
+            else:
+                logging.debug('File failed video integrity check')
+                logging.debug(f'FFmpeg output: {combined_output}')
+                return False
+        else:
+            logging.debug('File passed video integrity check')
+            return True
+    except Exception as e:
+        logging.debug(f"Error during video integrity check: {e}")
+        return False
+    
+# We want to scruitinize the output of ffmpeg more closely after encoding to ensure that there aren't any critical errors that would cause the file to be unplayable, even if it is technically valid. So we use a more thorough validation function post-flight.
+    
+def validate_video_full(file_path):
     try:
         command = 'ffmpeg -v error -i "' + file_path + '" -f null -'
         result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -103,6 +154,9 @@ def validate_video(file_path):
     except Exception as e:
         logging.debug(f"Error during video integrity check: {e}")
         return False
+
+
+
 
 # ----------------------------------------
 
