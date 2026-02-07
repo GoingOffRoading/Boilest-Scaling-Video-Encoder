@@ -17,12 +17,12 @@ db_path = get_db_path()
 logging.debug(f"Database path: {db_path}")
 
 def get_all_directories(db_path):
-    """Return all rows from the `directories` table as a list of (guid, path, ffmpeg_video)."""
+    """Return all rows from the `directories` table as a list of (guid, path, ffmpeg_video, desired_video_codec)."""
     conn = None
     try:
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
-        cur.execute("SELECT guid, path, ffmpeg_video FROM directories")
+        cur.execute("SELECT guid, path, ffmpeg_video, desired_video_codec FROM directories")
         rows = cur.fetchall()
         conn.close()
         return rows
@@ -85,7 +85,7 @@ def run_ffprobe(directory_path, filename):
         cmd = [
             'ffprobe',
             '-loglevel', 'quiet',
-            '-show_entries', 'format:stream=index,stream,codec_type,codec_name,channel_layout,format=nb_streams',  
+            '-show_entries', 'format:stream=index,stream,codec_type,codec_name,channel_layout,color_space,color_primaries,color_transfer,side_data_list,format=nb_streams',
             '-of', 'json',
             file_path
         ]
@@ -112,7 +112,7 @@ def run_ffprobe(directory_path, filename):
         return {'error': str(e)}
 
 
-def check_codecs(encoding_decision, stream_info, ffmpeg_command, ffmpeg_video):
+def check_codecs(encoding_decision, stream_info, ffmpeg_command, ffmpeg_video, desired_video_codec):
     """Check codecs in streams and build ffmpeg command."""
     streams_count = stream_info['format']['nb_streams']
     
@@ -120,7 +120,14 @@ def check_codecs(encoding_decision, stream_info, ffmpeg_command, ffmpeg_video):
         codec_type = stream_info['streams'][i]['codec_type'] 
         if codec_type == 'video':
             logging.debug('Stream ' + str(i) + ' is video')
-            encoding_decision, ffmpeg_command = check_video_stream(encoding_decision, i, stream_info, ffmpeg_command, ffmpeg_video)
+            encoding_decision, ffmpeg_command = check_video_stream(
+                encoding_decision,
+                i,
+                stream_info,
+                ffmpeg_command,
+                ffmpeg_video,
+                desired_video_codec,
+            )
         elif codec_type == 'audio':
             encoding_decision, ffmpeg_command = check_audio_stream(encoding_decision, i, stream_info, ffmpeg_command)
             logging.debug('audio stream')
@@ -135,14 +142,30 @@ def check_codecs(encoding_decision, stream_info, ffmpeg_command, ffmpeg_video):
     return encoding_decision, ffmpeg_command
 
 
-def check_video_stream(encoding_decision, i, stream_info, ffmpeg_command, ffmpeg_video):
+def check_video_stream(encoding_decision, i, stream_info, ffmpeg_command, ffmpeg_video, desired_video_codec):
     """Checks the video stream from check_codecs to determine if the stream needs encoding."""
     codec_name = stream_info['streams'][i]['codec_name'] 
-    desired_video_codec = 'av1'
+
+    # Check for HDR metadata and BT.2020 color space, which may require encoding to preserve HDR quality
+    color_transfer = stream_info['streams'][i].get('color_transfer', '')
+    color_primaries = stream_info['streams'][i].get('color_primaries', '')
+    color_space = stream_info['streams'][i].get('color_space', '')
+    side_data_list = stream_info['streams'][i].get('side_data_list', [])
+
+    has_hdr_transfer = color_transfer in ('smpte2084', 'arib-std-b67')
+    has_bt2020 = color_primaries == 'bt2020' or color_space in ('bt2020nc', 'bt2020c')
+    has_hdr_metadata = (
+        any('Mastering display' in sd.get('side_data_type', '') for sd in side_data_list)
+        or any('Content light' in sd.get('side_data_type', '') for sd in side_data_list)
+    )
+    is_hdr = has_hdr_transfer or (has_bt2020 and has_hdr_metadata)
+
     logging.debug('Steam ' + str(i) + ' codec is: ' + codec_name)
     if codec_name == desired_video_codec:
         ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:v copy'
     elif codec_name == 'mjpeg':
+        ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:v copy'
+    elif is_hdr:
         ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:v copy'
     elif codec_name != desired_video_codec: 
         encoding_decision = True
@@ -288,7 +311,7 @@ def run_queue_workflow(db_path=None, extensions=None):
 
     directories = get_all_directories(db_path)
     
-    for directory_guid, directory_path, ffmpeg_video in directories:
+    for directory_guid, directory_path, ffmpeg_video, desired_video_codec in directories:
         logging.info(f"\nScanning directory {directory_path} (guid={directory_guid})")
         for directory, input_file_name in find_video_files(directory_path):
             file_path = os.path.join(directory, input_file_name)
@@ -298,7 +321,13 @@ def run_queue_workflow(db_path=None, extensions=None):
                 ffmpeg_command = ''
                 probe_data = run_ffprobe(directory, input_file_name)
                 output_file_name, file_encoding_decision = output_file_name_fx(input_file_name, default_encoding_decision)
-                final_encoding_decision, ffmpeg_command = check_codecs(file_encoding_decision, probe_data, ffmpeg_command, ffmpeg_video)
+                final_encoding_decision, ffmpeg_command = check_codecs(
+                    file_encoding_decision,
+                    probe_data,
+                    ffmpeg_command,
+                    ffmpeg_video,
+                    desired_video_codec,
+                )
                 
                 logging.debug(final_encoding_decision)
                 logging.debug(ffmpeg_command)

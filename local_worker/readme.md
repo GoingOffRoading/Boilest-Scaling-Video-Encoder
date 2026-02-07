@@ -8,6 +8,15 @@
 - [ ] Debate if worker should loop through attempts to send results until a 200
 - [x] Add additional messaging on hash mismatch
 - [x] Refactor both pipelines so that /boilemdia/ isn't used in the directory path... I.E. Appear more like the actual URL
-- [ ] Refactor logging so that line breaks more intuiity break up the lines in the logs
+- [x] Refactor logging so that line breaks more intuiity break up the lines in the logs
 - [x] Figure out why in isloated cases, the original file does not get replaced
 - [x] Rework the pre/post check list to include determining if the file exists, add appropraite messaging
+- [x] Refactor how media file integrity is done 
+- [ ] Video validation, need to revisit how validation is done to let in some videos that would otherwise be fixed with encoding
+
+
+
+
+
+
+

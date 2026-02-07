@@ -92,6 +92,7 @@ def validate_hash(before_file_path, before_file_size):
 # ----------------------------------------
 
 # Patterns that should be ignored during video validation
+# Not currently used as videos would pass this check and fail in encoding.  Will revisit.
 IGNORED_PATTERNS = [
     r"non monotonically increasing",
     r"invalid pts",

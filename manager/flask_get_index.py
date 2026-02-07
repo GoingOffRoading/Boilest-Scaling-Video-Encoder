@@ -10,7 +10,7 @@ def get_index_data():
     Get data for the index page
     
     Returns:
-        dict: Dictionary containing metrics and queued items
+        dict: Dictionary containing metrics, queued items, encoding items, and recently encoded items
     """
     logging.info("[UI] Fetching index page data")
     
@@ -18,6 +18,8 @@ def get_index_data():
     encoded_count = 0
     space_saved_gb = 0.0
     queued_items = []
+    encoding_items = []
+    encoded_items = []
     
     try:
         db_path = get_db_path()
@@ -50,6 +52,7 @@ def get_index_data():
                 input_file_name,
                 before_file_size,
                 output_file_name,
+                ffmpeg_string,
                 datetime_added
             FROM queue 
             WHERE status = 'queued'
@@ -57,6 +60,37 @@ def get_index_data():
         """)
         queued_items = [dict(row) for row in cur.fetchall()]
         logging.debug(f"[UI] Retrieved {len(queued_items)} queued items")
+        
+        # Get currently encoding items sorted by datetime_pulled ascending
+        cur.execute("""
+            SELECT 
+                file_guid,
+                input_file_name,
+                before_file_size,
+                output_file_name,
+                ffmpeg_string,
+                datetime_added,
+                datetime_pulled
+            FROM queue 
+            WHERE status = 'pulled'
+            ORDER BY datetime_pulled ASC
+        """)
+        encoding_items = [dict(row) for row in cur.fetchall()]
+        logging.debug(f"[UI] Retrieved {len(encoding_items)} currently encoding items")
+        
+        # Get recently encoded items sorted by datetime_encoded descending
+        cur.execute("""
+            SELECT 
+                output_file_name,
+                before_file_size - after_file_size as space_saved,
+                datetime_encoded
+            FROM queue 
+            WHERE status = 'encoded'
+            ORDER BY datetime_encoded DESC
+            LIMIT 10
+        """)
+        encoded_items = [dict(row) for row in cur.fetchall()]
+        logging.debug(f"[UI] Retrieved {len(encoded_items)} recently encoded items")
         
         conn.close()
     except Exception as e:
@@ -66,5 +100,7 @@ def get_index_data():
         'queued_count': queued_count,
         'encoded_count': encoded_count,
         'space_saved_gb': space_saved_gb,
-        'queued_items': queued_items
+        'queued_items': queued_items,
+        'encoding_items': encoding_items,
+        'encoded_items': encoded_items
     }

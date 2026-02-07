@@ -68,7 +68,7 @@ def run_local_worker_loop():
             
 
             # Step 3: Validate video integrity
-            if not validate_video_lite(before_file_size_file_path):
+            if not validate_video_full(before_file_size_file_path):
                 logging.error(f"✗ Step 3: Video integrity check failed for: {input_file_name}")
                 report_encoding_completed(file_guid, 'Failed: Input Integrity')
                 continue

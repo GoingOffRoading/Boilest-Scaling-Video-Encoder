@@ -245,20 +245,20 @@
             <table>
                 <thead>
                     <tr>
+                        <th style="width: 60px;">Rank</th>
                         <th>Filename</th>
-                        <th>File GUID</th>
                         <th style="text-align: right;">Size (KB)</th>
-                        <th>Output</th>
+                        <th>FFmpeg String</th>
                         <th>Added</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for item in queued_items %}
+                    {% for item in queued_items[:10] %}
                     <tr>
+                        <td><strong>{{ loop.index }}</strong></td>
                         <td>{{ item['input_file_name'] }}</td>
-                        <td style="font-size: 0.8rem; font-family: 'Courier New', monospace;">{{ item['file_guid'] }}</td>
                         <td class="file-size">{{ "{:,}".format(item['before_file_size']) }}</td>
-                        <td>{{ item['output_file_name'] }}</td>
+                        <td style="font-size: 0.85rem; font-family: 'Courier New', monospace;">{{ item['ffmpeg_string'] }}</td>
                         <td class="time-added">{{ item['datetime_added'] }}</td>
                     </tr>
                     {% endfor %}
@@ -266,6 +266,66 @@
             </table>
             {% else %}
             <div class="no-data">No queued files at this time</div>
+            {% endif %}
+        </div>
+        
+        <!-- Currently Encoding Table -->
+        <div class="table-container">
+            <h2>Currently Encoding</h2>
+            {% if encoding_items %}
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">Rank</th>
+                        <th>Filename</th>
+                        <th style="text-align: right;">Size (KB)</th>
+                        <th>FFmpeg String</th>
+                        <th>Added</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in encoding_items[:10] %}
+                    <tr>
+                        <td><strong>{{ loop.index }}</strong></td>
+                        <td>{{ item['input_file_name'] }}</td>
+                        <td class="file-size">{{ "{:,}".format(item['before_file_size']) }}</td>
+                        <td style="font-size: 0.85rem; font-family: 'Courier New', monospace;">{{ item['ffmpeg_string'] }}</td>
+                        <td class="time-added">{{ item['datetime_pulled'] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-data">No files currently encoding</div>
+            {% endif %}
+        </div>
+        
+        <!-- Recently Encoded Table -->
+        <div class="table-container">
+            <h2>Recently Encoded</h2>
+            {% if encoded_items %}
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">Rank</th>
+                        <th>Output Filename</th>
+                        <th style="text-align: right;">Space Saved (KB)</th>
+                        <th>Encoded</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in encoded_items[:10] %}
+                    <tr>
+                        <td><strong>{{ loop.index }}</strong></td>
+                        <td>{{ item['output_file_name'] }}</td>
+                        <td class="file-size">{{ "{:,}".format(item['space_saved']) }}</td>
+                        <td class="time-added">{{ item['datetime_encoded'] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-data">No recently encoded files</div>
             {% endif %}
         </div>
     </div>
