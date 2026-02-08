@@ -21,7 +21,10 @@ def get_index_data():
     queued_items = []
     encoding_items = []
     encoded_items = []
-        failed_items = []
+    failed_items = []
+    
+    try:
+        db_path = get_db_path()
         conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
