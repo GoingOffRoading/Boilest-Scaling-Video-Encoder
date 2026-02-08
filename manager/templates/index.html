@@ -176,16 +176,6 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
         }
 
-        .action-button.placeholder {
-            background-color: #e9ecef;
-            color: #333;
-            padding: 12px 18px;
-            font-size: 0.95rem;
-            cursor: default;
-            box-shadow: none;
-            opacity: 0.95;
-        }
-
         .action-button:hover:not(:disabled) {
             background-color: #764ba2;
             transform: translateY(-2px);
@@ -202,21 +192,7 @@
             opacity: 0.7;
         }
         
-        .scan-button:hover:not(:disabled) {
-            background-color: #764ba2;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
         
-        .scan-button:active:not(:disabled) {
-            transform: translateY(0);
-        }
-        
-        .scan-button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
         
         .status-message {
             margin-top: 8px;
@@ -270,10 +246,10 @@
         <div class="button-container">
             <div class="button-row">
                 <button class="action-button" id="scanButton" onclick="triggerScan()">Scan for Files</button>
-                <button class="action-button placeholder">Placeholder</button>
-                <button class="action-button placeholder">Placeholder</button>
-                <button class="action-button placeholder">Placeholder</button>
-                <button class="action-button placeholder">Placeholder</button>
+                <button class="action-button">Placeholder</button>
+                <button class="action-button">Placeholder</button>
+                <button class="action-button">Placeholder</button>
+                <button class="action-button">Placeholder</button>
             </div>
             <div class="status-message" id="statusMessage"></div>
         </div>
