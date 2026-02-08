@@ -247,7 +247,7 @@
             display: flex;
             gap: 0;
             background: white;
-            border-radius: 10px 10px 0 0;
+            border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             margin-top: 12px;
             border-bottom: 2px solid #667eea;
@@ -332,19 +332,6 @@
             </div>
         </div>
         
-        <!-- Scan Button -->
-        <div class="button-container">
-            <div class="button-row">
-                <button class="action-button" id="scanButton" onclick="triggerScan()">Scan for Files</button>
-                <button class="action-button">Placeholder</button>
-                <button class="action-button">Placeholder</button>
-                <button class="action-button">Placeholder</button>
-                <button class="action-button">Placeholder</button>
-                <button class="action-button">Placeholder</button>
-            </div>
-            <div class="status-message" id="statusMessage"></div>
-        </div>
-        
         <!-- Tab Navigation -->
         <div class="tab-nav">
             <button class="tab-btn active" onclick="switchTab(this, 'queued')">Queued Files</button>
@@ -357,6 +344,14 @@
         <!-- Queued Files Tab -->
         <div id="queued" class="tab-content active">
             <div class="table-container">
+                <!-- Scan Button -->
+                <div class="button-container">
+                    <div class="button-row">
+                        <button class="action-button" id="scanButton" onclick="triggerScan()">Scan for Files</button>
+                        <button class="action-button">Placeholder</button>
+                    </div>
+                    <div class="status-message" id="statusMessage"></div>
+                </div>
                 <h2>Queued Files</h2>
                 {% if queued_items %}
                 <table>
@@ -392,6 +387,11 @@
         <!-- Currently Encoding Tab -->
         <div id="encoding" class="tab-content">
             <div class="table-container">
+                <div class="button-container">
+                    <div class="button-row">
+                        <button class="action-button">Placeholder</button>
+                    </div>
+                </div>
                 <h2>Currently Encoding</h2>
                 {% if encoding_items %}
                 <table>
@@ -462,6 +462,11 @@
         <!-- Recently Failed Tab -->
         <div id="failed" class="tab-content">
             <div class="table-container">
+                <div class="button-container">
+                    <div class="button-row">
+                        <button class="action-button">Placeholder</button>
+                    </div>
+                </div>
                 <h2>Recently Failed</h2>
                 {% if failed_items %}
                 <table>
