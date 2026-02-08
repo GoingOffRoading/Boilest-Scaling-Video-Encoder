@@ -164,7 +164,7 @@
             align-items: center;
         }
         
-        .scan-button {
+        .action-button {
             background-color: #667eea;
             color: white;
             border: none;
@@ -176,16 +176,30 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
         }
 
-        .placeholder-button {
+        .action-button.placeholder {
             background-color: #e9ecef;
             color: #333;
-            border: none;
             padding: 12px 18px;
             font-size: 0.95rem;
-            border-radius: 6px;
             cursor: default;
             box-shadow: none;
-            opacity: 0.9;
+            opacity: 0.95;
+        }
+
+        .action-button:hover:not(:disabled) {
+            background-color: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+        }
+
+        .action-button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .action-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            opacity: 0.7;
         }
         
         .scan-button:hover:not(:disabled) {
@@ -255,11 +269,11 @@
         <!-- Scan Button -->
         <div class="button-container">
             <div class="button-row">
-                <button class="scan-button" id="scanButton" onclick="triggerScan()">Scan for Files</button>
-                <button class="placeholder-button">Placeholder</button>
-                <button class="placeholder-button">Placeholder</button>
-                <button class="placeholder-button">Placeholder</button>
-                <button class="placeholder-button">Placeholder</button>
+                <button class="action-button" id="scanButton" onclick="triggerScan()">Scan for Files</button>
+                <button class="action-button placeholder">Placeholder</button>
+                <button class="action-button placeholder">Placeholder</button>
+                <button class="action-button placeholder">Placeholder</button>
+                <button class="action-button placeholder">Placeholder</button>
             </div>
             <div class="status-message" id="statusMessage"></div>
         </div>
