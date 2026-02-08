@@ -10,32 +10,122 @@
             padding: 0;
             box-sizing: border-box;
         }
-
+        
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             font-family: 'Arial', sans-serif;
             padding: 40px 20px;
             min-height: 100vh;
         }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .title-box {
+            background: white;
+            padding: 18px 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 12px;
+        }
+        
+        .title-box h1 {
+            font-size: 2.4rem;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            font-size: 1rem;
+            font-style: italic;
+            color: #666;
+        }
+        
+        .subtitle a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s;
+        }
+        
+        .subtitle a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+        
+        .metrics-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .metric-box {
+            background: white;
+            padding: 12px 14px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+        
+        .metric-label {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .metric-value {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .metric-unit {
+            font-size: 0.9rem;
+            color: #999;
+            margin-top: 5px;
+        }
+        
+        .table-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+        
+        .table-container h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
 
+        .recently-encoded-table .scroll-wrapper {
+            max-height: 480px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 6px;
+        }
+
+        .recently-encoded-table table {
+            margin-bottom: 0;
+        }
+        
         table {
             width: 100%;
             border-collapse: collapse;
         }
-
-        table tbody tr:hover {
-            background-color: #f9f9f9;
+        
+        table thead {
+            background-color: #667eea;
+            color: white;
         }
-
-        table tbody tr:nth-child(odd) {
-            background-color: #f5f5f5;
-        }
-
-        table td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #eee;
-        }
-
+        
         table th {
             padding: 15px;
             text-align: left;
@@ -61,40 +151,37 @@
         table th.sortable[data-sort-dir="desc"]::after {
             content: "v";
         }
-
-        table thead {
-            background-color: #667eea;
-            color: white;
+        
+        table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
         }
-
-        .action-button {
-            background-color: #667eea;
-            color: white;
-            border: none;
-            padding: 16px 40px;
-            font-size: 1.15rem;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.12s;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        
+        table tbody tr:hover {
+            background-color: #f9f9f9;
         }
-
-        .action-button:active:not(:disabled) {
-            transform: translateY(0);
+        
+        table tbody tr:nth-child(odd) {
+            background-color: #f5f5f5;
         }
-
-        .action-button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-            opacity: 0.7;
+        
+        .no-data {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+            font-size: 1.1rem;
         }
-
-        .action-button:hover:not(:disabled) {
-            background-color: #764ba2;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+        
+        .file-size {
+            text-align: right;
+            font-family: 'Courier New', monospace;
         }
-
+        
+        .time-added {
+            color: #999;
+            font-size: 0.9rem;
+        }
+        
         .button-container {
             margin: 8px 0;
             display: flex;
@@ -107,104 +194,63 @@
             gap: 8px;
             align-items: center;
         }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .file-size {
-            text-align: right;
-            font-family: 'Courier New', monospace;
-        }
-
-        .metric-box {
-            background: white;
-            padding: 12px 14px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            text-align: center;
-        }
-
-        .metric-label {
-            font-size: 1rem;
-            color: #666;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .metric-unit {
-            font-size: 0.9rem;
-            color: #999;
-            margin-top: 5px;
-        }
-
-        .metric-value {
-            font-size: 1.6rem;
-            font-weight: bold;
-            color: #667eea;
-        }
-
-        .metrics-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
-            margin-bottom: 8px;
-        }
-
-        .no-data {
-            text-align: center;
-            color: #999;
-            padding: 40px;
-            font-size: 1.1rem;
-        }
-
-        .recently-encoded-table .scroll-wrapper {
-            max-height: 480px;
-            overflow-y: auto;
-            border: 1px solid #eee;
+        
+        .action-button {
+            background-color: #667eea;
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            font-size: 1.15rem;
             border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.12s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
         }
 
-        .recently-encoded-table table {
-            margin-bottom: 0;
+        .action-button:hover:not(:disabled) {
+            background-color: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
         }
 
+        .action-button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .action-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        
+        
+        .status-message {
+            margin-top: 8px;
+            font-size: 0.95rem;
+            min-height: 20px;
+        }
+        
+        .status-success {
+            color: #28a745;
+        }
+        
         .status-error {
             color: #dc3545;
         }
-
+        
         .status-loading {
             color: #667eea;
         }
 
-        .status-message {
-            margin-top: 8px;
-            font-size: 0.95rem;
-            min-height: 0;
-        }
-
-        .status-success {
-            color: #28a745;
-        }
-
-        .subtitle {
-            font-size: 1rem;
-            font-style: italic;
-            color: #666;
-        }
-
-        .subtitle a {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: bold;
-            transition: color 0.3s;
-        }
-
-        .subtitle a:hover {
-            color: #764ba2;
-            text-decoration: underline;
+        .tab-nav {
+            display: flex;
+            gap: 0;
+            background: white;
+            border-radius: 10px 10px 0 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 12px;
+            border-bottom: 2px solid #667eea;
         }
 
         .tab-btn {
@@ -221,15 +267,15 @@
             margin-bottom: -2px;
         }
 
+        .tab-btn:hover {
+            background: #eee;
+            color: #667eea;
+        }
+
         .tab-btn.active {
             background: white;
             color: #667eea;
             border-bottom: 3px solid #667eea;
-        }
-
-        .tab-btn:hover {
-            background: #eee;
-            color: #667eea;
         }
 
         .tab-content {
@@ -254,50 +300,6 @@
 
         .tab-content h2 {
             display: none;
-        }
-
-        .tab-nav {
-            display: flex;
-            gap: 0;
-            background: white;
-            border-radius: 10px 10px 0 0;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-top: 12px;
-            border-bottom: 2px solid #667eea;
-        }
-
-        .table-container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            overflow-x: auto;
-        }
-
-        .table-container h2 {
-            color: #667eea;
-            margin-bottom: 20px;
-            font-size: 1.5rem;
-        }
-
-        .time-added {
-            color: #999;
-            font-size: 0.9rem;
-        }
-
-        .title-box {
-            background: white;
-            padding: 18px 20px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 12px;
-        }
-
-        .title-box h1 {
-            font-size: 2.4rem;
-            color: #667eea;
-            margin-bottom: 8px;
         }
     </style>
 </head>
