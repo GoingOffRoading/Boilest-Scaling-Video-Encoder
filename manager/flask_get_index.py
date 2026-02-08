@@ -61,6 +61,17 @@ def get_index_data():
             ORDER BY before_file_size DESC
         """)
         queued_items = [dict(row) for row in cur.fetchall()]
+        # Convert queued item sizes from KB to MB for display
+        for item in queued_items:
+            try:
+                bfs = item.get('before_file_size')
+                if bfs is not None:
+                    item['before_file_size_mb'] = round(bfs / 1024, 2)
+                else:
+                    item['before_file_size_mb'] = None
+            except Exception:
+                item['before_file_size_mb'] = None
+
         logging.debug(f"[UI] Retrieved {len(queued_items)} queued items")
         
         # Get currently encoding items sorted by datetime_pulled ascending
@@ -79,6 +90,17 @@ def get_index_data():
             ORDER BY datetime_pulled ASC
         """)
         encoding_items = [dict(row) for row in cur.fetchall()]
+        # Convert encoding item sizes from KB to MB for display
+        for item in encoding_items:
+            try:
+                bfs = item.get('before_file_size')
+                if bfs is not None:
+                    item['before_file_size_mb'] = round(bfs / 1024, 2)
+                else:
+                    item['before_file_size_mb'] = None
+            except Exception:
+                item['before_file_size_mb'] = None
+
         logging.debug(f"[UI] Retrieved {len(encoding_items)} currently encoding items")
         
         # Get recently encoded items sorted by datetime_encoded descending

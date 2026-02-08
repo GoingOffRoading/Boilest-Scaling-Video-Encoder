@@ -25,17 +25,17 @@
         
         .title-box {
             background: white;
-            padding: 40px;
+            padding: 18px 20px;
             border-radius: 10px;
             text-align: center;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
         
         .title-box h1 {
-            font-size: 4rem;
+            font-size: 2.4rem;
             color: #667eea;
-            margin-bottom: 15px;
+            margin-bottom: 8px;
         }
         
         .subtitle {
@@ -58,16 +58,16 @@
         
         .metrics-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
         }
         
         .metric-box {
             background: white;
-            padding: 30px;
+            padding: 12px 14px;
             border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
             text-align: center;
         }
         
@@ -80,7 +80,7 @@
         }
         
         .metric-value {
-            font-size: 3rem;
+            font-size: 1.6rem;
             font-weight: bold;
             color: #667eea;
         }
@@ -248,7 +248,7 @@
                         <th style="width: 60px;">Rank</th>
                         <th>Filename</th>
                         <th>Path</th>
-                        <th style="text-align: right;">Size (KB)</th>
+                        <th style="text-align: right;">Size (MB)</th>
                         <th>FFmpeg String</th>
                         <th>Added</th>
                     </tr>
@@ -259,7 +259,7 @@
                         <td><strong>{{ loop.index }}</strong></td>
                         <td>{{ item['input_file_name'] }}</td>
                         <td>{{ item['directory_path'] }}</td>
-                        <td class="file-size">{{ "{:,}".format(item['before_file_size']) }}</td>
+                        <td class="file-size">{{ "{:,.2f}".format(item['before_file_size_mb']) if item['before_file_size_mb'] is not none else '—' }}</td>
                         <td style="font-size: 0.85rem; font-family: 'Courier New', monospace;">{{ item['ffmpeg_string'][:300] ~ '…' if item['ffmpeg_string'] and item['ffmpeg_string']|length > 300 else item['ffmpeg_string'] }}</td>
                         <td class="time-added">{{ item['datetime_added'] }}</td>
                     </tr>
@@ -281,7 +281,7 @@
                         <th style="width: 60px;">Rank</th>
                         <th>Filename</th>
                         <th>Path</th>
-                        <th style="text-align: right">Size (KB)</th>
+                        <th style="text-align: right">Size (MB)</th>
                         <th>FFmpeg String</th>
                         <th>Added</th>
                     </tr>
@@ -292,7 +292,7 @@
                         <td><strong>{{ loop.index }}</strong></td>
                         <td>{{ item['input_file_name'] }}</td>
                         <td>{{ item['directory_path'] }}</td>
-                        <td class="file-size">{{ "{:,}".format(item['before_file_size']) }}</td>
+                        <td class="file-size">{{ "{:,.2f}".format(item['before_file_size_mb']) if item['before_file_size_mb'] is not none else '—' }}</td>
                         <td style="font-size: 0.85rem; font-family: 'Courier New', monospace;">{{ item['ffmpeg_string'][:300] ~ '…' if item['ffmpeg_string'] and item['ffmpeg_string']|length > 300 else item['ffmpeg_string'] }}</td>
                         <td class="time-added">{{ item['datetime_pulled'] }}</td>
                     </tr>
