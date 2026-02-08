@@ -50,6 +50,7 @@ def get_index_data():
         cur.execute("""
             SELECT 
                 file_guid,
+                directory_path,
                 input_file_name,
                 before_file_size,
                 output_file_name,
@@ -66,6 +67,7 @@ def get_index_data():
         cur.execute("""
             SELECT 
                 file_guid,
+                directory_path,
                 input_file_name,
                 before_file_size,
                 output_file_name,

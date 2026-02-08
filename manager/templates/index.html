@@ -247,6 +247,7 @@
                     <tr>
                         <th style="width: 60px;">Rank</th>
                         <th>Filename</th>
+                        <th>Path</th>
                         <th style="text-align: right;">Size (KB)</th>
                         <th>FFmpeg String</th>
                         <th>Added</th>
@@ -257,8 +258,9 @@
                     <tr>
                         <td><strong>{{ loop.index }}</strong></td>
                         <td>{{ item['input_file_name'] }}</td>
+                        <td>{{ item['directory_path'] }}</td>
                         <td class="file-size">{{ "{:,}".format(item['before_file_size']) }}</td>
-                        <td style="font-size: 0.85rem; font-family: 'Courier New', monospace;">{{ item['ffmpeg_string'] }}</td>
+                        <td style="font-size: 0.85rem; font-family: 'Courier New', monospace;">{{ item['ffmpeg_string'][:300] ~ '…' if item['ffmpeg_string'] and item['ffmpeg_string']|length > 300 else item['ffmpeg_string'] }}</td>
                         <td class="time-added">{{ item['datetime_added'] }}</td>
                     </tr>
                     {% endfor %}
@@ -278,7 +280,8 @@
                     <tr>
                         <th style="width: 60px;">Rank</th>
                         <th>Filename</th>
-                        <th style="text-align: right;">Size (KB)</th>
+                        <th>Path</th>
+                        <th style="text-align: right">Size (KB)</th>
                         <th>FFmpeg String</th>
                         <th>Added</th>
                     </tr>
@@ -288,8 +291,9 @@
                     <tr>
                         <td><strong>{{ loop.index }}</strong></td>
                         <td>{{ item['input_file_name'] }}</td>
+                        <td>{{ item['directory_path'] }}</td>
                         <td class="file-size">{{ "{:,}".format(item['before_file_size']) }}</td>
-                        <td style="font-size: 0.85rem; font-family: 'Courier New', monospace;">{{ item['ffmpeg_string'] }}</td>
+                        <td style="font-size: 0.85rem; font-family: 'Courier New', monospace;">{{ item['ffmpeg_string'][:300] ~ '…' if item['ffmpeg_string'] and item['ffmpeg_string']|length > 300 else item['ffmpeg_string'] }}</td>
                         <td class="time-added">{{ item['datetime_pulled'] }}</td>
                     </tr>
                     {% endfor %}
