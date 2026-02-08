@@ -20,6 +20,7 @@
 - [ ] Add logic to the UI for when DB is disabled
 - [ ] Add logic for audio
 - [ ] Add logic for subtitles
+- [ ] Implement some kind of heartbeat for workers.  I.E. Encoded task returns to queue unless worker checks in after X time
 
 
 
