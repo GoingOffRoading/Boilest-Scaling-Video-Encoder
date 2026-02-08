@@ -384,6 +384,37 @@
             <div class="no-data">No recently encoded files</div>
             {% endif %}
         </div>
+        
+        <!-- Recently Failed Table -->
+        <div class="table-container">
+            <h2>Recently Failed</h2>
+            {% if failed_items %}
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">Rank</th>
+                        <th>Filename</th>
+                        <th>Path</th>
+                        <th>Pulled</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in failed_items[:100] %}
+                    <tr>
+                        <td><strong>{{ loop.index }}</strong></td>
+                        <td>{{ item['input_file_name'] }}</td>
+                        <td>{{ item['directory_path'] }}</td>
+                        <td class="time-added">{{ item['datetime_pulled'] }}</td>
+                        <td>{{ item['status'] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-data">No recently failed files</div>
+            {% endif %}
+        </div>
     </div>
     
     <script>

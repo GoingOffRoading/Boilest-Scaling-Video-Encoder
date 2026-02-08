@@ -21,9 +21,7 @@ def get_index_data():
     queued_items = []
     encoding_items = []
     encoded_items = []
-    
-    try:
-        db_path = get_db_path()
+        failed_items = []
         conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
@@ -145,6 +143,21 @@ def get_index_data():
 
         logging.debug(f"[UI] Retrieved {len(encoded_items)} recently encoded items")
         
+        # Get recently failed items (status not in queued, pulled, encoded)
+        cur.execute("""
+            SELECT 
+                input_file_name,
+                directory_path,
+                datetime_pulled,
+                status
+            FROM queue 
+            WHERE status NOT IN ('queued', 'pulled', 'encoded')
+            ORDER BY datetime_pulled DESC
+            LIMIT 100
+        """)
+        failed_items = [dict(row) for row in cur.fetchall()]
+        logging.debug(f"[UI] Retrieved {len(failed_items)} recently failed items")
+        
         conn.close()
     except Exception as e:
         logging.error(f"[ERROR] Failed to get index data: {e}")
@@ -155,5 +168,6 @@ def get_index_data():
         'space_saved_gb': space_saved_gb,
         'queued_items': queued_items,
         'encoding_items': encoding_items,
-        'encoded_items': encoded_items
+        'encoded_items': encoded_items,
+        'failed_items': failed_items
     }
