@@ -16,8 +16,10 @@ def get_index_data():
     logging.info("[UI] Fetching index page data")
     
     queued_count = 0
+    processing_count = 0
     encoded_count = 0
     space_saved_gb = 0.0
+    total_processing_minutes = 0.0
     queued_items = []
     encoding_items = []
     encoded_items = []
@@ -34,6 +36,11 @@ def get_index_data():
         cur.execute("SELECT COUNT(*) FROM queue WHERE status='queued'")
         queued_count = cur.fetchone()[0]
         logging.debug(f"[UI] Queued count: {queued_count}")
+        
+        # Get processing count
+        cur.execute("SELECT COUNT(*) FROM queue WHERE status='pulled'")
+        processing_count = cur.fetchone()[0]
+        logging.debug(f"[UI] Processing count: {processing_count}")
         
         # Get encoded count
         cur.execute("SELECT COUNT(*) FROM queue WHERE status='encoded'")
@@ -147,6 +154,12 @@ def get_index_data():
 
         logging.debug(f"[UI] Retrieved {len(encoded_items)} recently encoded items")
         
+        # Calculate total processing time
+        for item in encoded_items:
+            if item.get('duration_minutes') is not None:
+                total_processing_minutes += item['duration_minutes']
+        logging.debug(f"[UI] Total processing time: {total_processing_minutes} minutes")
+        
         # Get recently failed items (status not in queued, pulled, encoded)
         cur.execute("""
             SELECT 
@@ -173,8 +186,10 @@ def get_index_data():
     
     return {
         'queued_count': queued_count,
+        'processing_count': processing_count,
         'encoded_count': encoded_count,
         'space_saved_gb': space_saved_gb,
+        'total_processing_minutes': round(total_processing_minutes, 2),
         'queued_items': queued_items,
         'encoding_items': encoding_items,
         'encoded_items': encoded_items,

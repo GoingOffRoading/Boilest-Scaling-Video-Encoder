@@ -321,6 +321,12 @@
             </div>
             
             <div class="metric-box">
+                <div class="metric-label">Processing</div>
+                <div class="metric-value">{{ processing_count }}</div>
+                <div class="metric-unit">currently encoding</div>
+            </div>
+            
+            <div class="metric-box">
                 <div class="metric-label">Encoded</div>
                 <div class="metric-value">{{ encoded_count }}</div>
                 <div class="metric-unit">items completed</div>
@@ -330,6 +336,12 @@
                 <div class="metric-label">Space Saved</div>
                 <div class="metric-value">{{ space_saved_gb }}</div>
                 <div class="metric-unit">GB</div>
+            </div>
+            
+            <div class="metric-box">
+                <div class="metric-label">Total Processing Time</div>
+                <div class="metric-value">{{ total_processing_minutes }}</div>
+                <div class="metric-unit">minutes</div>
             </div>
         </div>
         
