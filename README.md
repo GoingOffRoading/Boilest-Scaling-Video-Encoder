@@ -86,8 +86,6 @@ Jump into the UI, click the start queu ebutton
 
 
 ---
-# Todo List
-
-- [ ] Get end to end running in a notebook
-- [ ] Decide on API vs Celery
-- [ ] Containerize 
+# How much of this is GenAI?
+- Everything but the UI: This was largely a refactoring of my existing code.  So GitHub copilot was used to setup some patterns, and the rest was done by hand.  Sans post_completed_encode.py.  I should have seperated this API into multiple (sucess, failure, delete, etc) but got lazy.
+-UI: Everything is GitHub CoPilot.  I am bad at UI.  

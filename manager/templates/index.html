@@ -242,6 +242,65 @@
         .status-loading {
             color: #667eea;
         }
+
+        .tab-nav {
+            display: flex;
+            gap: 0;
+            background: white;
+            border-radius: 10px 10px 0 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 12px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 16px 20px;
+            background: #f5f5f5;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab-btn:hover {
+            background: #eee;
+            color: #667eea;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .tab-content .table-container {
+            background: transparent;
+            padding: 0;
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        .tab-content h2 {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -286,134 +345,150 @@
             <div class="status-message" id="statusMessage"></div>
         </div>
         
-        <!-- Queued Items Table -->
-        <div class="table-container">
-            <h2>Queued Files</h2>
-            {% if queued_items %}
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 60px;">Rank</th>
-                        <th>Filename</th>
-                        <th>Path</th>
-                        <th style="text-align: right;">Size (MB)</th>
-                        <th>FFmpeg String</th>
-                        <th>Added</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in queued_items[:10] %}
-                    <tr>
-                        <td><strong>{{ loop.index }}</strong></td>
-                        <td>{{ item['input_file_name'] }}</td>
-                        <td>{{ item['directory_path'] }}</td>
-                        <td class="file-size">{{ "{:,.2f}".format(item['before_file_size_mb']) if item['before_file_size_mb'] is not none else '—' }}</td>
-                        <td style="font-size: 0.85rem; font-family: 'Courier New', monospace;">{{ item['ffmpeg_string'][:300] ~ '…' if item['ffmpeg_string'] and item['ffmpeg_string']|length > 300 else item['ffmpeg_string'] }}</td>
-                        <td class="time-added">{{ item['datetime_added'] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <div class="no-data">No queued files at this time</div>
-            {% endif %}
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab(this, 'queued')">Queued Files</button>
+            <button class="tab-btn" onclick="switchTab(this, 'encoding')">Currently Encoding</button>
+            <button class="tab-btn" onclick="switchTab(this, 'encoded')">Recently Encoded</button>
+            <button class="tab-btn" onclick="switchTab(this, 'failed')">Recently Failed</button>
         </div>
         
-        <!-- Currently Encoding Table -->
-        <div class="table-container">
-            <h2>Currently Encoding</h2>
-            {% if encoding_items %}
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 60px;">Rank</th>
-                        <th>Filename</th>
-                        <th>Path</th>
-                        <th style="text-align: right">Size (MB)</th>
-                        <th>FFmpeg String</th>
-                        <th>Added</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in encoding_items[:10] %}
-                    <tr>
-                        <td><strong>{{ loop.index }}</strong></td>
-                        <td>{{ item['input_file_name'] }}</td>
-                        <td>{{ item['directory_path'] }}</td>
-                        <td class="file-size">{{ "{:,.2f}".format(item['before_file_size_mb']) if item['before_file_size_mb'] is not none else '—' }}</td>
-                        <td style="font-size: 0.85rem; font-family: 'Courier New', monospace;">{{ item['ffmpeg_string'][:300] ~ '…' if item['ffmpeg_string'] and item['ffmpeg_string']|length > 300 else item['ffmpeg_string'] }}</td>
-                        <td class="time-added">{{ item['datetime_pulled'] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <div class="no-data">No files currently encoding</div>
-            {% endif %}
-        </div>
-        
-        <!-- Recently Encoded Table -->
-        <div class="table-container recently-encoded-table">
-            <h2>Recently Encoded</h2>
-            {% if encoded_items %}
-            <div class="scroll-wrapper">
+        <!-- Queued Files Tab -->
+        <div id="queued" class="tab-content active">
+            <div class="table-container">
+                <h2>Queued Files</h2>
+                {% if queued_items %}
                 <table>
                     <thead>
                         <tr>
                             <th style="width: 60px;">Rank</th>
-                            <th>Filee</th>
+                            <th>Filename</th>
                             <th>Path</th>
-                            <th>Space Saved (MB)</th>
-                            <th>Duration (min)</th>
+                            <th style="text-align: right;">Size (MB)</th>
+                            <th>FFmpeg String</th>
+                            <th>Added</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for item in encoded_items[:100] %}
+                        {% for item in queued_items[:10] %}
                         <tr>
                             <td><strong>{{ loop.index }}</strong></td>
-                            <td>{{ item['output_file_name'] }}</td>
+                            <td>{{ item['input_file_name'] }}</td>
                             <td>{{ item['directory_path'] }}</td>
-                            <td>{{ "{:,.2f}".format(item['space_saved_mb']) if item['space_saved_mb'] is not none else '—' }}</td>
-                            <td>{{ item['duration_minutes'] if item['duration_minutes'] is not none else '—' }}</td>
+                            <td class="file-size">{{ "{:,.2f}".format(item['before_file_size_mb']) if item['before_file_size_mb'] is not none else '—' }}</td>
+                            <td style="font-size: 0.85rem; font-family: 'Courier New', monospace;">{{ item['ffmpeg_string'][:300] ~ '…' if item['ffmpeg_string'] and item['ffmpeg_string']|length > 300 else item['ffmpeg_string'] }}</td>
+                            <td class="time-added">{{ item['datetime_added'] }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
+                {% else %}
+                <div class="no-data">No queued files at this time</div>
+                {% endif %}
             </div>
-            {% else %}
-            <div class="no-data">No recently encoded files</div>
-            {% endif %}
         </div>
         
-        <!-- Recently Failed Table -->
-        <div class="table-container">
-            <h2>Recently Failed</h2>
-            {% if failed_items %}
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 60px;">Rank</th>
-                        <th>Filename</th>
-                        <th>Path</th>
-                        <th>Pulled</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in failed_items[:100] %}
-                    <tr>
-                        <td><strong>{{ loop.index }}</strong></td>
-                        <td>{{ item['input_file_name'] }}</td>
-                        <td>{{ item['directory_path'] }}</td>
-                        <td class="time-added">{{ item['datetime_pulled'] }}</td>
-                        <td>{{ item['status'] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <div class="no-data">No recently failed files</div>
-            {% endif %}
+        <!-- Currently Encoding Tab -->
+        <div id="encoding" class="tab-content">
+            <div class="table-container">
+                <h2>Currently Encoding</h2>
+                {% if encoding_items %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 60px;">Rank</th>
+                            <th>Filename</th>
+                            <th>Path</th>
+                            <th style="text-align: right">Size (MB)</th>
+                            <th>FFmpeg String</th>
+                            <th>Added</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in encoding_items[:10] %}
+                        <tr>
+                            <td><strong>{{ loop.index }}</strong></td>
+                            <td>{{ item['input_file_name'] }}</td>
+                            <td>{{ item['directory_path'] }}</td>
+                            <td class="file-size">{{ "{:,.2f}".format(item['before_file_size_mb']) if item['before_file_size_mb'] is not none else '—' }}</td>
+                            <td style="font-size: 0.85rem; font-family: 'Courier New', monospace;">{{ item['ffmpeg_string'][:300] ~ '…' if item['ffmpeg_string'] and item['ffmpeg_string']|length > 300 else item['ffmpeg_string'] }}</td>
+                            <td class="time-added">{{ item['datetime_pulled'] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="no-data">No files currently encoding</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Recently Encoded Tab -->
+        <div id="encoded" class="tab-content">
+            <div class="table-container recently-encoded-table">
+                <h2>Recently Encoded</h2>
+                {% if encoded_items %}
+                <div class="scroll-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">Rank</th>
+                                <th>Filee</th>
+                                <th>Path</th>
+                                <th>Space Saved (MB)</th>
+                                <th>Duration (min)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in encoded_items[:100] %}
+                            <tr>
+                                <td><strong>{{ loop.index }}</strong></td>
+                                <td>{{ item['output_file_name'] }}</td>
+                                <td>{{ item['directory_path'] }}</td>
+                                <td>{{ "{:,.2f}".format(item['space_saved_mb']) if item['space_saved_mb'] is not none else '—' }}</td>
+                                <td>{{ item['duration_minutes'] if item['duration_minutes'] is not none else '—' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="no-data">No recently encoded files</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Recently Failed Tab -->
+        <div id="failed" class="tab-content">
+            <div class="table-container">
+                <h2>Recently Failed</h2>
+                {% if failed_items %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 60px;">Rank</th>
+                            <th>Filename</th>
+                            <th>Path</th>
+                            <th>Pulled</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in failed_items[:100] %}
+                        <tr>
+                            <td><strong>{{ loop.index }}</strong></td>
+                            <td>{{ item['input_file_name'] }}</td>
+                            <td>{{ item['directory_path'] }}</td>
+                            <td class="time-added">{{ item['datetime_pulled'] }}</td>
+                            <td>{{ item['status'] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="no-data">No recently failed files</div>
+                {% endif %}
+            </div>
         </div>
     </div>
     
@@ -457,6 +532,13 @@
                 return direction === 'asc' ? 1 : -1;
             }
             return 0;
+        }
+
+        function switchTab(button, tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            button.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
         }
 
         function setupSortableTables() {
@@ -528,7 +610,9 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', setupSortableTables);
+        document.addEventListener('DOMContentLoaded', () => {
+            setupSortableTables();
+        });
     </script>
 </body>
 </html>
