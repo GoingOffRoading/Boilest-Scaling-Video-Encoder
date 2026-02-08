@@ -351,6 +351,7 @@
             <button class="tab-btn" onclick="switchTab(this, 'encoding')">Currently Encoding</button>
             <button class="tab-btn" onclick="switchTab(this, 'encoded')">Recently Encoded</button>
             <button class="tab-btn" onclick="switchTab(this, 'failed')">Recently Failed</button>
+            <button class="tab-btn" onclick="switchTab(this, 'settings')">Settings</button>
         </div>
         
         <!-- Queued Files Tab -->
@@ -487,6 +488,35 @@
                 </table>
                 {% else %}
                 <div class="no-data">No recently failed files</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Settings Tab -->
+        <div id="settings" class="tab-content">
+            <div class="table-container">
+                <h2>Directories</h2>
+                {% if directories_items %}
+                <table>
+                    <thead>
+                        <tr>
+                            {% for column in directories_items[0].keys() %}
+                            <th>{{ column }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in directories_items %}
+                        <tr>
+                            {% for column in item.keys() %}
+                            <td>{{ item[column] }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="no-data">No directories configured</div>
                 {% endif %}
             </div>
         </div>
