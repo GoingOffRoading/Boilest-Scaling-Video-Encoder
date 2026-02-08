@@ -114,7 +114,7 @@ def get_index_data():
             FROM queue 
             WHERE status = 'encoded'
             ORDER BY datetime_encoded DESC
-            LIMIT 10
+            LIMIT 100
         """)
         encoded_items = [dict(row) for row in cur.fetchall()]
 

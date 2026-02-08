@@ -104,6 +104,17 @@
             margin-bottom: 20px;
             font-size: 1.5rem;
         }
+
+        .recently-encoded-table .scroll-wrapper {
+            max-height: 480px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 6px;
+        }
+
+        .recently-encoded-table table {
+            margin-bottom: 0;
+        }
         
         table {
             width: 100%;
@@ -119,6 +130,26 @@
             padding: 15px;
             text-align: left;
             font-weight: bold;
+        }
+
+        table th.sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        table th.sortable::after {
+            content: "";
+            font-size: 0.8rem;
+            margin-left: 6px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        table th.sortable[data-sort-dir="asc"]::after {
+            content: "^";
+        }
+
+        table th.sortable[data-sort-dir="desc"]::after {
+            content: "v";
         }
         
         table td {
@@ -322,31 +353,33 @@
         </div>
         
         <!-- Recently Encoded Table -->
-        <div class="table-container">
+        <div class="table-container recently-encoded-table">
             <h2>Recently Encoded</h2>
             {% if encoded_items %}
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 60px;">Rank</th>
-                        <th>Filee</th>
-                        <th>Path</th>
-                        <th>Space Saved (MB)</th>
-                        <th>Duration (min)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in encoded_items[:10] %}
-                    <tr>
-                        <td><strong>{{ loop.index }}</strong></td>
-                        <td>{{ item['output_file_name'] }}</td>
-                        <td>{{ item['directory_path'] }}</td>
-                        <td>{{ "{:,.2f}".format(item['space_saved_mb']) if item['space_saved_mb'] is not none else '—' }}</td>
-                        <td>{{ item['duration_minutes'] if item['duration_minutes'] is not none else '—' }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="scroll-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 60px;">Rank</th>
+                            <th>Filee</th>
+                            <th>Path</th>
+                            <th>Space Saved (MB)</th>
+                            <th>Duration (min)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in encoded_items[:100] %}
+                        <tr>
+                            <td><strong>{{ loop.index }}</strong></td>
+                            <td>{{ item['output_file_name'] }}</td>
+                            <td>{{ item['directory_path'] }}</td>
+                            <td>{{ "{:,.2f}".format(item['space_saved_mb']) if item['space_saved_mb'] is not none else '—' }}</td>
+                            <td>{{ item['duration_minutes'] if item['duration_minutes'] is not none else '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
             {% else %}
             <div class="no-data">No recently encoded files</div>
             {% endif %}
@@ -354,6 +387,79 @@
     </div>
     
     <script>
+        function getCellValue(row, index) {
+            const cell = row.children[index];
+            if (!cell) {
+                return '';
+            }
+            return cell.textContent.trim();
+        }
+
+        function normalizeValue(value) {
+            if (value === '—' || value === '') {
+                return { type: 'empty', value: '' };
+            }
+
+            const numeric = value.replace(/[,\s]/g, '');
+            if (/^-?\d+(\.\d+)?$/.test(numeric)) {
+                return { type: 'number', value: parseFloat(numeric) };
+            }
+
+            const dateValue = Date.parse(value);
+            if (!Number.isNaN(dateValue)) {
+                return { type: 'date', value: dateValue };
+            }
+
+            return { type: 'text', value: value.toLowerCase() };
+        }
+
+        function compareValues(a, b, direction) {
+            if (a.type !== b.type) {
+                if (a.type === 'empty') return 1;
+                if (b.type === 'empty') return -1;
+            }
+
+            if (a.value < b.value) {
+                return direction === 'asc' ? -1 : 1;
+            }
+            if (a.value > b.value) {
+                return direction === 'asc' ? 1 : -1;
+            }
+            return 0;
+        }
+
+        function setupSortableTables() {
+            const tables = document.querySelectorAll('table');
+            tables.forEach((table) => {
+                const headers = table.querySelectorAll('thead th');
+                const tbody = table.querySelector('tbody');
+                if (!tbody) {
+                    return;
+                }
+
+                headers.forEach((th, index) => {
+                    th.classList.add('sortable');
+                    th.addEventListener('click', () => {
+                        const currentDir = th.getAttribute('data-sort-dir');
+                        const nextDir = currentDir === 'asc' ? 'desc' : 'asc';
+
+                        headers.forEach((header) => header.removeAttribute('data-sort-dir'));
+                        th.setAttribute('data-sort-dir', nextDir);
+
+                        const rows = Array.from(tbody.querySelectorAll('tr'));
+                        rows.sort((rowA, rowB) => {
+                            const rawA = getCellValue(rowA, index);
+                            const rawB = getCellValue(rowB, index);
+                            const normA = normalizeValue(rawA);
+                            const normB = normalizeValue(rawB);
+                            return compareValues(normA, normB, nextDir);
+                        });
+
+                        rows.forEach((row) => tbody.appendChild(row));
+                    });
+                });
+            });
+        }
         async function triggerScan() {
             const button = document.getElementById('scanButton');
             const statusMessage = document.getElementById('statusMessage');
@@ -390,6 +496,8 @@
                 button.disabled = false;
             }
         }
+
+        document.addEventListener('DOMContentLoaded', setupSortableTables);
     </script>
 </body>
 </html>
