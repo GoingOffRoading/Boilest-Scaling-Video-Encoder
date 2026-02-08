@@ -27,11 +27,11 @@ RUN mkdir -p /boil/boil_hold
 
 # Create directories for media data
 RUN mkdir -p /tv && \
-    mkdir -p /tv_favorites && \
+    mkdir -p /fav_tv && \
     mkdir -p /movies && \
-    mkdir -p /movies_favorites && \
+    mkdir -p /fav_movies && \
     mkdir -p /anime && \
-    mkdir -p /anime_favorites && \
+    mkdir -p /fav_anime && \
     mkdir -p /home_movies && \
     mkdir -p /youtube_archive
 
@@ -44,11 +44,11 @@ COPY entrypoint.sh /boil/entrypoint.sh
 # Create directories for unpersisted application data 
 RUN chown -R appuser:appgroup /boil && \
     chown -R appuser:appgroup /tv && \
-    chown -R appuser:appgroup /tv_favorites && \
+    chown -R appuser:appgroup /fav_tv && \
     chown -R appuser:appgroup /movies && \
-    chown -R appuser:appgroup /movies_favorites && \
+    chown -R appuser:appgroup /fav_movies && \
     chown -R appuser:appgroup /anime && \
-    chown -R appuser:appgroup /anime_favorites && \
+    chown -R appuser:appgroup /fav_anime && \
     chown -R appuser:appgroup /home_movies && \
     chown -R appuser:appgroup /youtube_archive
 
