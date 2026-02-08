@@ -152,20 +152,40 @@
         }
         
         .button-container {
-            text-align: center;
-            margin: 30px 0;
+            margin: 8px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
         }
         
         .scan-button {
             background-color: #667eea;
             color: white;
             border: none;
-            padding: 12px 30px;
-            font-size: 1rem;
-            border-radius: 5px;
+            padding: 16px 40px;
+            font-size: 1.15rem;
+            border-radius: 6px;
             cursor: pointer;
-            transition: background-color 0.3s, transform 0.2s;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.2s, transform 0.12s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        .placeholder-button {
+            background-color: #e9ecef;
+            color: #333;
+            border: none;
+            padding: 12px 18px;
+            font-size: 0.95rem;
+            border-radius: 6px;
+            cursor: default;
+            box-shadow: none;
+            opacity: 0.9;
         }
         
         .scan-button:hover:not(:disabled) {
@@ -185,7 +205,7 @@
         }
         
         .status-message {
-            margin-top: 15px;
+            margin-top: 8px;
             font-size: 0.95rem;
             min-height: 20px;
         }
@@ -234,7 +254,13 @@
         
         <!-- Scan Button -->
         <div class="button-container">
-            <button class="scan-button" id="scanButton" onclick="triggerScan()">Scan for Files</button>
+            <div class="button-row">
+                <button class="scan-button" id="scanButton" onclick="triggerScan()">Scan for Files</button>
+                <button class="placeholder-button">Placeholder</button>
+                <button class="placeholder-button">Placeholder</button>
+                <button class="placeholder-button">Placeholder</button>
+                <button class="placeholder-button">Placeholder</button>
+            </div>
             <div class="status-message" id="statusMessage"></div>
         </div>
         
