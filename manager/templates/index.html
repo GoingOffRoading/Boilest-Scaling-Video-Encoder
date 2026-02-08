@@ -347,10 +347,10 @@
         
         <!-- Tab Navigation -->
         <div class="tab-nav">
-            <button class="tab-btn active" onclick="switchTabWithResize(this, 'queued')">Queued Files</button>
-            <button class="tab-btn" onclick="switchTabWithResize(this, 'encoding')">Currently Encoding</button>
-            <button class="tab-btn" onclick="switchTabWithResize(this, 'encoded')">Recently Encoded</button>
-            <button class="tab-btn" onclick="switchTabWithResize(this, 'failed')">Recently Failed</button>
+            <button class="tab-btn active" onclick="switchTab(this, 'queued')">Queued Files</button>
+            <button class="tab-btn" onclick="switchTab(this, 'encoding')">Currently Encoding</button>
+            <button class="tab-btn" onclick="switchTab(this, 'encoded')">Recently Encoded</button>
+            <button class="tab-btn" onclick="switchTab(this, 'failed')">Recently Failed</button>
             <button class="tab-btn" onclick="switchTab(this, 'settings')">Settings</button>
         </div>
         
@@ -642,42 +642,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             setupSortableTables();
-            alignTabButtonsToHeaders();
         });
-
-        function alignTabButtonsToHeaders() {
-            const activeTab = document.querySelector('.tab-content.active');
-            if (!activeTab) return;
-            
-            const table = activeTab.querySelector('table');
-            if (!table) return;
-            
-            const headers = table.querySelectorAll('thead th');
-            const buttons = document.querySelectorAll('.tab-btn');
-            const tabNav = document.querySelector('.tab-nav');
-            
-            if (headers.length === 0 || buttons.length === 0 || !tabNav) return;
-            
-            // Get header widths and calculate total
-            const headerWidths = Array.from(headers).map(h => h.offsetWidth);
-            const totalHeaderWidth = headerWidths.reduce((sum, w) => sum + w, 0);
-            const navWidth = tabNav.offsetWidth;
-            
-            // Scale header widths to match nav width while maintaining proportions
-            const scaleFactor = navWidth / totalHeaderWidth;
-            
-            buttons.forEach((btn, index) => {
-                btn.style.flex = 'none';
-                if (index < headerWidths.length) {
-                    btn.style.width = (headerWidths[index] * scaleFactor) + 'px';
-                }
-            });
-        }
-
-        function switchTabWithResize(button, tabId) {
-            switchTab(button, tabId);
-            setTimeout(alignTabButtonsToHeaders, 0);
-        }
     </script>
 </body>
 </html>
