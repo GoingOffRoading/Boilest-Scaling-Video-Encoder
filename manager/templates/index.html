@@ -652,11 +652,22 @@
             
             const headers = table.querySelectorAll('thead th');
             const buttons = document.querySelectorAll('.tab-btn');
+            const tabNav = document.querySelector('.tab-nav');
+            
+            if (headers.length === 0 || buttons.length === 0 || !tabNav) return;
+            
+            // Get header widths and calculate total
+            const headerWidths = Array.from(headers).map(h => h.offsetWidth);
+            const totalHeaderWidth = headerWidths.reduce((sum, w) => sum + w, 0);
+            const navWidth = tabNav.offsetWidth;
+            
+            // Scale header widths to match nav width while maintaining proportions
+            const scaleFactor = navWidth / totalHeaderWidth;
             
             buttons.forEach((btn, index) => {
                 btn.style.flex = 'none';
-                if (index < headers.length) {
-                    btn.style.width = headers[index].offsetWidth + 'px';
+                if (index < headerWidths.length) {
+                    btn.style.width = (headerWidths[index] * scaleFactor) + 'px';
                 }
             });
         }
