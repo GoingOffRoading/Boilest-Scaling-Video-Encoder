@@ -33,7 +33,7 @@ RUN mkdir -p /tv && \
     mkdir -p /anime && \
     mkdir -p /fav_anime && \
     mkdir -p /home_movies && \
-    mkdir -p /youtube_archive
+    mkdir -p /youtube
 
 # Create application directory and set ownership
 COPY manager /boil/manager
@@ -50,7 +50,7 @@ RUN chown -R appuser:appgroup /boil && \
     chown -R appuser:appgroup /anime && \
     chown -R appuser:appgroup /fav_anime && \
     chown -R appuser:appgroup /home_movies && \
-    chown -R appuser:appgroup /youtube_archive
+    chown -R appuser:appgroup /youtube
 
 # Manager Variables
 ENV FLASK_APP=Flask.py
