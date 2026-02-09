@@ -92,7 +92,9 @@ def delete_error_records():
     """
     Delete all error records from the queue table (status starts with 'Failed')
     """
-    response_data, status_code = delete_errors_logic()
+    data = request.get_json(silent=True) or {}
+    status_value = data.get('status')
+    response_data, status_code = delete_errors_logic(status_value)
     return jsonify(response_data), status_code
 
 

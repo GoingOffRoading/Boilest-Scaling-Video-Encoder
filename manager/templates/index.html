@@ -105,14 +105,16 @@
             font-size: 1.5rem;
         }
 
-        .recently-encoded-table .scroll-wrapper {
+        .recently-encoded-table .scroll-wrapper,
+        .queued-table .scroll-wrapper {
             max-height: 480px;
             overflow-y: auto;
             border: 1px solid #eee;
             border-radius: 6px;
         }
 
-        .recently-encoded-table table {
+        .recently-encoded-table table,
+        .queued-table table {
             margin-bottom: 0;
         }
         
@@ -193,6 +195,8 @@
             display: flex;
             gap: 8px;
             align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
         }
         
         .action-button {
@@ -205,6 +209,11 @@
             cursor: pointer;
             transition: background-color 0.2s, transform 0.12s;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        .action-button.compact {
+            padding: 10px 16px;
+            font-size: 0.9rem;
         }
 
         .action-button:hover:not(:disabled) {
@@ -356,7 +365,7 @@
         
         <!-- Queued Files Tab -->
         <div id="queued" class="tab-content active">
-            <div class="table-container">
+            <div class="table-container queued-table">
                 <!-- Scan Button -->
                 <div class="button-container">
                     <div class="button-row">
@@ -367,30 +376,32 @@
                 </div>
                 <h2>Queued Files</h2>
                 {% if queued_items %}
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 60px;">Rank</th>
-                            <th>Filename</th>
-                            <th>Path</th>
-                            <th style="text-align: right;">Size (MB)</th>
-                            <th>FFmpeg String</th>
-                            <th>Added</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in queued_items[:10] %}
-                        <tr>
-                            <td><strong>{{ loop.index }}</strong></td>
-                            <td>{{ item['input_file_name'] }}</td>
-                            <td>{{ item['directory_path'] }}</td>
-                            <td class="file-size">{{ "{:,.2f}".format(item['before_file_size_mb']) if item['before_file_size_mb'] is not none else '—' }}</td>
-                            <td style="font-size: 0.85rem; font-family: 'Courier New', monospace;">{{ item['ffmpeg_string'][:300] ~ '…' if item['ffmpeg_string'] and item['ffmpeg_string']|length > 300 else item['ffmpeg_string'] }}</td>
-                            <td class="time-added">{{ item['datetime_added'] }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="scroll-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">Rank</th>
+                                <th>Filename</th>
+                                <th>Path</th>
+                                <th style="text-align: right;">Size (MB)</th>
+                                <th>FFmpeg String</th>
+                                <th>Added</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in queued_items[:100] %}
+                            <tr>
+                                <td><strong>{{ loop.index }}</strong></td>
+                                <td>{{ item['input_file_name'] }}</td>
+                                <td>{{ item['directory_path'] }}</td>
+                                <td class="file-size">{{ "{:,.2f}".format(item['before_file_size_mb']) if item['before_file_size_mb'] is not none else '—' }}</td>
+                                <td style="font-size: 0.85rem; font-family: 'Courier New', monospace;">{{ item['ffmpeg_string'][:300] ~ '…' if item['ffmpeg_string'] and item['ffmpeg_string']|length > 300 else item['ffmpeg_string'] }}</td>
+                                <td class="time-added">{{ item['datetime_added'] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
                 {% else %}
                 <div class="no-data">No queued files at this time</div>
                 {% endif %}
@@ -476,7 +487,15 @@
             <div class="table-container">
                 <div class="button-container">
                     <div class="button-row">
-                        <button class="action-button" id="deleteErrorsButton" onclick="deleteErrorRecords()">Delete Failed Encodes</button>
+                        <button class="action-button compact" onclick="deleteFailedStatus('Failed: File not found', this)">Failed: File not found</button>
+                        <button class="action-button compact" onclick="deleteFailedStatus('Failed: Hash mismatch', this)">Failed: Hash mismatch</button>
+                        <button class="action-button compact" onclick="deleteFailedStatus('Failed: Input Integrity', this)">Failed: Input Integrity</button>
+                        <button class="action-button compact" onclick="deleteFailedStatus('Failed: FFmpeg failure', this)">Failed: FFmpeg failure</button>
+                        <button class="action-button compact" onclick="deleteFailedStatus('Failed: Temporary file not found', this)">Failed: Temporary file not found</button>
+                        <button class="action-button compact" onclick="deleteFailedStatus('Failed: Postflight Integrity', this)">Failed: Postflight Integrity</button>
+                        <button class="action-button compact" onclick="deleteFailedStatus('Failed: Postflight file size check', this)">Failed: Postflight file size check</button>
+                        <button class="action-button compact" onclick="deleteFailedStatus('Failed: Postflight delete source file', this)">Failed: Postflight delete source file</button>
+                        <button class="action-button compact" onclick="deleteFailedStatus('Failed: Postflight move temporary file to final destination', this)">Failed: Postflight move temporary file to final destination</button>
                     </div>
                 </div>
                 <h2>Recently Failed</h2>
@@ -514,6 +533,13 @@
         <!-- Settings Tab -->
         <div id="settings" class="tab-content">
             <div class="table-container">
+                <div class="button-container">
+                    <div class="button-row">
+                        <button class="action-button">Add Directory</button>
+                        <button class="action-button">Edit Directory</button>
+                        <button class="action-button">Remove Directory</button>
+                    </div>
+                </div>
                 <h2>Directories</h2>
                 {% if directories_items %}
                 <table>
@@ -703,15 +729,13 @@
             }
         }
 
-        async function deleteErrorRecords() {
+        async function deleteFailedStatus(statusValue, button) {
             // Confirm before deleting
-            if (!confirm('Are you sure you want to delete all error records?')) {
+            if (!confirm(`Delete records with status "${statusValue}"?`)) {
                 return;
             }
             
-            const button = document.getElementById('deleteErrorsButton');
-            
-            // Disable button
+            const originalText = button.textContent;
             button.disabled = true;
             button.textContent = 'Deleting...';
             
@@ -720,23 +744,24 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    body: JSON.stringify({ status: statusValue })
                 });
                 
                 const data = await response.json();
                 
                 if (response.ok) {
-                    alert(`Successfully deleted ${data.deleted_count} failed encodes. Refreshing...`);
+                    alert(`Successfully deleted ${data.deleted_count} records for "${statusValue}". Refreshing...`);
                     location.reload();
                 } else {
                     alert(`Delete failed: ${data.error || response.status}`);
                     button.disabled = false;
-                    button.textContent = 'Delete Failed Encodes';
+                    button.textContent = originalText;
                 }
             } catch (error) {
                 alert(`Error: ${error.message}`);
                 button.disabled = false;
-                button.textContent = 'Delete Failed Encodes';
+                button.textContent = originalText;
             }
         }
 
