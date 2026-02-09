@@ -618,13 +618,26 @@
                 </div>
                 <h2>Directories</h2>
                 {% if directories_items %}
+                {% set hidden_directory_columns = [
+                    'guid',
+                    'added_at',
+                    'desired_video_codec',
+                    'desired_audio_codec',
+                    'desired_subtitle_codec',
+                    'video_codec',
+                    'audio_codec',
+                    'subtitle_codec',
+                    'active'
+                ] %}
                 <div class="scroll-wrapper">
                     <table id="directoriesTable">
                         <thead>
                             <tr>
                                 <th style="width: 70px;">Select</th>
                                 {% for column in directories_items[0].keys() %}
+                                {% if column not in hidden_directory_columns %}
                                 <th>{{ column }}</th>
+                                {% endif %}
                                 {% endfor %}
                             </tr>
                         </thead>
@@ -633,7 +646,9 @@
                             <tr class="directory-row" data-guid="{{ item['guid'] }}">
                                 <td><input type="radio" name="directorySelect"></td>
                                 {% for column in item.keys() %}
+                                {% if column not in hidden_directory_columns %}
                                 <td>{{ item[column] }}</td>
+                                {% endif %}
                                 {% endfor %}
                             </tr>
                             {% endfor %}
