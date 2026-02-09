@@ -23,6 +23,7 @@
 - [ ] Implement some kind of heartbeat for workers.  I.E. Encoded task returns to queue unless worker checks in after X time
 - [x] Need to rethink workers.  Like when a task is retrieved, we should log the node.  Then log the state.  So when a worker fails, it might be able to pick up where it left off.
 - [x] Make it so that directories are not deleted
+- [ ] Remember to update Boilest.db after the ffmpeg settings tweaks
 
 
 
@@ -48,7 +49,7 @@ libsvtav1 -crf 30 -preset 5 -g 240 -keyint_min 24 -tile-columns 2 -tile-rows 0 -
 libsvtav1 -crf 20 -preset 2 -g 240 -keyint_min 24 -pix_fmt yuv420p10le -svtav1-params tune=0:enable-qm=1:qm-min=4:qm-max=10:filmgrain=12:film-grain-denoise=1
 
 ### Anime_Archive
-libsvtav1 -crf 30 -preset 6 -g 240 -keyint_min 24 -tile-columns 2 -tile-rows 0 -pix_fmt yuv420p10le -svtav1-params tune=1:enable-qm=1:qm-min=12:qm-max=20:filmgrain=0:film-grain-denoise=0
+libsvtav1 -crf 30 -preset 5 -g 240 -keyint_min 24 -pix_fmt yuv420p10le -svtav1-params tune=1:enable-qm=1:qm-min=8:qm-max=15:filmgrain=0:film-grain-denoise=0
 
 ### Anime_Favorites
 libsvtav1 -crf 22 -preset 3 -g 240 -keyint_min 24 -pix_fmt yuv420p10le -svtav1-params tune=1:enable-qm=1:qm-min=6:qm-max=10:filmgrain=0:film-grain-denoise=0
