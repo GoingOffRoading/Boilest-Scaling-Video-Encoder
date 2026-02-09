@@ -52,6 +52,9 @@ RUN chown -R appuser:appgroup /boil && \
     chown -R appuser:appgroup /home_movies && \
     chown -R appuser:appgroup /youtube
 
+# Global Variables
+ENV NODE_NAME=""
+
 # Manager Variables
 ENV FLASK_APP=Flask.py
 ENV FLASK_ENV=development

@@ -37,10 +37,10 @@ def get_index_data():
         queued_count = cur.fetchone()[0]
         logging.debug(f"[UI] Queued count: {queued_count}")
         
-        # Get processing count
-        cur.execute("SELECT COUNT(*) FROM queue WHERE status='pulled'")
+        # Get active workers count (distinct workers with pulls in last 12 hours)
+        cur.execute("SELECT COUNT(DISTINCT worker) FROM queue WHERE status='pulled' AND datetime_pulled > datetime('now', '-12 hours')")
         processing_count = cur.fetchone()[0]
-        logging.debug(f"[UI] Processing count: {processing_count}")
+        logging.debug(f"[UI] Active workers count: {processing_count}")
         
         # Get encoded count
         cur.execute("SELECT COUNT(*) FROM queue WHERE status='encoded'")
@@ -93,7 +93,8 @@ def get_index_data():
                 output_file_name,
                 ffmpeg_string,
                 datetime_added,
-                datetime_pulled
+                datetime_pulled,
+                worker
             FROM queue 
             WHERE status = 'pulled'
             ORDER BY datetime_pulled ASC
@@ -119,7 +120,8 @@ def get_index_data():
                 directory_path,
                 before_file_size - after_file_size as space_saved,
                 datetime_pulled,
-                datetime_encoded
+                datetime_encoded,
+                worker
             FROM queue 
             WHERE status = 'encoded'
             ORDER BY datetime_encoded DESC
@@ -166,7 +168,8 @@ def get_index_data():
                 input_file_name,
                 directory_path,
                 datetime_pulled,
-                status
+                status,
+                worker
             FROM queue 
             WHERE status NOT IN ('queued', 'pulled', 'encoded')
             ORDER BY datetime_pulled DESC

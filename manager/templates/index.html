@@ -321,9 +321,9 @@
             </div>
             
             <div class="metric-box">
-                <div class="metric-label">Processing</div>
+                <div class="metric-label">Workers</div>
                 <div class="metric-value">{{ processing_count }}</div>
-                <div class="metric-unit">currently encoding</div>
+                <div class="metric-unit">active nodes</div>
             </div>
             
             <div class="metric-box">
@@ -411,6 +411,7 @@
                     <thead>
                         <tr>
                             <th style="width: 60px;">Rank</th>
+                            <th>Worker</th>
                             <th>Filename</th>
                             <th>Path</th>
                             <th style="text-align: right">Size (MB)</th>
@@ -422,6 +423,7 @@
                         {% for item in encoding_items[:10] %}
                         <tr>
                             <td><strong>{{ loop.index }}</strong></td>
+                            <td>{{ item['worker'] if item['worker'] else '—' }}</td>
                             <td>{{ item['input_file_name'] }}</td>
                             <td>{{ item['directory_path'] }}</td>
                             <td class="file-size">{{ "{:,.2f}".format(item['before_file_size_mb']) if item['before_file_size_mb'] is not none else '—' }}</td>
@@ -447,6 +449,7 @@
                         <thead>
                             <tr>
                                 <th style="width: 60px;">Rank</th>
+                                <th>Worker</th>
                                 <th>Filee</th>
                                 <th>Path</th>
                                 <th>Space Saved (MB)</th>
@@ -457,6 +460,7 @@
                             {% for item in encoded_items[:100] %}
                             <tr>
                                 <td><strong>{{ loop.index }}</strong></td>
+                                <td>{{ item['worker'] if item['worker'] else '—' }}</td>
                                 <td>{{ item['output_file_name'] }}</td>
                                 <td>{{ item['directory_path'] }}</td>
                                 <td>{{ "{:,.2f}".format(item['space_saved_mb']) if item['space_saved_mb'] is not none else '—' }}</td>
@@ -486,6 +490,7 @@
                     <thead>
                         <tr>
                             <th style="width: 60px;">Rank</th>
+                            <th>Worker</th>
                             <th>Filename</th>
                             <th>Path</th>
                             <th>Pulled</th>
@@ -496,6 +501,7 @@
                         {% for item in failed_items[:100] %}
                         <tr>
                             <td><strong>{{ loop.index }}</strong></td>
+                            <td>{{ item['worker'] if item['worker'] else '—' }}</td>
                             <td>{{ item['input_file_name'] }}</td>
                             <td>{{ item['directory_path'] }}</td>
                             <td class="time-added">{{ item['datetime_pulled'] }}</td>

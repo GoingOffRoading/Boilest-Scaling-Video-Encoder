@@ -27,7 +27,7 @@ GET_TASK_ENDPOINT = f"{API_BASE_URL}/api/queue/largest"
 
 
 def get_largest_task():
-    worker_name = socket.gethostname()
+    worker_name = os.environ.get("NODE_NAME", socket.gethostname())
     request_url = f"{GET_TASK_ENDPOINT}?worker={worker_name}"
     request = urllib.request.Request(request_url, method="GET")
     try:
