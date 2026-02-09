@@ -38,7 +38,7 @@ def get_index_data():
         logging.debug(f"[UI] Queued count: {queued_count}")
         
         # Get active workers count (distinct workers with pulls in last 12 hours)
-        cur.execute("SELECT COUNT(DISTINCT worker) FROM queue WHERE status='pulled' AND datetime_pulled > datetime('now', '-12 hours')")
+        cur.execute("SELECT COUNT(DISTINCT worker) FROM queue WHERE datetime_pulled > datetime('now', '-12 hours')")
         processing_count = cur.fetchone()[0]
         logging.debug(f"[UI] Active workers count: {processing_count}")
         
