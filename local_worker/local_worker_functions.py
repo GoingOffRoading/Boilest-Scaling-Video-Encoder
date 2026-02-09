@@ -160,6 +160,22 @@ def validate_video_full(file_path):
         return False
 
 
+def post_flight_validate_video_full(file_path):
+    """
+    Validate video after encoding and delete the file if validation fails.
+    
+    Parameters:
+      - file_path (str): Path to the video file to validate
+    
+    Returns:
+      - bool: True if validation passed, False if validation failed (file will be deleted)
+    """
+    if not validate_video_full(file_path):
+        logging.debug(f"Post-flight validation failed for: {file_path}")
+        delete_file(file_path)
+        return False
+    logging.debug(f"Post-flight validation passed for: {file_path}")
+    return True
 
 
 # ----------------------------------------
