@@ -361,7 +361,7 @@
                 <div class="button-container">
                     <div class="button-row">
                         <button class="action-button" id="scanButton" onclick="triggerScan()">Scan for Files</button>
-                        <button class="action-button">Placeholder</button>
+                        <button class="action-button" id="deleteQueueButton" onclick="deleteQueue()">Delete Queue</button>
                     </div>
                     <div class="status-message" id="statusMessage"></div>
                 </div>
@@ -400,11 +400,6 @@
         <!-- Currently Encoding Tab -->
         <div id="encoding" class="tab-content">
             <div class="table-container">
-                <div class="button-container">
-                    <div class="button-row">
-                        <button class="action-button">Placeholder</button>
-                    </div>
-                </div>
                 <h2>Currently Encoding</h2>
                 {% if encoding_items %}
                 <table>
@@ -481,7 +476,7 @@
             <div class="table-container">
                 <div class="button-container">
                     <div class="button-row">
-                        <button class="action-button">Placeholder</button>
+                        <button class="action-button" id="deleteErrorsButton" onclick="deleteErrorRecords()">Delete Error Records</button>
                     </div>
                 </div>
                 <h2>Recently Failed</h2>
@@ -661,6 +656,87 @@
                 statusMessage.className = 'status-message status-error';
                 statusMessage.textContent = `✗ Error: ${error.message}`;
                 button.disabled = false;
+            }
+        }
+
+        async function deleteQueue() {
+            const button = document.getElementById('deleteQueueButton');
+            const statusMessage = document.getElementById('statusMessage');
+            
+            // Confirm before deleting
+            if (!confirm('Are you sure you want to delete all queued items?')) {
+                return;
+            }
+            
+            // Disable button and show loading message
+            button.disabled = true;
+            statusMessage.className = 'status-message status-loading';
+            statusMessage.textContent = 'Deleting queued items...';
+            
+            try {
+                const response = await fetch('/api/queue/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    statusMessage.className = 'status-message status-success';
+                    statusMessage.textContent = `✓ ${data.message} Refreshing...`;
+                    
+                    // Refresh the page after 2 seconds to show updated metrics
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    statusMessage.className = 'status-message status-error';
+                    statusMessage.textContent = `✗ Delete failed: ${data.error || response.status}`;
+                    button.disabled = false;
+                }
+            } catch (error) {
+                statusMessage.className = 'status-message status-error';
+                statusMessage.textContent = `✗ Error: ${error.message}`;
+                button.disabled = false;
+            }
+        }
+
+        async function deleteErrorRecords() {
+            // Confirm before deleting
+            if (!confirm('Are you sure you want to delete all error records?')) {
+                return;
+            }
+            
+            const button = document.getElementById('deleteErrorsButton');
+            
+            // Disable button
+            button.disabled = true;
+            button.textContent = 'Deleting...';
+            
+            try {
+                const response = await fetch('/api/queue/delete-errors', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert(`Successfully deleted ${data.deleted_count} error records. Refreshing...`);
+                    location.reload();
+                } else {
+                    alert(`Delete failed: ${data.error || response.status}`);
+                    button.disabled = false;
+                    button.textContent = 'Delete Error Records';
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+                button.disabled = false;
+                button.textContent = 'Delete Error Records';
             }
         }
 
