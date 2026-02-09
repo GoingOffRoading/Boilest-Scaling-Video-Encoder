@@ -5,7 +5,7 @@ from db_path import get_db_path
 __all__ = ["get_largest_queue_logic"]
 
 
-def get_largest_queue_logic(db_disabled):
+def get_largest_queue_logic(db_disabled, worker):
     import logging
     logging.info("="*80)
     logging.info("[REQUEST] GET /api/queue/largest")
@@ -28,6 +28,37 @@ def get_largest_queue_logic(db_disabled):
         conn.row_factory = sqlite3.Row  # This allows accessing columns by name
         cur = conn.cursor()
         logging.debug("[DB] Connected to database successfully")
+
+        # First, check if this worker already has an assigned task
+        if worker:
+            check_existing_query = """
+                SELECT 
+                    file_guid,
+                    directory_path,
+                    input_file_name,
+                    output_file_name,
+                    before_file_size,
+                    ffmpeg_string
+                FROM queue q
+                WHERE worker = ? AND status = 'pulled'
+                LIMIT 1
+            """
+            logging.debug(f"[QUERY] Checking for existing task assigned to worker: {worker}")
+            cur.execute(check_existing_query, (worker,))
+            existing_row = cur.fetchone()
+            
+            if existing_row:
+                logging.debug(f"[RESULT] Found existing task for worker: {worker}")
+                conn.close()
+                logging.debug("[DB] Connection closed")
+                
+                result = dict(existing_row)
+                logging.info(f"[RESULT] Returning existing task for worker {worker}: {result['input_file_name']}")
+                logging.info("="*80)
+                return {
+                    'success': True,
+                    'data': result
+                }, 200
 
         # Query the encode table sorted by before_file_size descending, limit 1
         query = """
@@ -53,11 +84,11 @@ def get_largest_queue_logic(db_disabled):
         if row:
             update_query = """
                 UPDATE queue
-                SET datetime_pulled = ?, status = 'pulled'
+                SET datetime_pulled = ?, status = 'pulled', worker = ?
                 WHERE file_guid = ?
             """
             current_time = datetime.now()
-            cur.execute(update_query, (current_time, row["file_guid"]))
+            cur.execute(update_query, (current_time, worker, row["file_guid"]))
             conn.commit()
 
         conn.close()

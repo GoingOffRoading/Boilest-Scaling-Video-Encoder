@@ -14,6 +14,7 @@ import json
 import re
 import urllib.request
 from urllib.error import URLError, HTTPError
+import socket
 
 
 # ----------------------------------------
@@ -26,7 +27,9 @@ GET_TASK_ENDPOINT = f"{API_BASE_URL}/api/queue/largest"
 
 
 def get_largest_task():
-    request = urllib.request.Request(GET_TASK_ENDPOINT, method="GET")
+    worker_name = socket.gethostname()
+    request_url = f"{GET_TASK_ENDPOINT}?worker={worker_name}"
+    request = urllib.request.Request(request_url, method="GET")
     try:
         with urllib.request.urlopen(request, timeout=10) as response:
             status_code = response.getcode()

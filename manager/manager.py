@@ -31,7 +31,8 @@ def get_largest_queue():
     """
     Query the queue table and return one row sorted by before_file_size DESC limit 1
     """
-    response_data, status_code = get_largest_queue_logic(DB_DISABLED)
+    worker = request.args.get('worker')
+    response_data, status_code = get_largest_queue_logic(DB_DISABLED, worker)
     return jsonify(response_data), status_code
 
 

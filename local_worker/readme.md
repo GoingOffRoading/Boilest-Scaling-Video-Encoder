@@ -15,6 +15,7 @@
 - [ ] Video validation, need to revisit how validation is done to let in some videos that would otherwise be fixed with encoding
 - [ ] Do a little cleanup and formatting of local_worker_functions
 - [ ] On status messaging between phases, mention the directory path
+- [ ] Resolve an issue where a postflight validation check leaves an ophaned file
 
 
 
