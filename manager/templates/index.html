@@ -476,7 +476,7 @@
             <div class="table-container">
                 <div class="button-container">
                     <div class="button-row">
-                        <button class="action-button" id="deleteErrorsButton" onclick="deleteErrorRecords()">Delete Error Records</button>
+                        <button class="action-button" id="deleteErrorsButton" onclick="deleteErrorRecords()">Delete Failed Encodes</button>
                     </div>
                 </div>
                 <h2>Recently Failed</h2>
@@ -726,17 +726,17 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    alert(`Successfully deleted ${data.deleted_count} error records. Refreshing...`);
+                    alert(`Successfully deleted ${data.deleted_count} failed encodes. Refreshing...`);
                     location.reload();
                 } else {
                     alert(`Delete failed: ${data.error || response.status}`);
                     button.disabled = false;
-                    button.textContent = 'Delete Error Records';
+                    button.textContent = 'Delete Failed Encodes';
                 }
             } catch (error) {
                 alert(`Error: ${error.message}`);
                 button.disabled = false;
-                button.textContent = 'Delete Error Records';
+                button.textContent = 'Delete Failed Encodes';
             }
         }
 

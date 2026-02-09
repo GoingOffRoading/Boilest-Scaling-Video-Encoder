@@ -7,6 +7,8 @@ from flask_get_largest_queue import get_largest_queue_logic
 from flask_post_completed_encode import post_completed_encode_logic
 from flask_post_queue import run_queue_workflow
 from flask_post_toggle_database import toggle_database_logic
+from flask_post_delete_errors import delete_errors_logic
+from flask_post_delete_queue import delete_queue_logic
 
 # Get log level from environment variable (default: INFO)
 log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
@@ -81,71 +83,17 @@ def delete_queued():
     """
     Delete all queued items from the queue table
     """
-    import sqlite3
-    from db_path import get_db_path
-    
-    logging.info("[REQUEST] POST /api/queue/delete")
-    
-    try:
-        db_path = get_db_path()
-        conn = sqlite3.connect(db_path)
-        cur = conn.cursor()
-        
-        # Delete all rows with status = 'queued'
-        cur.execute("DELETE FROM queue WHERE status = 'queued'")
-        deleted_count = cur.rowcount
-        conn.commit()
-        conn.close()
-        
-        logging.info(f"[SUCCESS] Deleted {deleted_count} queued items")
-        return jsonify({
-            'success': True,
-            'deleted_count': deleted_count,
-            'message': f'Successfully deleted {deleted_count} queued items'
-        }), 200
-        
-    except Exception as e:
-        logging.error(f"[ERROR] Failed to delete queued items: {e}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+    response_data, status_code = delete_queue_logic()
+    return jsonify(response_data), status_code
 
 
 @app.route('/api/queue/delete-errors', methods=['POST'])
 def delete_error_records():
     """
-    Delete all error records from the queue table (status starts with 'error')
+    Delete all error records from the queue table (status starts with 'Failed')
     """
-    import sqlite3
-    from db_path import get_db_path
-    
-    logging.info("[REQUEST] POST /api/queue/delete-errors")
-    
-    try:
-        db_path = get_db_path()
-        conn = sqlite3.connect(db_path)
-        cur = conn.cursor()
-        
-        # Delete all rows with status starting with 'error'
-        cur.execute("DELETE FROM queue WHERE status LIKE 'error%'")
-        deleted_count = cur.rowcount
-        conn.commit()
-        conn.close()
-        
-        logging.info(f"[SUCCESS] Deleted {deleted_count} error records")
-        return jsonify({
-            'success': True,
-            'deleted_count': deleted_count,
-            'message': f'Successfully deleted {deleted_count} error records'
-        }), 200
-        
-    except Exception as e:
-        logging.error(f"[ERROR] Failed to delete error records: {e}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+    response_data, status_code = delete_errors_logic()
+    return jsonify(response_data), status_code
 
 
 @app.route('/api/db/status', methods=['GET'])
