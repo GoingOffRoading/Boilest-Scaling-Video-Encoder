@@ -9,6 +9,7 @@ from flask_post_queue import run_queue_workflow
 from flask_post_toggle_database import toggle_database_logic
 from flask_post_delete_errors import delete_errors_logic
 from flask_post_delete_queue import delete_queue_logic
+from flask_directories import create_directory_logic, update_directory_logic, delete_directory_logic
 
 # Get log level from environment variable (default: INFO)
 log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
@@ -98,6 +99,26 @@ def delete_error_records():
     return jsonify(response_data), status_code
 
 
+@app.route('/api/directories', methods=['POST'])
+def create_directory():
+    data = request.get_json(silent=True) or {}
+    response_data, status_code = create_directory_logic(data)
+    return jsonify(response_data), status_code
+
+
+@app.route('/api/directories/<guid>', methods=['PATCH'])
+def update_directory(guid):
+    data = request.get_json(silent=True) or {}
+    response_data, status_code = update_directory_logic(guid, data)
+    return jsonify(response_data), status_code
+
+
+@app.route('/api/directories/<guid>', methods=['DELETE'])
+def delete_directory(guid):
+    response_data, status_code = delete_directory_logic(guid)
+    return jsonify(response_data), status_code
+
+
 @app.route('/api/db/status', methods=['GET'])
 def database_status():
     """
@@ -123,9 +144,14 @@ if __name__ == '__main__':
     logging.info("="*80)
     logging.info("Available endpoints:")
     logging.info("  - GET  /                    (Main UI page)")
-    logging.info("  - GET  /api/encode/largest  (Get largest encode by file size)")
-    logging.info("  - POST /api/encoded         (Create new encoded record)")
+    logging.info("  - GET  /api/queue/largest   (Get largest queued item by file size)")
+    logging.info("  - POST /api/completed       (Create new completed record)")
     logging.info("  - POST /api/scan            (Scan directories and probe files)")
+    logging.info("  - POST /api/queue/delete    (Delete all queued items)")
+    logging.info("  - POST /api/queue/delete-errors (Delete failed records by status)")
+    logging.info("  - POST /api/directories     (Create directory)")
+    logging.info("  - PATCH /api/directories/<guid> (Update directory)")
+    logging.info("  - DELETE /api/directories/<guid> (Delete directory)")
     logging.info("  - POST /api/db/toggle       (Enable/disable database operations)")
     logging.info("  - GET  /api/db/status       (Check database status)")
     logging.info("  - GET  /health              (Health check)")

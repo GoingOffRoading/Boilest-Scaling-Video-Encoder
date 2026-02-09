@@ -216,6 +216,80 @@
             font-size: 0.9rem;
         }
 
+        .directory-row.selected {
+            outline: 2px solid #667eea;
+            outline-offset: -2px;
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal.hidden {
+            display: none;
+        }
+
+        .modal-content {
+            background: #fff;
+            width: min(600px, 92vw);
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            padding: 18px 20px 20px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+            color: #667eea;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .modal-body label {
+            display: flex;
+            flex-direction: column;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .modal-body input {
+            margin-top: 6px;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
         .action-button:hover:not(:disabled) {
             background-color: #764ba2;
             transform: translateY(-2px);
@@ -535,16 +609,17 @@
             <div class="table-container">
                 <div class="button-container">
                     <div class="button-row">
-                        <button class="action-button">Add Directory</button>
-                        <button class="action-button">Edit Directory</button>
-                        <button class="action-button">Remove Directory</button>
+                        <button class="action-button" onclick="openDirectoryModal('create')">Add Directory</button>
+                        <button class="action-button" onclick="openDirectoryModal('edit')">Edit Directory</button>
+                        <button class="action-button" onclick="deleteDirectory()">Remove Directory</button>
                     </div>
                 </div>
                 <h2>Directories</h2>
                 {% if directories_items %}
-                <table>
+                <table id="directoriesTable">
                     <thead>
                         <tr>
+                            <th style="width: 70px;">Select</th>
                             {% for column in directories_items[0].keys() %}
                             <th>{{ column }}</th>
                             {% endfor %}
@@ -552,7 +627,8 @@
                     </thead>
                     <tbody>
                         {% for item in directories_items %}
-                        <tr>
+                        <tr class="directory-row" data-guid="{{ item['guid'] }}">
+                            <td><input type="radio" name="directorySelect"></td>
                             {% for column in item.keys() %}
                             <td>{{ item[column] }}</td>
                             {% endfor %}
@@ -563,6 +639,42 @@
                 {% else %}
                 <div class="no-data">No directories configured</div>
                 {% endif %}
+            </div>
+        </div>
+
+        <div id="directoryModal" class="modal hidden" aria-hidden="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title" id="directoryModalTitle">Add Directory</div>
+                    <button class="modal-close" onclick="closeDirectoryModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <label>Path
+                        <input id="dirPath" type="text" placeholder="/tv" />
+                    </label>
+                    <label>FFmpeg Video
+                        <input id="dirFfmpegVideo" type="text" placeholder="-c:v libx265" />
+                    </label>
+                    <label>FFmpeg Audio
+                        <input id="dirFfmpegAudio" type="text" placeholder="-c:a aac" />
+                    </label>
+                    <label>FFmpeg Subtitle
+                        <input id="dirFfmpegSubtitle" type="text" placeholder="-c:s copy" />
+                    </label>
+                    <label>Video Codec
+                        <input id="dirVideoCodec" type="text" placeholder="hevc" />
+                    </label>
+                    <label>Audio Codec
+                        <input id="dirAudioCodec" type="text" placeholder="aac" />
+                    </label>
+                    <label>Subtitle Codec
+                        <input id="dirSubtitleCodec" type="text" placeholder="copy" />
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button class="action-button compact" id="saveDirectoryButton" onclick="saveDirectory()">Save</button>
+                    <button class="action-button compact" onclick="closeDirectoryModal()">Cancel</button>
+                </div>
             </div>
         </div>
     </div>
@@ -614,6 +726,161 @@
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             button.classList.add('active');
             document.getElementById(tabId).classList.add('active');
+        }
+
+        let selectedDirectoryGuid = null;
+        let selectedDirectoryData = null;
+        let directoryModalMode = 'create';
+
+        const directoryFieldMap = {
+            path: 'dirPath',
+            ffmpeg_video: 'dirFfmpegVideo',
+            ffmpeg_audio: 'dirFfmpegAudio',
+            ffmpeg_subtitle: 'dirFfmpegSubtitle',
+            video_codec: 'dirVideoCodec',
+            audio_codec: 'dirAudioCodec',
+            subtitle_codec: 'dirSubtitleCodec'
+        };
+
+        function setupDirectorySelection() {
+            const table = document.getElementById('directoriesTable');
+            if (!table) {
+                return;
+            }
+            table.querySelectorAll('tbody tr').forEach(row => {
+                row.addEventListener('click', () => selectDirectoryRow(row));
+            });
+        }
+
+        function selectDirectoryRow(row) {
+            document.querySelectorAll('.directory-row').forEach(r => r.classList.remove('selected'));
+            row.classList.add('selected');
+            selectedDirectoryGuid = row.dataset.guid;
+            selectedDirectoryData = getDirectoryRowData(row);
+            const radio = row.querySelector('input[type="radio"]');
+            if (radio) {
+                radio.checked = true;
+            }
+        }
+
+        function getDirectoryRowData(row) {
+            const table = document.getElementById('directoriesTable');
+            const headers = Array.from(table.querySelectorAll('thead th')).slice(1);
+            const cells = Array.from(row.querySelectorAll('td')).slice(1);
+            const data = {};
+            headers.forEach((header, index) => {
+                const key = header.textContent.trim();
+                data[key] = cells[index] ? cells[index].textContent.trim() : '';
+            });
+            return data;
+        }
+
+        function openDirectoryModal(mode) {
+            if (mode === 'edit' && !selectedDirectoryGuid) {
+                alert('Select a directory row first.');
+                return;
+            }
+            directoryModalMode = mode;
+            document.getElementById('directoryModalTitle').textContent = mode === 'edit' ? 'Edit Directory' : 'Add Directory';
+            clearDirectoryForm();
+            if (mode === 'edit') {
+                fillDirectoryForm(selectedDirectoryData || {});
+            }
+            document.getElementById('directoryModal').classList.remove('hidden');
+        }
+
+        function closeDirectoryModal() {
+            document.getElementById('directoryModal').classList.add('hidden');
+        }
+
+        function clearDirectoryForm() {
+            Object.values(directoryFieldMap).forEach(id => {
+                const input = document.getElementById(id);
+                if (input) {
+                    input.value = '';
+                }
+            });
+        }
+
+        function fillDirectoryForm(data) {
+            Object.entries(directoryFieldMap).forEach(([key, id]) => {
+                const input = document.getElementById(id);
+                if (input && data[key] !== undefined) {
+                    input.value = data[key];
+                }
+            });
+        }
+
+        function collectDirectoryPayload() {
+            const payload = {};
+            Object.entries(directoryFieldMap).forEach(([key, id]) => {
+                const input = document.getElementById(id);
+                if (input && input.value.trim() !== '') {
+                    payload[key] = input.value.trim();
+                }
+            });
+            return payload;
+        }
+
+        async function saveDirectory() {
+            const payload = collectDirectoryPayload();
+            if (!payload.path && directoryModalMode === 'create') {
+                alert('Path is required.');
+                return;
+            }
+
+            let url = '/api/directories';
+            let method = 'POST';
+            if (directoryModalMode === 'edit') {
+                url = `/api/directories/${selectedDirectoryGuid}`;
+                method = 'PATCH';
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Directory saved. Refreshing...');
+                    location.reload();
+                } else {
+                    alert(`Save failed: ${data.error || response.status}`);
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        async function deleteDirectory() {
+            if (!selectedDirectoryGuid) {
+                alert('Select a directory row first.');
+                return;
+            }
+            if (!confirm('Delete selected directory?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/directories/${selectedDirectoryGuid}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Directory deleted. Refreshing...');
+                    location.reload();
+                } else {
+                    alert(`Delete failed: ${data.error || response.status}`);
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
         }
 
         function setupSortableTables() {
@@ -767,6 +1034,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             setupSortableTables();
+            setupDirectorySelection();
         });
     </script>
 </body>
