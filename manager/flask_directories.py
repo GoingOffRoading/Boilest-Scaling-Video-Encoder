@@ -133,7 +133,7 @@ def update_directory_logic(guid, data):
 
 def delete_directory_logic(guid):
     """
-    Delete a directory record by guid.
+    Soft-delete a directory record by setting active to 'false'.
 
     Returns:
         tuple: (response_dict, status_code)
@@ -151,25 +151,25 @@ def delete_directory_logic(guid):
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
 
-        cur.execute("DELETE FROM directories WHERE guid = ?", (guid,))
+        cur.execute("UPDATE directories SET active = 'false' WHERE guid = ?", (guid,))
         conn.commit()
-        deleted_count = cur.rowcount
+        updated_count = cur.rowcount
         conn.close()
 
-        if deleted_count == 0:
+        if updated_count == 0:
             return {
                 "success": False,
                 "error": "Directory not found"
             }, 404
 
-        logging.info(f"[SUCCESS] Deleted directory: {guid}")
+        logging.info(f"[SUCCESS] Deactivated directory: {guid}")
         return {
             "success": True,
-            "deleted_count": deleted_count
+            "updated_count": updated_count
         }, 200
 
     except Exception as e:
-        logging.error(f"[ERROR] Failed to delete directory {guid}: {e}")
+        logging.error(f"[ERROR] Failed to deactivate directory {guid}: {e}")
         return {
             "success": False,
             "error": str(e)

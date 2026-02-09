@@ -105,16 +105,14 @@
             font-size: 1.5rem;
         }
 
-        .recently-encoded-table .scroll-wrapper,
-        .queued-table .scroll-wrapper {
-            max-height: 480px;
+        .scroll-wrapper {
+            max-height: 960px;
             overflow-y: auto;
             border: 1px solid #eee;
             border-radius: 6px;
         }
 
-        .recently-encoded-table table,
-        .queued-table table {
+        .scroll-wrapper table {
             margin-bottom: 0;
         }
         
@@ -487,32 +485,34 @@
             <div class="table-container">
                 <h2>Currently Encoding</h2>
                 {% if encoding_items %}
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 60px;">Rank</th>
-                            <th>Worker</th>
-                            <th>Filename</th>
-                            <th>Path</th>
-                            <th style="text-align: right">Size (MB)</th>
-                            <th>FFmpeg String</th>
-                            <th>Added</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in encoding_items[:10] %}
-                        <tr>
-                            <td><strong>{{ loop.index }}</strong></td>
-                            <td>{{ item['worker'] if item['worker'] else '—' }}</td>
-                            <td>{{ item['input_file_name'] }}</td>
-                            <td>{{ item['directory_path'] }}</td>
-                            <td class="file-size">{{ "{:,.2f}".format(item['before_file_size_mb']) if item['before_file_size_mb'] is not none else '—' }}</td>
-                            <td style="font-size: 0.85rem; font-family: 'Courier New', monospace;">{{ item['ffmpeg_string'][:300] ~ '…' if item['ffmpeg_string'] and item['ffmpeg_string']|length > 300 else item['ffmpeg_string'] }}</td>
-                            <td class="time-added">{{ item['datetime_pulled'] }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="scroll-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">Rank</th>
+                                <th>Worker</th>
+                                <th>Filename</th>
+                                <th>Path</th>
+                                <th style="text-align: right">Size (MB)</th>
+                                <th>FFmpeg String</th>
+                                <th>Added</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in encoding_items[:10] %}
+                            <tr>
+                                <td><strong>{{ loop.index }}</strong></td>
+                                <td>{{ item['worker'] if item['worker'] else '—' }}</td>
+                                <td>{{ item['input_file_name'] }}</td>
+                                <td>{{ item['directory_path'] }}</td>
+                                <td class="file-size">{{ "{:,.2f}".format(item['before_file_size_mb']) if item['before_file_size_mb'] is not none else '—' }}</td>
+                                <td style="font-size: 0.85rem; font-family: 'Courier New', monospace;">{{ item['ffmpeg_string'][:300] ~ '…' if item['ffmpeg_string'] and item['ffmpeg_string']|length > 300 else item['ffmpeg_string'] }}</td>
+                                <td class="time-added">{{ item['datetime_pulled'] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
                 {% else %}
                 <div class="no-data">No files currently encoding</div>
                 {% endif %}
@@ -574,30 +574,32 @@
                 </div>
                 <h2>Recently Failed</h2>
                 {% if failed_items %}
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 60px;">Rank</th>
-                            <th>Worker</th>
-                            <th>Filename</th>
-                            <th>Path</th>
-                            <th>Pulled</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in failed_items[:100] %}
-                        <tr>
-                            <td><strong>{{ loop.index }}</strong></td>
-                            <td>{{ item['worker'] if item['worker'] else '—' }}</td>
-                            <td>{{ item['input_file_name'] }}</td>
-                            <td>{{ item['directory_path'] }}</td>
-                            <td class="time-added">{{ item['datetime_pulled'] }}</td>
-                            <td>{{ item['status'] }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="scroll-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">Rank</th>
+                                <th>Worker</th>
+                                <th>Filename</th>
+                                <th>Path</th>
+                                <th>Pulled</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in failed_items[:100] %}
+                            <tr>
+                                <td><strong>{{ loop.index }}</strong></td>
+                                <td>{{ item['worker'] if item['worker'] else '—' }}</td>
+                                <td>{{ item['input_file_name'] }}</td>
+                                <td>{{ item['directory_path'] }}</td>
+                                <td class="time-added">{{ item['datetime_pulled'] }}</td>
+                                <td>{{ item['status'] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
                 {% else %}
                 <div class="no-data">No recently failed files</div>
                 {% endif %}
@@ -616,26 +618,28 @@
                 </div>
                 <h2>Directories</h2>
                 {% if directories_items %}
-                <table id="directoriesTable">
-                    <thead>
-                        <tr>
-                            <th style="width: 70px;">Select</th>
-                            {% for column in directories_items[0].keys() %}
-                            <th>{{ column }}</th>
+                <div class="scroll-wrapper">
+                    <table id="directoriesTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 70px;">Select</th>
+                                {% for column in directories_items[0].keys() %}
+                                <th>{{ column }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in directories_items %}
+                            <tr class="directory-row" data-guid="{{ item['guid'] }}">
+                                <td><input type="radio" name="directorySelect"></td>
+                                {% for column in item.keys() %}
+                                <td>{{ item[column] }}</td>
+                                {% endfor %}
+                            </tr>
                             {% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in directories_items %}
-                        <tr class="directory-row" data-guid="{{ item['guid'] }}">
-                            <td><input type="radio" name="directorySelect"></td>
-                            {% for column in item.keys() %}
-                            <td>{{ item[column] }}</td>
-                            {% endfor %}
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                </div>
                 {% else %}
                 <div class="no-data">No directories configured</div>
                 {% endif %}
