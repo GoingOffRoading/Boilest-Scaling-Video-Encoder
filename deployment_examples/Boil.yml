@@ -1,0 +1,206 @@
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: boilest-manager
+  labels:
+    app: boilest-manager
+    thing: boilest
+    boilest: manager
+spec:
+  selector:
+    matchLabels:
+      app: boilest-manager
+  template:
+    metadata:
+      labels:
+        app: boilest-manager
+    spec:
+      containers:
+        - name: boilest-manager
+          image: ghcr.io/goingoffroading/boilest:dev 
+          imagePullPolicy: Always
+          env:
+            - name: Role
+              value: "Manager"
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          ports:
+            - containerPort: 5000
+          volumeMounts:
+            - name: config 
+              mountPath: "/boil/app"
+            - name: media-pvc
+              mountPath: "/tv-unsorted"
+              subPath: TV-Unsorted
+              readOnly: true
+            - name: media-pvc
+              mountPath: "/tv-live-action"
+              subPath: TV-Live-Action
+              readOnly: true
+            - name: media-pvc
+              mountPath: "/tv-live-action-favorites"
+              subPath: TV-Live-Action-Favorites
+              readOnly: true
+            - name: media-pvc
+              mountPath: "/tv-animated"
+              subPath: TV-Animated
+              readOnly: true
+            - name: media-pvc
+              mountPath: "/tv-animated-favorites"
+              subPath: TV-Animated-Favorites
+              readOnly: true
+            - name: media-pvc
+              mountPath: "/movies-unsorted"
+              subPath: Movies-Unsorted
+              readOnly: true
+            - name: media-pvc
+              mountPath: "/movies-live-action"
+              subPath: Movies-Live-Action
+              readOnly: true
+            - name: media-pvc
+              mountPath: "/movies-live-action-favorites"
+              subPath: Movies-Live-Action-Favorites
+              readOnly: true
+            - name: media-pvc
+              mountPath: "/movies-animated"
+              subPath: Movies-Animated
+              readOnly: true
+            - name: media-pvc
+              mountPath: "/movies-animated-favorites"
+              subPath: Movies-Animated-Favorites
+              readOnly: true
+            - name: media-pvc
+              mountPath: "/anime-unsorted"
+              subPath: Anime-Unsorted
+              readOnly: true
+            - name: media-pvc
+              mountPath: "/anime"
+              subPath: Anime
+              readOnly: true
+            - name: media-pvc
+              mountPath: "/anime-favorites"
+              subPath: Anime-Favorites
+              readOnly: true
+            - name: media-pvc
+              mountPath: "/youtube"
+              subPath: YouTube
+              readOnly: true
+            - name: media-pvc
+              mountPath: "/home-movies"
+              subPath: Home-Movies
+              readOnly: true
+      nodeSelector:
+        boilest: manager
+      volumes:
+        - name: media-pvc
+          persistentVolumeClaim:
+            claimName: media-pvc
+        - name: config
+          emptyDir: {}
+
+
+---
+  apiVersion: v1
+  kind: Service
+  metadata:
+    name: boilest-flask
+  spec:
+    ports:
+      - name: flask
+        protocol: TCP
+        port: 5000
+        nodePort: 31500
+    selector:
+      app: boilest-manager
+    type: NodePort
+
+
+
+---
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: boilest-worker
+  labels:
+    app: boilest-worker
+    boilest: worker
+    thing: boilest
+spec:
+  selector:
+    matchLabels:
+      app: boilest-worker
+  template:
+    metadata:
+      labels:
+        app: boilest-worker
+    spec:
+      containers:
+        - name: boilest-worker
+          image: ghcr.io/goingoffroading/boilest:dev 
+          imagePullPolicy: Always
+          env:
+            - name: Role
+              value: "Worker"
+              # Change this next piece to the URL + IP of the manager service.  This is how the worker nodes will find the manager to get their work assignments.
+            - name: MANAGER_BASE_URL
+              value: "http://192.168.1.110:31500"
+              # Keep this next part.  It helps identify which node the worker is running on, which is helpful for debugging and logging.
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - name: media-pvc
+              mountPath: "/tv-unsorted"
+              subPath: TV-Unsorted
+            - name: media-pvc
+              mountPath: "/tv-live-action"
+              subPath: TV-Live-Action
+            - name: media-pvc
+              mountPath: "/tv-live-action-favorites"
+              subPath: TV-Live-Action-Favorites
+            - name: media-pvc
+              mountPath: "/tv-animated"
+              subPath: TV-Animated
+            - name: media-pvc
+              mountPath: "/tv-animated-favorites"
+              subPath: TV-Animated-Favorites
+            - name: media-pvc
+              mountPath: "/movies-unsorted"
+              subPath: Movies-Unsorted
+            - name: media-pvc
+              mountPath: "/movies-live-action"
+              subPath: Movies-Live-Action
+            - name: media-pvc
+              mountPath: "/movies-live-action-favorites"
+              subPath: Movies-Live-Action-Favorites
+            - name: media-pvc
+              mountPath: "/movies-animated"
+              subPath: Movies-Animated
+            - name: media-pvc
+              mountPath: "/movies-animated-favorites"
+              subPath: Movies-Animated-Favorites
+            - name: media-pvc
+              mountPath: "/anime-unsorted"
+              subPath: Anime-Unsorted
+            - name: media-pvc
+              mountPath: "/anime"
+              subPath: Anime
+            - name: media-pvc
+              mountPath: "/anime-favorites"
+              subPath: Anime-Favorites
+            - name: media-pvc
+              mountPath: "/youtube"
+              subPath: YouTube
+            - name: media-pvc
+              mountPath: "/home-movies"
+              subPath: Home-Movies
+      nodeSelector:
+        boilest: worker
+      volumes:
+        - name: media-pvc
+          persistentVolumeClaim:
+            claimName: media-pvc
