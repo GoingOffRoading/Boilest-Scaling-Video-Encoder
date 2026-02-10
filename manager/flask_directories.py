@@ -12,9 +12,9 @@ _ALLOWED_FIELDS = {
     "ffmpeg_video",
     "ffmpeg_audio",
     "ffmpeg_subtitle",
-    "video_codec",
-    "audio_codec",
-    "subtitle_codec",
+    "desired_video_codec",
+    "desired_audio_codec",
+    "desired_subtitle_codec",
 }
 
 
