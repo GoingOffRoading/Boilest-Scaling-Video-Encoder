@@ -26,14 +26,21 @@ RUN mkdir -p /boil/cloud_worker
 RUN mkdir -p /boil/boil_hold
 
 # Create directories for media data
-RUN mkdir -p /tv && \
-    mkdir -p /fav_tv && \
-    mkdir -p /movies && \
-    mkdir -p /fav_movies && \
+RUN mkdir -p /tv-unsorted && \
+    mkdir -p /tv-live-action && \
+    mkdir -p /tv-live-action-favorites && \
+    mkdir -p /tv-animated && \
+    mkdir -p /tv-animated-favorites && \
+    mkdir -p /movies-unsorted && \
+    mkdir -p /movies-live-action && \
+    mkdir -p /movies-live-action-favorites && \
+    mkdir -p /movies-animated && \
+    mkdir -p /movies-animated-favorites && \
+    mkdir -p /anime-unsorted && \
     mkdir -p /anime && \
-    mkdir -p /fav_anime && \
-    mkdir -p /home_movies && \
-    mkdir -p /youtube
+    mkdir -p /anime-favorites && \
+    mkdir -p /youtube && \
+    mkdir -p /home-movies
 
 # Create application directory and set ownership
 COPY manager /boil/manager
@@ -43,14 +50,21 @@ COPY entrypoint.sh /boil/entrypoint.sh
 
 # Create directories for unpersisted application data 
 RUN chown -R appuser:appgroup /boil && \
-    chown -R appuser:appgroup /tv && \
-    chown -R appuser:appgroup /fav_tv && \
-    chown -R appuser:appgroup /movies && \
-    chown -R appuser:appgroup /fav_movies && \
+    chown -R appuser:appgroup /tv-unsorted && \
+    chown -R appuser:appgroup /tv-live-action && \
+    chown -R appuser:appgroup /tv-live-action-favorites && \
+    chown -R appuser:appgroup /tv-animated && \
+    chown -R appuser:appgroup /tv-animated-favorites && \
+    chown -R appuser:appgroup /movies-unsorted && \
+    chown -R appuser:appgroup /movies-live-action && \
+    chown -R appuser:appgroup /movies-live-action-favorites && \
+    chown -R appuser:appgroup /movies-animated && \
+    chown -R appuser:appgroup /movies-animated-favorites && \
+    chown -R appuser:appgroup /anime-unsorted && \
     chown -R appuser:appgroup /anime && \
-    chown -R appuser:appgroup /fav_anime && \
-    chown -R appuser:appgroup /home_movies && \
-    chown -R appuser:appgroup /youtube
+    chown -R appuser:appgroup /anime-favorites && \
+    chown -R appuser:appgroup /youtube && \
+    chown -R appuser:appgroup /home-movies
 
 # Global Variables
 ENV NODE_NAME=""

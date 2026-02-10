@@ -33,11 +33,42 @@
 libsvtav1 -crf 25 -preset 4 -g 240 -pix_fmt yuv420p10le -svtav1-params filmgrain=20:film-grain-denoise=0:tune=0:enable-qm=1:qm-min=0:qm-max=15
 
 
+## TV SVT-AV1 Settings
+
+## TV-Live-Action
+libsvtav1 -crf 26 -preset 4 -g 240 -keyint_min 24 -pix_fmt yuv420p10le -svtav1-params tune=0:enable-qm=1:qm-min=4:qm-max=20:ac-bias=6:tf-strength=2:enable-variance-boost=1:scd=1:filmgrain=0
+
+## TV-Animated
+libsvtav1 -crf 30 -preset 4 -g 240 -keyint_min 24 -pix_fmt yuv420p10le -svtav1-params tune=1:enable-qm=1:qm-min=6:qm-max=16:ac-bias=5:tf-strength=1:enable-variance-boost=1:scd=1:filmgrain=0
+
+## TV-Live-Action-Favorites
+libsvtav1 -crf 22 -preset 4 -g 240 -keyint_min 24 -pix_fmt yuv420p10le -svtav1-params tune=0:enable-qm=1:qm-min=4:qm-max=20:ac-bias=6:tf-strength=2:enable-variance-boost=1:scd=1:filmgrain=0
+
+## TV-Animated-Favorites
+libsvtav1 -crf 22 -preset 4 -g 240 -keyint_min 24 -pix_fmt yuv420p10le -svtav1-params tune=1:enable-qm=1:qm-min=6:qm-max=16:ac-bias=5:tf-strength=1:enable-variance-boost=1:scd=1:filmgrain=0
+
+## Movies-Live-Action
+libsvtav1 -crf <CRF> -preset 4 -g 240 -keyint_min 24 -pix_fmt yuv420p10le -svtav1-params tune=0:enable-qm=1:qm-min=4:qm-max=20:ac-bias=6:tf-strength=2:enable-variance-boost=1:scd=1:filmgrain=0
+
+## Movies-Animated
 
 
+## Movies-Live-Action-Favorites
+libsvtav1 -crf <CRF> -preset 4 -g 240 -keyint_min 24 -pix_fmt yuv420p10le -svtav1-params tune=0:enable-qm=1:qm-min=4:qm-max=20:ac-bias=6:tf-strength=2:enable-variance-boost=1:scd=1:filmgrain=0
 
-### TV_Archive
-libsvtav1 -crf 30 -preset 6 -g 240 -keyint_min 24 -tile-columns 2 -tile-rows 0 -pix_fmt yuv420p10le -svtav1-params tune=0:enable-qm=1:qm-min=10:qm-max=18:filmgrain=0:film-grain-denoise=0
+## Movies-Animated-Favorites
+
+## Anime
+
+## Anime-Favorites
+
+
+## YouTube
+
+
+## Home Movies
+libsvtav1 -crf 18 -preset 4 -g 240 -keyint_min 24 -pix_fmt yuv420p10le -svtav1-params tune=0:enable-qm=1:qm-min=4:qm-max=20:ac-bias=6:tf-strength=2:enable-variance-boost=1:scd=1:filmgrain=0
+
 
 ### TV_Favorites
 libsvtav1 -crf 24 -preset 3 -g 240 -keyint_min 24 -pix_fmt yuv420p10le -svtav1-params tune=0:enable-qm=1:qm-min=6:qm-max=12:filmgrain=0:film-grain-denoise=0
@@ -54,9 +85,21 @@ libsvtav1 -crf 30 -preset 5 -g 240 -keyint_min 24 -pix_fmt yuv420p10le -svtav1-p
 ### Anime_Favorites
 libsvtav1 -crf 22 -preset 3 -g 240 -keyint_min 24 -pix_fmt yuv420p10le -svtav1-params tune=1:enable-qm=1:qm-min=6:qm-max=10:filmgrain=0:film-grain-denoise=0
 
+libsvtav1 -crf 20 -preset 4 -g 240 -keyint_min 24 -pix_fmt yuv420p10le -svtav1-params enable-qm=1:qm-min=4:qm-max=20:ac-bias=5:tf-strength=1:enable-variance-boost=1:scd=1:filmgrain=0
+
 ### YouTube_Archive
 libsvtav1 -crf 26 -preset 4 -g 240 -keyint_min 24 -pix_fmt yuv420p10le -svtav1-params tune=0:enable-qm=1:qm-min=6:qm-max=12:filmgrain=0:film-grain-denoise=0
 
 ### Home_Movies
 libsvtav1 -crf 22 -preset 3 -g 240 -keyint_min 24 -pix_fmt yuv420p10le -svtav1-params tune=0:enable-qm=1:qm-min=4:qm-max=10:filmgrain=0:film-grain-denoise=0
 
+
+
+
+### Live Action Baseline:
+
+libsvtav1 -crf <CRF> -preset 4 -g 240 -keyint_min 24 -pix_fmt yuv420p10le -svtav1-params tune=0:enable-qm=1:qm-min=4:qm-max=20:ac-bias=6:tf-strength=2:enable-variance-boost=1:scd=1:filmgrain=0
+
+### Animated Baseline:
+
+libsvtav1 -crf <CRF> -preset 4 -g 240 -keyint_min 24 -pix_fmt yuv420p10le -svtav1-params tune=1:enable-qm=1:qm-min=6:qm-max=16:ac-bias=5:tf-strength=1:enable-variance-boost=1:scd=1:filmgrain=0
