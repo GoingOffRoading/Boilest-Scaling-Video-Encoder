@@ -643,7 +643,7 @@
                         </thead>
                         <tbody>
                             {% for item in directories_items %}
-                            <tr class="directory-row" data-guid="{{ item['guid'] }}">
+                            <tr class="directory-row" data-guid="{{ item['guid'] }}" data-desired-video-codec="{{ item.get('desired_video_codec', '') }}" data-desired-audio-codec="{{ item.get('desired_audio_codec', '') }}" data-desired-subtitle-codec="{{ item.get('desired_subtitle_codec', '') }}">
                                 <td><input type="radio" name="directorySelect"></td>
                                 {% for column in item.keys() %}
                                 {% if column not in hidden_directory_columns %}
@@ -756,9 +756,9 @@
             ffmpeg_video: 'dirFfmpegVideo',
             ffmpeg_audio: 'dirFfmpegAudio',
             ffmpeg_subtitle: 'dirFfmpegSubtitle',
-            video_codec: 'dirVideoCodec',
-            audio_codec: 'dirAudioCodec',
-            subtitle_codec: 'dirSubtitleCodec'
+            desired_video_codec: 'dirVideoCodec',
+            desired_audio_codec: 'dirAudioCodec',
+            desired_subtitle_codec: 'dirSubtitleCodec'
         };
 
         function setupDirectorySelection() {
@@ -791,6 +791,10 @@
                 const key = header.textContent.trim();
                 data[key] = cells[index] ? cells[index].textContent.trim() : '';
             });
+            // Add hidden codec fields from data attributes
+            data['desired_video_codec'] = row.dataset.desiredVideoCodec || '';
+            data['desired_audio_codec'] = row.dataset.desiredAudioCodec || '';
+            data['desired_subtitle_codec'] = row.dataset.desiredSubtitleCodec || '';
             return data;
         }
 

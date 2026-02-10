@@ -151,7 +151,7 @@ def delete_directory_logic(guid):
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
 
-        cur.execute("UPDATE directories SET active = 'false' WHERE guid = ?", (guid,))
+        cur.execute("UPDATE directories SET active = 'inactive' WHERE guid = ?", (guid,))
         conn.commit()
         updated_count = cur.rowcount
         conn.close()

@@ -179,7 +179,7 @@ def get_index_data():
         logging.debug(f"[UI] Retrieved {len(failed_items)} recently failed items")
         
         # Get all active directories
-        cur.execute("SELECT * FROM directories WHERE active = 'true'")
+        cur.execute("SELECT * FROM directories WHERE active = 'active'")
         directories_items = [dict(row) for row in cur.fetchall()]
         logging.debug(f"[UI] Retrieved {len(directories_items)} directories")
         

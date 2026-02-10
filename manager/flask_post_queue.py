@@ -22,7 +22,7 @@ def get_all_directories(db_path):
     try:
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
-        cur.execute("SELECT guid, path, ffmpeg_video, desired_video_codec FROM directories WHERE active = 'true'")
+        cur.execute("SELECT guid, path, ffmpeg_video, desired_video_codec FROM directories WHERE active = 'active'")
         rows = cur.fetchall()
         conn.close()
         return rows
