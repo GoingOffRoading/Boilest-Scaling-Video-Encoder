@@ -25,6 +25,8 @@
 - [x] Make it so that directories are not deleted
 - [x] Remember to update Boilest.db after the ffmpeg settings tweaks
 - [ ] Maybe change directory active boolean to something more intuitive
+- [ ] Update workers metric to include pulled
+- [ ] Update get_largest to only return if it's been X amount of time since last pull as to not overwhelm the network on file validations
 
 
 
