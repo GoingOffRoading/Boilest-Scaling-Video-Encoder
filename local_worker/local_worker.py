@@ -67,12 +67,14 @@ def run_local_worker_loop():
             logging.info(f"✓ Step 2: File hash validated")
             
 
+            # Temp: Skipping full video integrity check for now since it adds significant time to the preflight checks. Will add back in a future update once we have more optimizations in place.
+
             # Step 3: Validate video integrity
-            if not validate_video_full(before_file_size_file_path):
-                logging.error(f"✗ Step 3: Video integrity check failed for: {input_file_name}")
-                report_encoding_completed(file_guid, 'Failed: Input Integrity')
-                continue
-            logging.info(f"✓ Step 3: Video integrity validated")
+            #if not validate_video_full(before_file_size_file_path):
+            #    logging.error(f"✗ Step 3: Video integrity check failed for: {input_file_name}")
+            #    report_encoding_completed(file_guid, 'Failed: Input Integrity')
+            #    continue
+            #logging.info(f"✓ Step 3: Video integrity validated")
             
 
             logging.info(f"Preflight checks passed... Starting FFmpeg on: {input_file_name}")
