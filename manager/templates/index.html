@@ -622,7 +622,7 @@
                                 <td>{{ item['directory_path'] }}</td>
                                 <td class="file-size">{{ "{:,.2f}".format(item['before_file_size_mb']) if item['before_file_size_mb'] is not none else '—' }}</td>
                                 <td style="font-size: 0.85rem; font-family: 'Courier New', monospace;">{{ item['ffmpeg_string'][:300] ~ '…' if item['ffmpeg_string'] and item['ffmpeg_string']|length > 300 else item['ffmpeg_string'] }}</td>
-                                <td class="time-added">{{ item['datetime_added'] }}</td>
+                                <td class="time-added">{{ item['datetime_added']|string|replace('T', ' ')|truncate(16, True, '') if item['datetime_added'] else '—' }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -661,7 +661,7 @@
                                 <td>{{ item['directory_path'] }}</td>
                                 <td class="file-size">{{ "{:,.2f}".format(item['before_file_size_mb']) if item['before_file_size_mb'] is not none else '—' }}</td>
                                 <td style="font-size: 0.85rem; font-family: 'Courier New', monospace;">{{ item['ffmpeg_string'][:300] ~ '…' if item['ffmpeg_string'] and item['ffmpeg_string']|length > 300 else item['ffmpeg_string'] }}</td>
-                                <td class="time-added">{{ item['datetime_pulled'] }}</td>
+                                <td class="time-added">{{ item['datetime_pulled']|string|replace('T', ' ')|truncate(16, True, '') if item['datetime_pulled'] else '—' }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -688,6 +688,7 @@
                                 <th>Path</th>
                                 <th>Space Saved</th>
                                 <th>Duration (min)</th>
+                                <th>Completed</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -705,6 +706,7 @@
                                     {% endif %}
                                 </td>
                                 <td>{{ item['duration_minutes'] if item['duration_minutes'] is not none else '—' }}</td>
+                                <td class="time-added">{{ item['datetime_encoded']|string|replace('T', ' ')|truncate(16, True, '') if item['datetime_encoded'] else '—' }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -753,7 +755,7 @@
                                 <td>{{ item['worker'] if item['worker'] else '—' }}</td>
                                 <td>{{ item['input_file_name'] }}</td>
                                 <td>{{ item['directory_path'] }}</td>
-                                <td class="time-added">{{ item['datetime_pulled'] }}</td>
+                                <td class="time-added">{{ item['datetime_pulled']|string|replace('T', ' ')|truncate(16, True, '') if item['datetime_pulled'] else '—' }}</td>
                                 <td>{{ item['status'] }}</td>
                             </tr>
                             {% endfor %}
