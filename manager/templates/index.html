@@ -12,11 +12,72 @@
         }
         
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #475569 0%, #1e293b 100%);
             font-family: 'Arial', sans-serif;
             padding: 40px 20px;
             min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
         }
+
+        /* Boiling water animation background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 100%, rgba(96, 165, 250, 0.15) 0%, transparent 70%);
+            z-index: -1;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+        }
+
+        .bubble {
+            position: fixed;
+            bottom: -100px;
+            background: radial-gradient(circle at 30% 30%, rgba(191, 219, 254, 0.8), rgba(147, 197, 253, 0.4));
+            border-radius: 50%;
+            opacity: 0.6;
+            z-index: -1;
+            animation: rise linear infinite;
+            box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        @keyframes rise {
+            0% {
+                bottom: -100px;
+                transform: translateX(0) scale(1);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.6;
+            }
+            90% {
+                opacity: 0.6;
+            }
+            100% {
+                bottom: 110vh;
+                transform: translateX(var(--drift)) scale(0.3);
+                opacity: 0;
+            }
+        }
+
+        .bubble:nth-child(1) { left: 10%; width: 40px; height: 40px; animation-duration: 8s; animation-delay: 0s; --drift: 30px; }
+        .bubble:nth-child(2) { left: 25%; width: 60px; height: 60px; animation-duration: 10s; animation-delay: 1s; --drift: -40px; }
+        .bubble:nth-child(3) { left: 40%; width: 30px; height: 30px; animation-duration: 7s; animation-delay: 2s; --drift: 20px; }
+        .bubble:nth-child(4) { left: 55%; width: 50px; height: 50px; animation-duration: 9s; animation-delay: 0.5s; --drift: -30px; }
+        .bubble:nth-child(5) { left: 70%; width: 45px; height: 45px; animation-duration: 8.5s; animation-delay: 1.5s; --drift: 35px; }
+        .bubble:nth-child(6) { left: 85%; width: 35px; height: 35px; animation-duration: 7.5s; animation-delay: 0.8s; --drift: -25px; }
+        .bubble:nth-child(7) { left: 15%; width: 55px; height: 55px; animation-duration: 9.5s; animation-delay: 2.5s; --drift: 40px; }
+        .bubble:nth-child(8) { left: 60%; width: 38px; height: 38px; animation-duration: 8.2s; animation-delay: 1.8s; --drift: -35px; }
+        .bubble:nth-child(9) { left: 32%; width: 42px; height: 42px; animation-duration: 7.8s; animation-delay: 0.3s; --drift: 28px; }
+        .bubble:nth-child(10) { left: 78%; width: 48px; height: 48px; animation-duration: 8.8s; animation-delay: 2.2s; --drift: -38px; }
         
         .container {
             max-width: 1200px;
@@ -34,7 +95,7 @@
         
         .title-box h1 {
             font-size: 2.4rem;
-            color: #667eea;
+            color: #64748b;
             margin-bottom: 8px;
         }
         
@@ -45,14 +106,14 @@
         }
         
         .subtitle a {
-            color: #667eea;
+            color: #64748b;
             text-decoration: none;
             font-weight: bold;
             transition: color 0.3s;
         }
         
         .subtitle a:hover {
-            color: #764ba2;
+            color: #475569;
             text-decoration: underline;
         }
         
@@ -82,7 +143,7 @@
         .metric-value {
             font-size: 1.6rem;
             font-weight: bold;
-            color: #667eea;
+            color: #64748b;
         }
         
         .metric-unit {
@@ -100,7 +161,7 @@
         }
         
         .table-container h2 {
-            color: #667eea;
+            color: #64748b;
             margin-bottom: 20px;
             font-size: 1.5rem;
         }
@@ -122,7 +183,7 @@
         }
         
         table thead {
-            background-color: #667eea;
+            background-color: #475569;
             color: white;
         }
         
@@ -198,7 +259,7 @@
         }
         
         .action-button {
-            background-color: #667eea;
+            background-color: #64748b;
             color: white;
             border: none;
             padding: 16px 40px;
@@ -215,7 +276,7 @@
         }
 
         .directory-row.selected {
-            outline: 2px solid #667eea;
+            outline: 2px solid #64748b;
             outline-offset: -2px;
         }
 
@@ -250,7 +311,7 @@
 
         .modal-title {
             font-size: 1.2rem;
-            color: #667eea;
+            color: #64748b;
         }
 
         .modal-close {
@@ -289,7 +350,7 @@
         }
 
         .action-button:hover:not(:disabled) {
-            background-color: #764ba2;
+            background-color: #475569;
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
         }
@@ -321,7 +382,7 @@
         }
         
         .status-loading {
-            color: #667eea;
+            color: #64748b;
         }
 
         .tab-nav {
@@ -331,7 +392,7 @@
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             margin-top: 12px;
-            border-bottom: 2px solid #667eea;
+            border-bottom: 2px solid #64748b;
         }
 
         .tab-btn {
@@ -351,13 +412,13 @@
 
         .tab-btn:hover {
             background: #eee;
-            color: #667eea;
+            color: #64748b;
         }
 
         .tab-btn.active {
             background: white;
-            color: #667eea;
-            border-bottom: 3px solid #667eea;
+            color: #64748b;
+            border-bottom: 3px solid #64748b;
         }
 
         .tab-content {
@@ -386,6 +447,18 @@
     </style>
 </head>
 <body>
+    <!-- Boiling water bubbles -->
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    
     <div class="container">
         <!-- Title Box -->
         <div class="title-box">
