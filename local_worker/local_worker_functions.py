@@ -145,9 +145,12 @@ def validate_video_lite(file_path):
     
 # We want to scruitinize the output of ffmpeg more closely after encoding to ensure that there aren't any critical errors that would cause the file to be unplayable, even if it is technically valid. So we use a more thorough validation function post-flight.
     
-def validate_video_full(file_path):
+def validate_video_full(file_path, duration=None):
     try:
-        command = 'ffmpeg -v error -i "' + file_path + '" -f null -'
+        if duration is not None:
+            command = f'ffmpeg -v error -t {int(duration)} -i "{file_path}" -f null -'
+        else:
+            command = f'ffmpeg -v error -i "{file_path}" -f null -'
         result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         if result.stdout or result.stderr:
             logging.debug('File failed video integrity check')

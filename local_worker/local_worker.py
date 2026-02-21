@@ -1,5 +1,6 @@
 import os
 import time
+import random
 import logging
 from local_worker_functions import *
 
@@ -10,12 +11,13 @@ logging.basicConfig(level=getattr(logging, log_level), format='%(asctime)s - %(l
 __all__ = ["run_local_worker_loop"]
 
 def run_local_worker_loop():
-    poll_interval = int(os.environ.get("POLL_INTERVAL", "300"))
-    logging.info(f"Worker started. Poll interval: {poll_interval} seconds")
+    logging.info("Worker started. Polling for tasks...")
     
     while True:
         try:
-            time.sleep(poll_interval)
+            poll_sleep_seconds = random.uniform(0, 15)
+            logging.info(f"Sleeping {poll_sleep_seconds:.2f}s before next poll")
+            time.sleep(poll_sleep_seconds)
             
             logging.info("=" * 80)
             logging.info("Polling for new task...")
@@ -25,10 +27,14 @@ def run_local_worker_loop():
             
             if status != 200:
                 logging.error(f"✗ Failed to get task. Status: {status}, Response: {response}")
+                logging.info("Sleeping 300s before retry after manager request failure")
+                time.sleep(300)
                 continue
             
             if not response.get('success') or response.get('data') is None:
                 logging.info("No tasks available in queue")
+                logging.info("Sleeping 300s before polling again")
+                time.sleep(300)
                 continue
             
             task_data = response['data']
@@ -67,14 +73,12 @@ def run_local_worker_loop():
             logging.info(f"✓ Step 2: File hash validated")
             
 
-            # Temp: Skipping full video integrity check for now since it adds significant time to the preflight checks. Will add back in a future update once we have more optimizations in place.
-
             # Step 3: Validate video integrity
-            #if not validate_video_full(before_file_size_file_path):
-            #    logging.error(f"✗ Step 3: Video integrity check failed for: {input_file_name}")
-            #    report_encoding_completed(file_guid, 'Failed: Input Integrity')
-            #    continue
-            #logging.info(f"✓ Step 3: Video integrity validated")
+            if not validate_video_full(before_file_size_file_path, 15):
+                logging.error(f"✗ Step 3: Video integrity check failed for: {input_file_name}")
+                report_encoding_completed(file_guid, 'Failed: Input Integrity')
+                continue
+            logging.info(f"✓ Step 3: Video integrity validated")
             
 
             logging.info(f"Preflight checks passed... Starting FFmpeg on: {input_file_name}")
