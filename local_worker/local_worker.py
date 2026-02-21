@@ -72,7 +72,7 @@ def run_local_worker_loop():
             if not file_exists(before_file_size_file_path):
                 step_1_duration = time.perf_counter() - step_1_start_perf
                 logging.error(f"✗ Step 1: File existence validation failed for: {input_file_name} (duration: {format_duration(step_1_duration)})")
-                report_encoding_completed(file_guid, 'Failed: File not found')
+                report_encoding_completed(file_guid, 'Failed: File Not Found')
                 continue
             step_1_duration = time.perf_counter() - step_1_start_perf
             logging.info(f"✓ Step 1: File existence validated (duration: {format_duration(step_1_duration)})")
@@ -87,7 +87,7 @@ def run_local_worker_loop():
             if not validate_hash(before_file_size_file_path, before_file_size):
                 step_2_duration = time.perf_counter() - step_2_start_perf
                 logging.error(f"✗ Step 2: File hash validation failed for: {input_file_name} (duration: {format_duration(step_2_duration)})")
-                report_encoding_completed(file_guid, 'Failed: Hash mismatch')
+                report_encoding_completed(file_guid, 'Failed: Hash Mismatch')
                 continue
             step_2_duration = time.perf_counter() - step_2_start_perf
             logging.info(f"✓ Step 2: File hash validated (duration: {format_duration(step_2_duration)})")
@@ -120,7 +120,7 @@ def run_local_worker_loop():
             if not run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path, file_guid=file_guid):
                 step_4_duration = time.perf_counter() - step_4_start_perf
                 logging.error(f"✗ Step 4: FFmpeg encoding failed for: {input_file_name} (duration: {format_duration(step_4_duration)})")
-                report_encoding_completed(file_guid, 'Failed: FFmpeg failure')
+                report_encoding_completed(file_guid, 'Failed: FFmpeg Failure')
                 continue
             step_4_duration = time.perf_counter() - step_4_start_perf
             logging.info(f"✓ Step 4: FFmpeg encoding completed (duration: {format_duration(step_4_duration)})")
@@ -138,7 +138,7 @@ def run_local_worker_loop():
             if not file_exists(templorary_file_path):
                 step_5_duration = time.perf_counter() - step_5_start_perf
                 logging.error(f"✗ Step 5: Temporary file existence validation failed for: {output_file_name} (duration: {format_duration(step_5_duration)})")
-                report_encoding_completed(file_guid, 'Failed: Temporary file not found')
+                report_encoding_completed(file_guid, 'Failed: Temporary File Not Found')
                 continue
             step_5_duration = time.perf_counter() - step_5_start_perf
             logging.info(f"✓ Step 5: Temporary file existence validated (duration: {format_duration(step_5_duration)})")
@@ -173,7 +173,7 @@ def run_local_worker_loop():
             if after_file_size == 0:
                 step_7_duration = time.perf_counter() - step_7_start_perf
                 logging.error(f"✗ Step 7: File size check failed for: {input_file_name} (duration: {format_duration(step_7_duration)})")
-                report_encoding_completed(file_guid, 'Failed: Postflight file size check')
+                report_encoding_completed(file_guid, 'Failed: Postflight File Size Check')
                 continue
             step_7_duration = time.perf_counter() - step_7_start_perf
             logging.info(f"✓ Step 7: Output file size captured (duration: {format_duration(step_7_duration)})")
@@ -188,7 +188,7 @@ def run_local_worker_loop():
             if not delete_file(before_file_size_file_path):
                 step_8_duration = time.perf_counter() - step_8_start_perf
                 logging.error(f"✗ Step 8: Source file deletion failed for: {input_file_name} (duration: {format_duration(step_8_duration)})")
-                report_encoding_completed(file_guid, 'Failed: Postflight delete source file')
+                report_encoding_completed(file_guid, 'Failed: Postflight Delete Source File')
                 continue
             step_8_duration = time.perf_counter() - step_8_start_perf
             logging.info(f"✓ Step 8: Source file deleted (duration: {format_duration(step_8_duration)})")
@@ -203,7 +203,7 @@ def run_local_worker_loop():
             if not move_file(templorary_file_path, after_file_path):
                 step_9_duration = time.perf_counter() - step_9_start_perf
                 logging.error(f"✗ Step 9: File move failed for: {input_file_name} (duration: {format_duration(step_9_duration)})")
-                report_encoding_completed(file_guid, 'Failed: Postflight move temporary file to final destination')
+                report_encoding_completed(file_guid, 'Failed: Postflight Move Temporary File To Final Destination')
                 continue
             step_9_duration = time.perf_counter() - step_9_start_perf
             logging.info(f"✓ Step 9: File moved to final destination (duration: {format_duration(step_9_duration)})")
