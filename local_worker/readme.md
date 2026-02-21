@@ -18,6 +18,7 @@
 - [x] Resolve an issue where a postflight validation check leaves an ophaned file
 - [x] Add a random delay to the next task piece
 - [x] Eyeball how we could do the wait for next task differently
+- [x] Add a retry on files failing to write
 
 
 
