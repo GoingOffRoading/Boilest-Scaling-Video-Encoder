@@ -96,38 +96,6 @@
             }
         }
 
-        /* Ripple effect */
-        .ripple {
-            position: fixed;
-            bottom: 20px;
-            width: 100px;
-            height: 100px;
-            border: 2px solid rgba(147, 197, 253, 0.3);
-            border-radius: 50%;
-            z-index: -1;
-            animation: ripple-expand 4s ease-out infinite;
-        }
-
-        @keyframes ripple-expand {
-            0% {
-                transform: scale(0);
-                opacity: 0.6;
-            }
-            100% {
-                transform: scale(3);
-                opacity: 0;
-            }
-        }
-
-        .ripple:nth-child(1) { left: 15%; animation-delay: 0s; }
-        .ripple:nth-child(2) { left: 35%; animation-delay: 0.8s; }
-        .ripple:nth-child(3) { left: 55%; animation-delay: 1.6s; }
-        .ripple:nth-child(4) { left: 75%; animation-delay: 2.4s; }
-        .ripple:nth-child(5) { left: 25%; animation-delay: 3.2s; }
-        .ripple:nth-child(6) { left: 65%; animation-delay: 1.2s; }
-        .ripple:nth-child(7) { left: 45%; animation-delay: 2.0s; }
-        .ripple:nth-child(8) { left: 85%; animation-delay: 2.8s; }
-
         .bubble {
             position: fixed;
             bottom: -100px;
@@ -571,16 +539,6 @@
     
     <!-- Simmering water surface -->
     <div class="water-surface"></div>
-    
-    <!-- Water ripples -->
-    <div class="ripple"></div>
-    <div class="ripple"></div>
-    <div class="ripple"></div>
-    <div class="ripple"></div>
-    <div class="ripple"></div>
-    <div class="ripple"></div>
-    <div class="ripple"></div>
-    <div class="ripple"></div>
     
     <div class="container">
         <!-- Title Box -->
