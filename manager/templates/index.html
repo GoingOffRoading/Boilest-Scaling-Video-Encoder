@@ -547,6 +547,37 @@
             <p class="subtitle">to read more, go <a href="https://github.com/GoingOffRoading/Boilest-Scaling-Video-Encoder" target="_blank">HERE</a></p>
         </div>
         
+        <!-- Stop Encode Modal -->
+        <div id="stopEncodeModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">Stop Encoding - Select Files</div>
+                    <button class="modal-close" onclick="closeStopEncodeModal()">&times;</button>
+                </div>
+                <div class="modal-body" style="grid-template-columns: 1fr;">
+                    <div style="width:100%; overflow:auto; max-height:360px;">
+                        <table id="stopEncodeTable">
+                            <thead>
+                                <tr>
+                                    <th style="width:40px">Stop</th>
+                                    <th>Filename</th>
+                                    <th>Worker</th>
+                                    <th>Path</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="action-button compact" onclick="closeStopEncodeModal()">Cancel</button>
+                    <button class="action-button" id="stopEncodeSubmit" onclick="submitStopEncode()">Submit</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Metrics -->
         <div class="metrics-container">
             <div class="metric-box">
@@ -637,7 +668,12 @@
         <!-- Currently Encoding Tab -->
         <div id="encoding" class="tab-content">
             <div class="table-container">
-                <h2>Currently Encoding</h2>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h2>Currently Encoding</h2>
+                    <div>
+                        <button class="action-button compact" onclick="openStopEncodeModal()">Stop Encode</button>
+                    </div>
+                </div>
                 {% if encoding_items %}
                 <div class="scroll-wrapper">
                     <table>
@@ -731,7 +767,8 @@
                         <button class="action-button compact" onclick="deleteFailedStatus('Failed: Postflight Integrity', this)">Failed: Postflight Integrity</button>
                         <button class="action-button compact" onclick="deleteFailedStatus('Failed: Postflight file size check', this)">Failed: Postflight file size check</button>
                         <button class="action-button compact" onclick="deleteFailedStatus('Failed: Postflight delete source file', this)">Failed: Postflight delete source file</button>
-                        <button class="action-button compact" onclick="deleteFailedStatus('Failed: Postflight move temporary file to final destination', this)">Failed: Postflight move temporary file to final destination</button>
+                                <button class="action-button compact" onclick="deleteFailedStatus('Failed: Postflight move temporary file to final destination', this)">Failed: Postflight move temporary file to final destination</button>
+                                <button class="action-button compact" onclick="deleteFailedStatus('stopped', this)">Stopped</button>
                     </div>
                 </div>
                 <h2>Recently Failed</h2>
@@ -898,6 +935,89 @@
     </div>
     
     <script>
+        // When opening the Stop Encode modal, fetch live encoding items from server
+        async function openStopEncodeModal() {
+            const modal = document.getElementById('stopEncodeModal');
+            const tbody = document.querySelector('#stopEncodeTable tbody');
+            tbody.innerHTML = '';
+            try {
+                const resp = await fetch('/api/v2/queue/encoding');
+                if (!resp.ok) throw new Error(`Server returned ${resp.status}`);
+                const data = await resp.json();
+                const items = (data && data.data) || [];
+                if (!items || items.length === 0) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = '<td colspan="4" class="no-data">No files currently encoding</td>';
+                    tbody.appendChild(tr);
+                } else {
+                    items.forEach(item => {
+                        const tr = document.createElement('tr');
+                        const guid = item.file_guid || '';
+                        tr.innerHTML = `
+                            <td><input type="checkbox" class="stop-encode-checkbox" data-guid="${guid}"></td>
+                            <td>${item.input_file_name || ''}</td>
+                            <td>${item.worker || ''}</td>
+                            <td>${item.directory_path || ''}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to load encoding items:', err);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="4" class="no-data">Failed to load items: ${err.message}</td>`;
+                tbody.appendChild(tr);
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function closeStopEncodeModal() {
+            const modal = document.getElementById('stopEncodeModal');
+            modal.classList.add('hidden');
+            const tbody = document.querySelector('#stopEncodeTable tbody');
+            if (tbody) tbody.innerHTML = '';
+        }
+
+        async function submitStopEncode() {
+            const submitBtn = document.getElementById('stopEncodeSubmit');
+            const checkboxes = Array.from(document.querySelectorAll('.stop-encode-checkbox:checked'));
+            if (checkboxes.length === 0) {
+                alert('Select at least one file to stop.');
+                return;
+            }
+            const guids = checkboxes.map(cb => cb.dataset.guid).filter(Boolean);
+            if (guids.length === 0) {
+                alert('No valid file GUIDs selected.');
+                return;
+            }
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Stopping...';
+            try {
+                // POST stopped outcome for each selected file
+                for (const guid of guids) {
+                    try {
+                        const resp = await fetch('/api/v2/completed', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ file_guid: guid, outcome: 'stopped' })
+                        });
+                        if (!resp.ok) {
+                            const data = await resp.json().catch(() => ({}));
+                            console.error('Failed to stop', guid, resp.status, data);
+                            alert(`Failed to stop ${guid}: ${resp.status}`);
+                        }
+                    } catch (err) {
+                        console.error('Error stopping', guid, err);
+                        alert(`Error stopping ${guid}: ${err.message}`);
+                    }
+                }
+                // Refresh page to reflect changes
+                location.reload();
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit';
+            }
+        }
         function getCellValue(row, index) {
             const cell = row.children[index];
             if (!cell) {

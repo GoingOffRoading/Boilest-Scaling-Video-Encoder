@@ -7,11 +7,13 @@ from flask_get_largest_queue import get_largest_queue_logic
 from flask_get_smalled_queue import get_smallest_queue_logic
 from flask_get_fifo_queue import get_fifo_queue_logic
 from flask_post_completed_encode import post_completed_encode_logic
+from flask_get_queue_status import get_queue_status_logic
 from flask_post_queue import run_queue_workflow
 from flask_post_toggle_database import toggle_database_logic
 from flask_post_delete_errors import delete_errors_logic
 from flask_post_delete_queue import delete_queue_logic
 from flask_directories import create_directory_logic, update_directory_logic, delete_directory_logic
+from flask_get_encoding_queue import get_encoding_queue_logic
 
 # Get log level from environment variable (default: INFO)
 log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
@@ -157,6 +159,18 @@ def database_status():
     status_data = get_database_status(DB_DISABLED)
 
     return jsonify(status_data), 200
+
+
+@app.route('/api/v2/queue/status', methods=['GET'])
+def get_queue_status():
+    file_guid = request.args.get('file_guid')
+    response_data, status_code = get_queue_status_logic(file_guid)
+    return jsonify(response_data), status_code
+
+@app.route('/api/v2/queue/encoding', methods=['GET'])
+def get_encoding_queue():
+    response_data, status_code = get_encoding_queue_logic()
+    return jsonify(response_data), status_code
 
 
 @app.route('/health', methods=['GET'])

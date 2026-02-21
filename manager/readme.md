@@ -19,7 +19,7 @@
 - [ ] Add logic to the UI for when DB is disabled
 - [ ] Add logic for audio
 - [ ] Add logic for subtitles
-- [ ] Implement some kind of heartbeat for workers.  I.E. Encoded task returns to queue unless worker checks in after X time
+- [x] Implement some kind of heartbeat for workers.  I.E. Encoded task returns to queue unless worker checks in after X time
 - [x] Need to rethink workers.  Like when a task is retrieved, we should log the node.  Then log the state.  So when a worker fails, it might be able to pick up where it left off.
 - [x] Make it so that directories are not deleted
 - [x] Remember to update Boilest.db after the ffmpeg settings tweaks

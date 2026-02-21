@@ -217,7 +217,7 @@ def get_index_data():
         total_processing_value, total_processing_unit = _format_minutes_duration(total_processing_minutes)
         logging.debug(f"[UI] Total processing time: {total_processing_minutes} minutes")
         
-        # Get recently failed items (status not in queued, pulled, encoded)
+        # Get recently failed items (include any non-active statuses and explicitly include 'stopped')
         cur.execute("""
             SELECT 
                 input_file_name,
@@ -226,7 +226,7 @@ def get_index_data():
                 status,
                 worker
             FROM queue 
-            WHERE status NOT IN ('queued', 'pulled', 'encoded')
+            WHERE status NOT IN ('queued', 'pulled', 'encoded') OR status = 'stopped'
             ORDER BY datetime_pulled DESC
             LIMIT 100
         """)

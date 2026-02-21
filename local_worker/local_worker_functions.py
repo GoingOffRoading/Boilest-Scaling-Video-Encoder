@@ -202,7 +202,7 @@ def post_flight_validate_video_full(file_path):
 
 # ----------------------------------------
 
-def run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path):
+def run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path, file_guid=None):
     """
     Runs ffmpeg with the provided file paths and ffmpeg command.
     Returns True on success, False on failure.
@@ -223,9 +223,35 @@ def run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path)
         logging.debug(command)
 
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-        for line in process.stdout:
-            logging.info(line.rstrip())
-        return True
+        # Read output line by line and check manager stop signal periodically
+        try:
+            for line in process.stdout:
+                logging.info(line.rstrip())
+                if file_guid:
+                    try:
+                        if file_should_stop(file_guid):
+                            logging.info(f"Manager requested stop for file {file_guid}; terminating ffmpeg")
+                            try:
+                                process.terminate()
+                                process.wait(timeout=10)
+                            except Exception:
+                                try:
+                                    process.kill()
+                                except Exception:
+                                    pass
+                            return False
+                    except Exception:
+                        # ignore errors checking manager to avoid killing ffmpeg unnecessarily
+                        pass
+            process.wait()
+            return process.returncode == 0
+        except Exception as exc:
+            logging.error(f"Error while running ffmpeg: {exc}")
+            try:
+                process.kill()
+            except Exception:
+                pass
+            return False
     except Exception as exc:
         logging.error(f"Error: {exc}")
         return False
@@ -376,5 +402,64 @@ def report_encoding_completed(file_guid, status, after_file_size=None):
     # All attempts failed
     logging.error(f"[FAILED] All {max_attempts} attempts failed")
     return last_status_code, last_response
+
+
+def get_file_status_from_manager(file_guid):
+    """
+    Query the manager for the queue record for `file_guid` and return the `status` value.
+    Returns the status string (e.g. 'queued','pulled','encoded','stop', etc.) or None on error.
+    """
+    if not file_guid:
+        return None
+    endpoint = f"{API_BASE_URL}/api/v2/queue/status?file_guid={file_guid}"
+    request = urllib.request.Request(endpoint, method="GET")
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:
+            body = response.read().decode('utf-8')
+            try:
+                data = json.loads(body)
+            except json.JSONDecodeError:
+                return None
+            if isinstance(data, dict) and data.get('success') and data.get('data'):
+                return data['data'].get('status')
+            return None
+    except Exception as exc:
+        logging.debug(f"Failed to fetch file status from manager: {exc}")
+        return None
+
+
+def file_should_stop(file_guid):
+    """Return True if manager reports the given file's status is 'stop'."""
+    try:
+        status = get_file_status_from_manager(file_guid)
+        if isinstance(status, str) and status.lower() == 'stop':
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def sleep_with_file_check(total_seconds, file_guid):
+    """
+    Sleep for total_seconds but check the manager for file status every MANAGER_POLL_INTERVAL seconds.
+    Returns True if completed without a stop signal; False if manager requested stop for this file.
+    """
+    check_interval = int(os.environ.get('MANAGER_POLL_INTERVAL', '60'))
+    end_time = time.time() + float(total_seconds)
+    last_check = 0
+    while time.time() < end_time:
+        time.sleep(1)
+        now = time.time()
+        if (now - last_check) >= check_interval:
+            last_check = now
+            if file_should_stop(file_guid):
+                logging.info(f"Manager reported 'stop' for file {file_guid}")
+                # best-effort report
+                try:
+                    report_encoding_completed(file_guid, 'stopped')
+                except Exception:
+                    pass
+                return False
+    return True
     
 

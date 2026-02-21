@@ -62,7 +62,9 @@ def run_local_worker_loop():
             
             logging.info(f"Running preflight checks on: {input_file_name}")
 
-            time.sleep(1)
+            if not sleep_with_file_check(1, file_guid):
+                logging.info("Aborting current task due to manager stop (during initial sleep)")
+                continue
 
             
             # Step 1: Validate file existence
@@ -75,7 +77,9 @@ def run_local_worker_loop():
             step_1_duration = time.perf_counter() - step_1_start_perf
             logging.info(f"✓ Step 1: File existence validated (duration: {format_duration(step_1_duration)})")
 
-            time.sleep(1)
+            if not sleep_with_file_check(1, file_guid):
+                logging.info("Aborting current task due to manager stop (after step 1)")
+                continue
 
 
             # Step 2: Validate file size hasn't changed
@@ -88,7 +92,9 @@ def run_local_worker_loop():
             step_2_duration = time.perf_counter() - step_2_start_perf
             logging.info(f"✓ Step 2: File hash validated (duration: {format_duration(step_2_duration)})")
 
-            time.sleep(1)
+            if not sleep_with_file_check(1, file_guid):
+                logging.info("Aborting current task due to manager stop (after step 2)")
+                continue
             
 
             # Step 3: Validate video integrity
@@ -101,7 +107,9 @@ def run_local_worker_loop():
             step_3_duration = time.perf_counter() - step_3_start_perf
             logging.info(f"✓ Step 3: Video integrity validated (duration: {format_duration(step_3_duration)})")
 
-            time.sleep(1)
+            if not sleep_with_file_check(1, file_guid):
+                logging.info("Aborting current task due to manager stop (after step 3)")
+                continue
             
 
             logging.info(f"Preflight checks passed... Starting FFmpeg on: {input_file_name}")
@@ -109,7 +117,7 @@ def run_local_worker_loop():
 
             # Step 4: Run ffmpeg encoding
             step_4_start_perf = time.perf_counter()
-            if not run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path):
+            if not run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path, file_guid=file_guid):
                 step_4_duration = time.perf_counter() - step_4_start_perf
                 logging.error(f"✗ Step 4: FFmpeg encoding failed for: {input_file_name} (duration: {format_duration(step_4_duration)})")
                 report_encoding_completed(file_guid, 'Failed: FFmpeg failure')
@@ -117,7 +125,9 @@ def run_local_worker_loop():
             step_4_duration = time.perf_counter() - step_4_start_perf
             logging.info(f"✓ Step 4: FFmpeg encoding completed (duration: {format_duration(step_4_duration)})")
 
-            time.sleep(1)
+            if not sleep_with_file_check(1, file_guid):
+                logging.info("Aborting current task due to manager stop (after ffmpeg)")
+                continue
 
 
             logging.info(f"FFmpeg completed... Starting postflight checks on: {input_file_name}")
@@ -133,7 +143,9 @@ def run_local_worker_loop():
             step_5_duration = time.perf_counter() - step_5_start_perf
             logging.info(f"✓ Step 5: Temporary file existence validated (duration: {format_duration(step_5_duration)})")
 
-            time.sleep(1)
+            if not sleep_with_file_check(1, file_guid):
+                logging.info("Aborting current task due to manager stop (after step 5)")
+                continue
 
 
 
@@ -147,7 +159,9 @@ def run_local_worker_loop():
             step_6_duration = time.perf_counter() - step_6_start_perf
             logging.info(f"✓ Step 6: Output video integrity validated (duration: {format_duration(step_6_duration)})")
 
-            time.sleep(1)
+            if not sleep_with_file_check(1, file_guid):
+                logging.info("Aborting current task due to manager stop (after step 6)")
+                continue
 
 
             logging.info(f"Postflight checks passed... Starting postflight workflow on: {input_file_name}")
@@ -164,7 +178,9 @@ def run_local_worker_loop():
             step_7_duration = time.perf_counter() - step_7_start_perf
             logging.info(f"✓ Step 7: Output file size captured (duration: {format_duration(step_7_duration)})")
 
-            time.sleep(1)
+            if not sleep_with_file_check(1, file_guid):
+                logging.info("Aborting current task due to manager stop (after step 7)")
+                continue
 
 
             # Step 8: Delete source
@@ -177,7 +193,9 @@ def run_local_worker_loop():
             step_8_duration = time.perf_counter() - step_8_start_perf
             logging.info(f"✓ Step 8: Source file deleted (duration: {format_duration(step_8_duration)})")
 
-            time.sleep(1)
+            if not sleep_with_file_check(1, file_guid):
+                logging.info("Aborting current task due to manager stop (after step 8)")
+                continue
 
 
             # Step 9: Move temporary file to final destination
@@ -190,7 +208,9 @@ def run_local_worker_loop():
             step_9_duration = time.perf_counter() - step_9_start_perf
             logging.info(f"✓ Step 9: File moved to final destination (duration: {format_duration(step_9_duration)})")
 
-            time.sleep(1)
+            if not sleep_with_file_check(1, file_guid):
+                logging.info("Aborting current task due to manager stop (after step 9)")
+                continue
 
 
             # Step 10: Report completion to manager
