@@ -12,7 +12,7 @@ def delete_errors_logic(status_value):
     Returns:
         tuple: (response_dict, status_code)
     """
-    logging.info("[REQUEST] POST /api/queue/delete-errors")
+    logging.info("[REQUEST] POST /api/v2/queue/delete-errors")
 
     if not status_value:
         return {

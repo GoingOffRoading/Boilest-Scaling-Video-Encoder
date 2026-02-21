@@ -12,7 +12,7 @@ def delete_queue_logic():
     Returns:
         tuple: (response_dict, status_code)
     """
-    logging.info("[REQUEST] POST /api/queue/delete")
+    logging.info("[REQUEST] POST /api/v2/queue/delete")
     
     try:
         db_path = get_db_path()

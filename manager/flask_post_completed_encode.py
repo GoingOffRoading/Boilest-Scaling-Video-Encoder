@@ -8,7 +8,7 @@ __all__ = ["post_completed_encode_logic"]
 
 def post_completed_encode_logic(request_data):
     logging.info("\n" + "="*80)
-    logging.info("[REQUEST] POST /api/completed")
+    logging.info("[REQUEST] POST /api/v2/completed")
     logging.info("="*80)
 
     try:

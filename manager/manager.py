@@ -31,7 +31,7 @@ def index():
     return render_template('index.html', **index_data)
 
 
-@app.route('/api/queue/largest', methods=['GET'])
+@app.route('/api/v2/queue/largest', methods=['GET'])
 def get_largest_queue():
     """
     Query the queue table and return one row sorted by before_file_size DESC limit 1
@@ -41,7 +41,7 @@ def get_largest_queue():
     return jsonify(response_data), status_code
 
 
-@app.route('/api/queue/smallest', methods=['GET'])
+@app.route('/api/v2/queue/smallest', methods=['GET'])
 def get_smallest_queue():
     """
     Query the queue table and return one row sorted by before_file_size ASC limit 1
@@ -51,7 +51,7 @@ def get_smallest_queue():
     return jsonify(response_data), status_code
 
 
-@app.route('/api/queue/fifo', methods=['GET'])
+@app.route('/api/v2/queue/fifo', methods=['GET'])
 def get_fifo_queue():
     """
     Query the queue table and return one row using FIFO order by table ROWID
@@ -61,7 +61,7 @@ def get_fifo_queue():
     return jsonify(response_data), status_code
 
 
-@app.route('/api/completed', methods=['POST'])
+@app.route('/api/v2/completed', methods=['POST'])
 def post_completed_encode():
     """
     Write a new record to the completed table
@@ -72,7 +72,7 @@ def post_completed_encode():
     return jsonify(response_data), status_code
 
 
-@app.route('/api/scan', methods=['POST'])
+@app.route('/api/v2/scan', methods=['POST'])
 def scan():
     """
     Scan directories for video files and probe them to populate queue table
@@ -93,7 +93,7 @@ def scan():
     return jsonify({"status": "scan_completed", "db_disabled": DB_DISABLED}), 200
 
 
-@app.route('/api/db/toggle', methods=['POST'])
+@app.route('/api/v2/db/toggle', methods=['POST'])
 def toggle_database():
     """
     Toggle the database operations on/off
@@ -107,7 +107,7 @@ def toggle_database():
     return jsonify(response_data), status_code
 
 
-@app.route('/api/queue/delete', methods=['POST'])
+@app.route('/api/v2/queue/delete', methods=['POST'])
 def delete_queued():
     """
     Delete all queued items from the queue table
@@ -116,7 +116,7 @@ def delete_queued():
     return jsonify(response_data), status_code
 
 
-@app.route('/api/queue/delete-errors', methods=['POST'])
+@app.route('/api/v2/queue/delete-errors', methods=['POST'])
 def delete_error_records():
     """
     Delete all error records from the queue table (status starts with 'Failed')
@@ -127,32 +127,32 @@ def delete_error_records():
     return jsonify(response_data), status_code
 
 
-@app.route('/api/directories', methods=['POST'])
+@app.route('/api/v2/directories', methods=['POST'])
 def create_directory():
     data = request.get_json(silent=True) or {}
     response_data, status_code = create_directory_logic(data)
     return jsonify(response_data), status_code
 
 
-@app.route('/api/directories/<guid>', methods=['PATCH'])
+@app.route('/api/v2/directories/<guid>', methods=['PATCH'])
 def update_directory(guid):
     data = request.get_json(silent=True) or {}
     response_data, status_code = update_directory_logic(guid, data)
     return jsonify(response_data), status_code
 
 
-@app.route('/api/directories/<guid>', methods=['DELETE'])
+@app.route('/api/v2/directories/<guid>', methods=['DELETE'])
 def delete_directory(guid):
     response_data, status_code = delete_directory_logic(guid)
     return jsonify(response_data), status_code
 
 
-@app.route('/api/db/status', methods=['GET'])
+@app.route('/api/v2/db/status', methods=['GET'])
 def database_status():
     """
     Get the current status of database operations
     """
-    logging.info("[REQUEST] GET /api/db/status")
+    logging.info("[REQUEST] GET /api/v2/db/status")
 
     status_data = get_database_status(DB_DISABLED)
 
@@ -172,18 +172,18 @@ if __name__ == '__main__':
     logging.info("="*80)
     logging.info("Available endpoints:")
     logging.info("  - GET  /                    (Main UI page)")
-    logging.info("  - GET  /api/queue/largest   (Get largest queued item by file size)")
-    logging.info("  - GET  /api/queue/smallest  (Get smallest queued item by file size)")
-    logging.info("  - GET  /api/queue/fifo      (Get queued item by FIFO row order)")
-    logging.info("  - POST /api/completed       (Create new completed record)")
-    logging.info("  - POST /api/scan            (Scan directories and probe files)")
-    logging.info("  - POST /api/queue/delete    (Delete all queued items)")
-    logging.info("  - POST /api/queue/delete-errors (Delete failed records by status)")
-    logging.info("  - POST /api/directories     (Create directory)")
-    logging.info("  - PATCH /api/directories/<guid> (Update directory)")
-    logging.info("  - DELETE /api/directories/<guid> (Delete directory)")
-    logging.info("  - POST /api/db/toggle       (Enable/disable database operations)")
-    logging.info("  - GET  /api/db/status       (Check database status)")
+    logging.info("  - GET  /api/v2/queue/largest   (Get largest queued item by file size)")
+    logging.info("  - GET  /api/v2/queue/smallest  (Get smallest queued item by file size)")
+    logging.info("  - GET  /api/v2/queue/fifo      (Get queued item by FIFO row order)")
+    logging.info("  - POST /api/v2/completed       (Create new completed record)")
+    logging.info("  - POST /api/v2/scan            (Scan directories and probe files)")
+    logging.info("  - POST /api/v2/queue/delete    (Delete all queued items)")
+    logging.info("  - POST /api/v2/queue/delete-errors (Delete failed records by status)")
+    logging.info("  - POST /api/v2/directories     (Create directory)")
+    logging.info("  - PATCH /api/v2/directories/<guid> (Update directory)")
+    logging.info("  - DELETE /api/v2/directories/<guid> (Delete directory)")
+    logging.info("  - POST /api/v2/db/toggle       (Enable/disable database operations)")
+    logging.info("  - GET  /api/v2/db/status       (Check database status)")
     logging.info("  - GET  /health              (Health check)")
     logging.info("="*80 + "\n")
     app.run(debug=True, use_reloader=False, host='0.0.0.0', port=5000)

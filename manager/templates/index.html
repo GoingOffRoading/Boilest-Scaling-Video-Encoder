@@ -926,10 +926,10 @@
                 return;
             }
 
-            let url = '/api/directories';
+            let url = '/api/v2/directories';
             let method = 'POST';
             if (directoryModalMode === 'edit') {
-                url = `/api/directories/${selectedDirectoryGuid}`;
+                url = `/api/v2/directories/${selectedDirectoryGuid}`;
                 method = 'PATCH';
             }
 
@@ -964,7 +964,7 @@
             }
 
             try {
-                const response = await fetch(`/api/directories/${selectedDirectoryGuid}`, {
+                const response = await fetch(`/api/v2/directories/${selectedDirectoryGuid}`, {
                     method: 'DELETE'
                 });
 
@@ -1022,7 +1022,7 @@
             statusMessage.textContent = 'Scanning for files...';
             
             try {
-                const response = await fetch('/api/scan', {
+                const response = await fetch('/api/v2/scan', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1065,7 +1065,7 @@
             statusMessage.textContent = 'Deleting queued items...';
             
             try {
-                const response = await fetch('/api/queue/delete', {
+                const response = await fetch('/api/v2/queue/delete', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1105,7 +1105,7 @@
             button.textContent = 'Deleting...';
             
             try {
-                const response = await fetch('/api/queue/delete-errors', {
+                const response = await fetch('/api/v2/queue/delete-errors', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

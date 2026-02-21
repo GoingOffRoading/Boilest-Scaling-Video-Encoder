@@ -15,7 +15,7 @@ def toggle_database_logic(request_data, db_disabled_ref):
         tuple: (response_data: dict, status_code: int)
     """
     logging.info("\n" + "="*80)
-    logging.info("[REQUEST] POST /api/db/toggle")
+    logging.info("[REQUEST] POST /api/v2/db/toggle")
     logging.info("="*80)
 
     try:

@@ -8,7 +8,7 @@ __all__ = ["get_largest_queue_logic"]
 def get_largest_queue_logic(db_disabled, worker):
     import logging
     logging.info("="*80)
-    logging.info("[REQUEST] GET /api/queue/largest")
+    logging.info("[REQUEST] GET /api/v2/queue/largest")
     logging.info("="*80)
 
     # Check if database operations are disabled

@@ -24,9 +24,9 @@ import socket
 # ----------------------------------------
 API_BASE_URL = os.environ.get("MANAGER_BASE_URL", "http://192.168.1.110:31500")  # Get from container env var
 QUEUE_ENDPOINTS = {
-    "LARGEST": f"{API_BASE_URL}/api/queue/largest",
-    "SMALLEST": f"{API_BASE_URL}/api/queue/smallest",
-    "FIFO": f"{API_BASE_URL}/api/queue/fifo",
+    "LARGEST": f"{API_BASE_URL}/api/v2/queue/largest",
+    "SMALLEST": f"{API_BASE_URL}/api/v2/queue/smallest",
+    "FIFO": f"{API_BASE_URL}/api/v2/queue/fifo",
 }
 
 
@@ -278,7 +278,7 @@ def move_file(source_path, destination_path):
 
 def report_encoding_completed(file_guid, status, after_file_size=None):
     """
-    Call the /api/completed endpoint to report that encoding is finished.
+    Call the /api/v2/completed endpoint to report that encoding is finished.
     
     Parameters:
       - file_guid (str): The unique identifier of the file that was encoded
@@ -288,7 +288,7 @@ def report_encoding_completed(file_guid, status, after_file_size=None):
     Returns:
       - tuple: (status_code, response_data)
     """
-    endpoint = f"{API_BASE_URL}/api/completed"
+    endpoint = f"{API_BASE_URL}/api/v2/completed"
     
     # Prepare the request data
     request_data = {
