@@ -27,6 +27,7 @@
 - [ ] Maybe change directory active boolean to something more intuitive
 - [ ] Update workers metric to include pulled
 - [ ] Update get_largest to only return if it's been X amount of time since last pull as to not overwhelm the network on file validations
+- [ ] Change encoding time to days.  Or maybe make it dynamic Minutes > Hours > Days
 
 
 

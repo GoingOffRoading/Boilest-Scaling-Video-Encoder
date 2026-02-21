@@ -64,6 +64,16 @@ def get_file_size_kb(file_path):
         return 0
 
 
+def format_duration(duration_seconds):
+    total_seconds = float(duration_seconds)
+
+    if total_seconds < 60:
+        return f"{total_seconds:.2f}s"
+    if total_seconds < 3600:
+        return f"{(total_seconds / 60):.2f}m"
+    return f"{(total_seconds / 3600):.2f}h"
+
+
 def file_exists(file_path):
     """
     Check if a file exists at the specified path.
@@ -198,7 +208,7 @@ def run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path)
       - templorary_file_path: Full path to the output file (temporary location)
     """
     try:
-        ffmpeg_settings = 'ffmpeg -hide_banner -loglevel 16 -stats -stats_period 10 -y -i'
+        ffmpeg_settings = 'ffmpeg -hide_banner -loglevel 16 -stats -stats_period 60 -y -i'
 
         logging.debug(before_file_size_file_path)
         logging.debug(templorary_file_path)
@@ -209,7 +219,7 @@ def run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path)
 
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
         for line in process.stdout:
-            logging.debug(line.rstrip())
+            logging.info(line.rstrip())
         return True
     except Exception as exc:
         logging.error(f"Error: {exc}")

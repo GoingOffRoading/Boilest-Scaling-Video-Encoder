@@ -1,11 +1,11 @@
 ## Worker ToDo List
 
-- [ ] The file move workflow assumes that the file move will be susesful.  It really should be rename source file, and only delete if the move is sucsesful.  I may not get to that in this itteration.  After Edit: Validate video output probably shouldn't start until the encoded file is moved.  After after edit: That might be too heavy on the NAS bandwidth...  Need to rethink this a bit
+- [x] The file move workflow assumes that the file move will be susesful.  It really should be rename source file, and only delete if the move is sucsesful.  I may not get to that in this itteration.  After Edit: Validate video output probably shouldn't start until the encoded file is moved.  After after edit: That might be too heavy on the NAS bandwidth...  Need to rethink this a bit
 - [x] Add a preflight check for video exists
 - [x] Add a postflight check for video exists
 - [x] Improve logging messages.  Including posting messages when steps start, not just end.  New line breaks.
-- [ ] Debate if queueing with nothing in queue after so many instances should trigger a scan
-- [ ] Debate if worker should loop through attempts to send results until a 200
+- [x] Debate if queueing with nothing in queue after so many instances should trigger a scan
+- [x] Debate if worker should loop through attempts to send results until a 200
 - [x] Add additional messaging on hash mismatch
 - [x] Refactor both pipelines so that /boilemdia/ isn't used in the directory path... I.E. Appear more like the actual URL
 - [x] Refactor logging so that line breaks more intuiity break up the lines in the logs
@@ -16,9 +16,9 @@
 - [ ] Do a little cleanup and formatting of local_worker_functions
 - [x] On status messaging between phases, mention the directory path
 - [x] Resolve an issue where a postflight validation check leaves an ophaned file
-- [ ] Add a random delay to the next task piece
-- [ ] Eyeball how we could do the wait for next task differently
-- [ ] Change encoding time to days.  Or maybe make it dynamic Minutes > Hours > Days
+- [x] Add a random delay to the next task piece
+- [x] Eyeball how we could do the wait for next task differently
+
 
 
 
