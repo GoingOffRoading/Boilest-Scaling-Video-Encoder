@@ -57,9 +57,15 @@ def scan():
     Uses the scan_db_directories_and_write function from queue.py
     """
     global DB_DISABLED
+    data = request.get_json(silent=True) or {}
+    selected_paths = data.get('paths')
+
+    if selected_paths is not None and not isinstance(selected_paths, list):
+        return jsonify({"error": "'paths' must be a list of directory paths"}), 400
+
     DB_DISABLED = True
     try:
-        run_queue_workflow()
+        run_queue_workflow(selected_paths=selected_paths)
     finally:
         DB_DISABLED = False
     return jsonify({"status": "scan_completed", "db_disabled": DB_DISABLED}), 200

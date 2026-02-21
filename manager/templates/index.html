@@ -441,7 +441,7 @@
                 <!-- Scan Button -->
                 <div class="button-container">
                     <div class="button-row">
-                        <button class="action-button" id="scanButton" onclick="triggerScan()">Scan for Files</button>
+                        <button class="action-button" id="scanButton" onclick="openScanModal()">Scan for Files</button>
                         <button class="action-button" id="deleteQueueButton" onclick="deleteQueue()">Delete Queue</button>
                     </div>
                     <div class="status-message" id="statusMessage"></div>
@@ -678,7 +678,7 @@
                         <input id="dirPath" type="text" placeholder="/tv" />
                     </label>
                     <label>FFmpeg Video
-                        <input id="dirFfmpegVideo" type="text" placeholder="-c:v libx265" />
+                        <input id="dirFfmpegVideo" type="text" placeholder="-c:v libsvtav1" />
                     </label>
                     <label>FFmpeg Audio
                         <input id="dirFfmpegAudio" type="text" placeholder="-c:a aac" />
@@ -687,7 +687,7 @@
                         <input id="dirFfmpegSubtitle" type="text" placeholder="-c:s copy" />
                     </label>
                     <label>Video Codec
-                        <input id="dirVideoCodec" type="text" placeholder="hevc" />
+                        <input id="dirVideoCodec" type="text" placeholder="av1" />
                     </label>
                     <label>Audio Codec
                         <input id="dirAudioCodec" type="text" placeholder="aac" />
@@ -699,6 +699,43 @@
                 <div class="modal-actions">
                     <button class="action-button compact" id="saveDirectoryButton" onclick="saveDirectory()">Save</button>
                     <button class="action-button compact" onclick="closeDirectoryModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="scanModal" class="modal hidden" aria-hidden="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">Scan Directories</div>
+                    <button class="modal-close" onclick="closeScanModal()">×</button>
+                </div>
+                <div class="modal-body" style="display:block;">
+                    {% if directories_items %}
+                    <div class="scroll-wrapper" style="max-height: 340px;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 90px;">Scan</th>
+                                    <th>Path</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in directories_items %}
+                                <tr>
+                                    <td><input type="checkbox" class="scan-directory-checkbox" value="{{ item['path'] }}" checked></td>
+                                    <td>{{ item['path'] }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="no-data">No directories configured</div>
+                    {% endif %}
+                </div>
+                <div class="modal-actions">
+                    <button class="action-button compact" onclick="scanSelectedDirectories()">Scan</button>
+                    <button class="action-button compact" onclick="closeScanModal()">Cancel</button>
                 </div>
             </div>
         </div>
@@ -820,6 +857,37 @@
 
         function closeDirectoryModal() {
             document.getElementById('directoryModal').classList.add('hidden');
+        }
+
+        function openScanModal() {
+            const modal = document.getElementById('scanModal');
+            if (!modal) {
+                return;
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function closeScanModal() {
+            const modal = document.getElementById('scanModal');
+            if (!modal) {
+                return;
+            }
+            modal.classList.add('hidden');
+        }
+
+        function getSelectedScanPaths() {
+            return Array.from(document.querySelectorAll('.scan-directory-checkbox:checked')).map((checkbox) => checkbox.value);
+        }
+
+        async function scanSelectedDirectories() {
+            const selectedPaths = getSelectedScanPaths();
+            if (selectedPaths.length === 0) {
+                alert('Select at least one directory to scan.');
+                return;
+            }
+
+            closeScanModal();
+            await triggerScan(selectedPaths);
         }
 
         function clearDirectoryForm() {
@@ -944,7 +1012,7 @@
                 });
             });
         }
-        async function triggerScan() {
+        async function triggerScan(selectedPaths = null) {
             const button = document.getElementById('scanButton');
             const statusMessage = document.getElementById('statusMessage');
             
@@ -958,7 +1026,8 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    body: JSON.stringify({ paths: selectedPaths })
                 });
                 
                 if (response.ok) {

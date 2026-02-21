@@ -303,13 +303,25 @@ def write_to_queue(directory_guid, directory_path, input_file_name, output_file_
         return None
 
 
-def run_queue_workflow(db_path=None, extensions=None):
+def run_queue_workflow(db_path=None, extensions=None, selected_paths=None):
     """Main workflow to scan directories and queue files for encoding."""
     db_path = get_db_path()
 
     logging.debug(db_path)
 
     directories = get_all_directories(db_path)
+
+    if selected_paths is not None:
+        normalized_selected_paths = {
+            os.path.normpath(path).strip()
+            for path in selected_paths
+            if isinstance(path, str) and path.strip()
+        }
+        directories = [
+            row for row in directories
+            if os.path.normpath(row[1]).strip() in normalized_selected_paths
+        ]
+        logging.info(f"Selected directories filter applied: {len(directories)} directories")
     
     for directory_guid, directory_path, ffmpeg_video, desired_video_codec in directories:
         logging.info(f"\nScanning directory {directory_path} (guid={directory_guid})")
