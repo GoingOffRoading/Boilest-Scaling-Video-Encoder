@@ -192,7 +192,11 @@ def check_audio_stream(encoding_decision, i, stream_info, ffmpeg_command):
     #if codec_name != desired_video_codec:
     #    encoding_decision = True
     logging.debug('Steam ' + str(i) + ' codec is: ' + codec_name)
-    ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:a copy'
+    if codec_name == 'opus':
+        encoding_decision = True
+        ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:a aac -b:a 128k -ac 2'
+    else:
+        ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:a copy'
     return encoding_decision, ffmpeg_command
 
 
