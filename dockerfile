@@ -6,7 +6,8 @@ RUN apk update && \
     apk add --no-cache \
         build-base \
         linux-headers \
-        ffmpeg && \
+        ffmpeg \
+        sqlite && \
     pip install --no-cache-dir flask requests && \
     apk upgrade
 

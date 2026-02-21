@@ -1034,7 +1034,7 @@
                         const resp = await fetch('/api/v2/completed', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ file_guid: guid, outcome: 'stopped' })
+                            body: JSON.stringify({ file_guid: guid, outcome: 'Stopped' })
                         });
                         if (!resp.ok) {
                             const data = await resp.json().catch(() => ({}));

@@ -432,7 +432,7 @@ def file_should_stop(file_guid):
     """Return True if manager reports the given file's status is 'stop'."""
     try:
         status = get_file_status_from_manager(file_guid)
-        if isinstance(status, str) and status.lower() == 'stop':
+        if isinstance(status, str) and status.lower() == 'Stopped':
             return True
     except Exception:
         pass
@@ -456,7 +456,7 @@ def sleep_with_file_check(total_seconds, file_guid):
                 logging.info(f"Manager reported 'stop' for file {file_guid}")
                 # best-effort report
                 try:
-                    report_encoding_completed(file_guid, 'stopped')
+                    report_encoding_completed(file_guid, 'Stopped')
                 except Exception:
                     pass
                 return False
