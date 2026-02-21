@@ -6,6 +6,44 @@ from db_path import get_db_path
 __all__ = ["get_index_data"]
 
 
+def _format_kb_size(kb_value):
+    if kb_value is None:
+        return None, None
+
+    size_kb = float(kb_value)
+    abs_size_kb = abs(size_kb)
+
+    if abs_size_kb >= (1024 * 1024 * 1024):
+        return round(size_kb / (1024 * 1024 * 1024), 2), "TB"
+    if abs_size_kb >= (1024 * 1024):
+        return round(size_kb / (1024 * 1024), 2), "GB"
+    return round(size_kb / 1024, 2), "MB"
+
+
+def _format_minutes_duration(total_minutes):
+    if total_minutes is None:
+        return None, None
+
+    minutes = float(total_minutes)
+    abs_minutes = abs(minutes)
+
+    minutes_per_hour = 60
+    minutes_per_day = 24 * minutes_per_hour
+    minutes_per_week = 7 * minutes_per_day
+    minutes_per_month = 30 * minutes_per_day
+    minutes_per_year = 365 * minutes_per_day
+
+    if abs_minutes >= minutes_per_year:
+        return round(minutes / minutes_per_year, 2), "years"
+    if abs_minutes >= minutes_per_month:
+        return round(minutes / minutes_per_month, 2), "months"
+    if abs_minutes >= minutes_per_week:
+        return round(minutes / minutes_per_week, 2), "weeks"
+    if abs_minutes >= minutes_per_day:
+        return round(minutes / minutes_per_day, 2), "days"
+    return round(minutes / minutes_per_hour, 2), "hours"
+
+
 def get_index_data():
     """
     Get data for the index page
@@ -19,7 +57,11 @@ def get_index_data():
     processing_count = 0
     encoded_count = 0
     space_saved_gb = 0.0
+    space_saved_value = 0.0
+    space_saved_unit = "MB"
     total_processing_minutes = 0.0
+    total_processing_value = 0.0
+    total_processing_unit = "hours"
     queued_items = []
     encoding_items = []
     encoded_items = []
@@ -53,6 +95,9 @@ def get_index_data():
         if space_saved_result and space_saved_result['space_saved'] is not None:
             space_saved_kb = space_saved_result['space_saved']
             space_saved_gb = round(space_saved_kb / (1024 * 1024), 2)
+            space_saved_value, space_saved_unit = _format_kb_size(space_saved_kb)
+        else:
+            space_saved_value, space_saved_unit = 0.0, "MB"
         logging.debug(f"[UI] Space saved: {space_saved_gb} GB")
         
         # Get queued items sorted by file size descending
@@ -144,15 +189,15 @@ def get_index_data():
                     duration_minutes = None
             item['duration_minutes'] = duration_minutes
 
-            # Convert space_saved from KB to MB for display
+            # Convert space_saved from KB to dynamic unit for display
             try:
                 ss = item.get('space_saved')
                 if ss is not None:
-                    item['space_saved_mb'] = round(ss / 1024, 2)
+                    item['space_saved_value'], item['space_saved_unit'] = _format_kb_size(ss)
                 else:
-                    item['space_saved_mb'] = None
+                    item['space_saved_value'], item['space_saved_unit'] = None, None
             except Exception:
-                item['space_saved_mb'] = None
+                item['space_saved_value'], item['space_saved_unit'] = None, None
 
         logging.debug(f"[UI] Retrieved {len(encoded_items)} recently encoded items")
         
@@ -160,6 +205,7 @@ def get_index_data():
         for item in encoded_items:
             if item.get('duration_minutes') is not None:
                 total_processing_minutes += item['duration_minutes']
+        total_processing_value, total_processing_unit = _format_minutes_duration(total_processing_minutes)
         logging.debug(f"[UI] Total processing time: {total_processing_minutes} minutes")
         
         # Get recently failed items (status not in queued, pulled, encoded)
@@ -192,7 +238,11 @@ def get_index_data():
         'processing_count': processing_count,
         'encoded_count': encoded_count,
         'space_saved_gb': space_saved_gb,
+        'space_saved_value': space_saved_value,
+        'space_saved_unit': space_saved_unit,
         'total_processing_minutes': round(total_processing_minutes, 2),
+        'total_processing_value': total_processing_value,
+        'total_processing_unit': total_processing_unit,
         'queued_items': queued_items,
         'encoding_items': encoding_items,
         'encoded_items': encoded_items,
