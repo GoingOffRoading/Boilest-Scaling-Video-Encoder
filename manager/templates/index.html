@@ -648,7 +648,7 @@
                         <tbody>
                             {% for item in queued_items[:100] %}
                             <tr>
-                                <td><strong>{{ loop.index }}</strong></td>
+                                <td><strong>{{ item['row_number'] }}</strong></td>
                                 <td>{{ item['input_file_name'] }}</td>
                                 <td>{{ item['directory_path'] }}</td>
                                 <td class="file-size">{{ "{:,.2f}".format(item['before_file_size_mb']) if item['before_file_size_mb'] is not none else '—' }}</td>

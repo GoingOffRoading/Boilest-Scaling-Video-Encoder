@@ -63,6 +63,7 @@ def get_fifo_queue_logic(db_disabled, worker):
         # Query the encode table using FIFO order (ROWID), limit 1
         query = """
             SELECT 
+                ROWID AS row_number,
                 file_guid,
                 directory_path,
                 input_file_name,
