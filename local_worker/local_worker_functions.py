@@ -230,18 +230,22 @@ def run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path,
                 if file_guid:
                     try:
                         if file_should_stop(file_guid):
-                            logging.info(f"Manager requested stop for file {file_guid}; terminating ffmpeg")
+                            logging.info(f"Manager requested stop for file {file_guid}; attempting to terminate ffmpeg")
                             try:
                                 process.terminate()
-                                process.wait(timeout=10)
-                            except Exception:
                                 try:
+                                    process.wait(timeout=10)
+                                    logging.info(f"ffmpeg terminated gracefully for file {file_guid}")
+                                except subprocess.TimeoutExpired:
+                                    logging.warning(f"ffmpeg did not terminate gracefully, force killing for file {file_guid}")
                                     process.kill()
-                                except Exception:
-                                    pass
+                                    process.wait(timeout=5)
+                                    logging.info(f"ffmpeg killed for file {file_guid}")
+                            except Exception as kill_exc:
+                                logging.error(f"Failed to terminate/kill ffmpeg for file {file_guid}: {kill_exc}")
                             return False
-                    except Exception:
-                        # ignore errors checking manager to avoid killing ffmpeg unnecessarily
+                    except Exception as check_exc:
+                        logging.error(f"Error checking manager stop signal: {check_exc}")
                         pass
             process.wait()
             return process.returncode == 0
@@ -249,8 +253,8 @@ def run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path,
             logging.error(f"Error while running ffmpeg: {exc}")
             try:
                 process.kill()
-            except Exception:
-                pass
+            except Exception as kill_exc:
+                logging.error(f"Failed to kill ffmpeg after error: {kill_exc}")
             return False
     except Exception as exc:
         logging.error(f"Error: {exc}")
