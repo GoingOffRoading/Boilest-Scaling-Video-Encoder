@@ -62,6 +62,8 @@ def run_local_worker_loop():
             
             logging.info(f"Running preflight checks on: {input_file_name}")
 
+            time.sleep(1)
+
             
             # Step 1: Validate file existence
             step_1_start_perf = time.perf_counter()
@@ -73,6 +75,8 @@ def run_local_worker_loop():
             step_1_duration = time.perf_counter() - step_1_start_perf
             logging.info(f"✓ Step 1: File existence validated (duration: {format_duration(step_1_duration)})")
 
+            time.sleep(1)
+
 
             # Step 2: Validate file size hasn't changed
             step_2_start_perf = time.perf_counter()
@@ -83,17 +87,21 @@ def run_local_worker_loop():
                 continue
             step_2_duration = time.perf_counter() - step_2_start_perf
             logging.info(f"✓ Step 2: File hash validated (duration: {format_duration(step_2_duration)})")
+
+            time.sleep(1)
             
 
             # Step 3: Validate video integrity
             step_3_start_perf = time.perf_counter()
-            if not validate_video_full(before_file_size_file_path, 15):
+            if not validate_video(before_file_size_file_path, 15):
                 step_3_duration = time.perf_counter() - step_3_start_perf
                 logging.error(f"✗ Step 3: Video integrity check failed for: {input_file_name} (duration: {format_duration(step_3_duration)})")
                 report_encoding_completed(file_guid, 'Failed: Input Integrity')
                 continue
             step_3_duration = time.perf_counter() - step_3_start_perf
             logging.info(f"✓ Step 3: Video integrity validated (duration: {format_duration(step_3_duration)})")
+
+            time.sleep(1)
             
 
             logging.info(f"Preflight checks passed... Starting FFmpeg on: {input_file_name}")
@@ -109,6 +117,8 @@ def run_local_worker_loop():
             step_4_duration = time.perf_counter() - step_4_start_perf
             logging.info(f"✓ Step 4: FFmpeg encoding completed (duration: {format_duration(step_4_duration)})")
 
+            time.sleep(1)
+
 
             logging.info(f"FFmpeg completed... Starting postflight checks on: {input_file_name}")
             
@@ -123,6 +133,8 @@ def run_local_worker_loop():
             step_5_duration = time.perf_counter() - step_5_start_perf
             logging.info(f"✓ Step 5: Temporary file existence validated (duration: {format_duration(step_5_duration)})")
 
+            time.sleep(1)
+
 
 
             # Step 6: Postflight check - validate output video integrity
@@ -134,6 +146,8 @@ def run_local_worker_loop():
                 continue
             step_6_duration = time.perf_counter() - step_6_start_perf
             logging.info(f"✓ Step 6: Output video integrity validated (duration: {format_duration(step_6_duration)})")
+
+            time.sleep(1)
 
 
             logging.info(f"Postflight checks passed... Starting postflight workflow on: {input_file_name}")
@@ -150,6 +164,8 @@ def run_local_worker_loop():
             step_7_duration = time.perf_counter() - step_7_start_perf
             logging.info(f"✓ Step 7: Output file size captured (duration: {format_duration(step_7_duration)})")
 
+            time.sleep(1)
+
 
             # Step 8: Delete source
             step_8_start_perf = time.perf_counter()
@@ -161,6 +177,8 @@ def run_local_worker_loop():
             step_8_duration = time.perf_counter() - step_8_start_perf
             logging.info(f"✓ Step 8: Source file deleted (duration: {format_duration(step_8_duration)})")
 
+            time.sleep(1)
+
 
             # Step 9: Move temporary file to final destination
             step_9_start_perf = time.perf_counter()
@@ -171,6 +189,8 @@ def run_local_worker_loop():
                 continue
             step_9_duration = time.perf_counter() - step_9_start_perf
             logging.info(f"✓ Step 9: File moved to final destination (duration: {format_duration(step_9_duration)})")
+
+            time.sleep(1)
 
 
             # Step 10: Report completion to manager

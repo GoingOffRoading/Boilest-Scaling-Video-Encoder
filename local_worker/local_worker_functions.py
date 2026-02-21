@@ -156,14 +156,18 @@ def _contains_ignored_pattern(text):
 
 # We want to scruitinize the output of ffmpeg more closely after encoding to ensure that there aren't any critical errors that would cause the file to be unplayable, even if it is technically valid. So we use a more thorough validation function post-flight.
     
-def validate_video_full(file_path, duration=None):
+def validate_video(file_path, duration=None):
     try:
         if duration is not None:
-            command = f'ffmpeg -v error -t {int(duration)} -i "{file_path}" -f null -'
+            command = f'ffmpeg -v error -xerror -t {int(duration)} -i "{file_path}" -f null -'
         else:
-            command = f'ffmpeg -v error -i "{file_path}" -f null -'
+            command = f'ffmpeg -v error -xerror -i "{file_path}" -f null -'
         result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        if result.stdout or result.stderr:
+        ffmpeg_output = "\n".join(
+            part for part in [result.stdout.strip(), result.stderr.strip()] if part
+        )
+        if ffmpeg_output:
+            logging.warning(f"FFmpeg validation output for {file_path}:\n{ffmpeg_output}")
             logging.debug('File failed video integrity check')
             return False
         else:
@@ -184,7 +188,7 @@ def post_flight_validate_video_full(file_path):
     Returns:
       - bool: True if validation passed, False if validation failed (file will be deleted)
     """
-    if not validate_video_full(file_path):
+    if not validate_video(file_path):
         logging.debug(f"Post-flight validation failed for: {file_path}")
         delete_file(file_path)
         return False
