@@ -201,10 +201,19 @@ def get_index_data():
 
         logging.debug(f"[UI] Retrieved {len(encoded_items)} recently encoded items")
         
-        # Calculate total processing time
-        for item in encoded_items:
-            if item.get('duration_minutes') is not None:
-                total_processing_minutes += item['duration_minutes']
+        # Calculate total processing time across all encoded records
+        cur.execute("""
+            SELECT SUM((julianday(datetime_encoded) - julianday(datetime_pulled)) * 24 * 60) AS total_minutes
+            FROM queue
+            WHERE status = 'encoded'
+              AND datetime_pulled IS NOT NULL
+              AND datetime_encoded IS NOT NULL
+        """)
+        total_minutes_result = cur.fetchone()
+        if total_minutes_result and total_minutes_result['total_minutes'] is not None:
+            total_processing_minutes = float(total_minutes_result['total_minutes'])
+        else:
+            total_processing_minutes = 0.0
         total_processing_value, total_processing_unit = _format_minutes_duration(total_processing_minutes)
         logging.debug(f"[UI] Total processing time: {total_processing_minutes} minutes")
         
