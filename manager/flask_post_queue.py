@@ -114,6 +114,15 @@ def run_ffprobe(directory_path, filename):
 
 def check_codecs(encoding_decision, stream_info, ffmpeg_command, ffmpeg_video, desired_video_codec):
     """Check codecs in streams and build ffmpeg command."""
+    # Safety check: ensure stream_info has the required structure
+    if 'error' in stream_info:
+        logging.error(f"Cannot check codecs: {stream_info['error']}")
+        return encoding_decision, ffmpeg_command
+        
+    if 'format' not in stream_info or 'nb_streams' not in stream_info['format']:
+        logging.error("Cannot check codecs: Invalid stream_info structure (missing 'format' or 'nb_streams')")
+        return encoding_decision, ffmpeg_command
+    
     streams_count = stream_info['format']['nb_streams']
     
     for i in range(0, streams_count):
@@ -332,6 +341,17 @@ def run_queue_workflow(db_path=None, extensions=None, selected_paths=None):
                 default_encoding_decision = False
                 ffmpeg_command = ''
                 probe_data = run_ffprobe(directory, input_file_name)
+                
+                # Check if ffprobe failed
+                if 'error' in probe_data:
+                    logging.warning(f"    Skipping {input_file_name}: {probe_data['error']}")
+                    continue
+                    
+                # Check if format key exists (valid probe data)
+                if 'format' not in probe_data:
+                    logging.warning(f"    Skipping {input_file_name}: Invalid ffprobe output (missing 'format' key)")
+                    continue
+                
                 output_file_name, file_encoding_decision = output_file_name_fx(input_file_name, default_encoding_decision)
                 final_encoding_decision, ffmpeg_command = check_codecs(
                     file_encoding_decision,
