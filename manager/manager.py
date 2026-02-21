@@ -126,7 +126,8 @@ def delete_error_records():
     """
     data = request.get_json(silent=True) or {}
     status_value = data.get('status')
-    response_data, status_code = delete_errors_logic(status_value)
+    guids = data.get('guids')
+    response_data, status_code = delete_errors_logic(status_value, guids=guids)
     return jsonify(response_data), status_code
 
 

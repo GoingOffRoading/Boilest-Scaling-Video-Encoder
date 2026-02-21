@@ -27,6 +27,7 @@
 - [x] Update workers metric to include pulled
 - [x] Change encoding time to days.  Or maybe make it dynamic Minutes > Hours > Days
 - [ ] Debate installing libfdk_aac and using it instead of aac
+- [ ] Add simple auth to all API calls
 
 
 
