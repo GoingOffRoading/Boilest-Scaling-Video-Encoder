@@ -3,7 +3,7 @@
 - [x] Interactive UI
 - [x] Add a status field to the queue DB
 - [x] Update flask_post_queue to check for the status flag, instead of checking for datetime columns
-- [ ] Maybe add another queue for largest impact.  I.E. Largest file, x264, etc.  Maybe a field like 'encode priorit' or something.  
+- [x] Maybe add another queue for largest impact.  I.E. Largest file, x264, etc.  Maybe a field like 'encode priorit' or something.  
 - [x] Update flast_get_largest_queue to use the same datetime logic as queed/completed for datetime stamp
 - [x] Logs were being printed for files being added to queue that were correctly being skipped
 - [x] Refactor both pipelines so that /boilemdia/ isn't used in the directory path... I.E. Appear more like the actual URL
@@ -12,7 +12,6 @@
 - [x] Use these values when encodings
 - [x] Add a skip for HDR content
 - [ ] Later: Come up with a strategy for HDR content
-- [ ] Before allowing a filebase scan, check if queue is empty
 - [x] Add codec types to target in the directories table
 - [x] Add a display for currently queued and recently encoded
 - [ ] Rewrite repo readme
@@ -24,10 +23,9 @@
 - [x] Need to rethink workers.  Like when a task is retrieved, we should log the node.  Then log the state.  So when a worker fails, it might be able to pick up where it left off.
 - [x] Make it so that directories are not deleted
 - [x] Remember to update Boilest.db after the ffmpeg settings tweaks
-- [ ] Maybe change directory active boolean to something more intuitive
+- [x] Maybe change directory active boolean to something more intuitive
 - [x] Update workers metric to include pulled
-- [ ] Update get_largest to only return if it's been X amount of time since last pull as to not overwhelm the network on file validations
-- [ ] Change encoding time to days.  Or maybe make it dynamic Minutes > Hours > Days
+- [x] Change encoding time to days.  Or maybe make it dynamic Minutes > Hours > Days
 
 
 

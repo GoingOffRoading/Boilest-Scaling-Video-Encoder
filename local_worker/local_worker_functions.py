@@ -23,12 +23,32 @@ import socket
 
 # ----------------------------------------
 API_BASE_URL = os.environ.get("MANAGER_BASE_URL", "http://192.168.1.110:31500")  # Get from container env var
-GET_TASK_ENDPOINT = f"{API_BASE_URL}/api/queue/largest"
+QUEUE_ENDPOINTS = {
+    "LARGEST": f"{API_BASE_URL}/api/queue/largest",
+    "SMALLEST": f"{API_BASE_URL}/api/queue/smallest",
+    "FIFO": f"{API_BASE_URL}/api/queue/fifo",
+}
 
 
-def get_largest_task():
+def normalize_queue_order(queue_order):
+    if queue_order is None:
+        return "FIFO"
+
+    normalized = str(queue_order).strip().upper()
+    if normalized in QUEUE_ENDPOINTS:
+        return normalized
+    return "FIFO"
+
+
+def get_task_endpoint(queue_order=None):
+    normalized_queue_order = normalize_queue_order(queue_order)
+    return QUEUE_ENDPOINTS[normalized_queue_order]
+
+
+def get_task(queue_order=None):
     worker_name = os.environ.get("NODE_NAME", socket.gethostname())
-    request_url = f"{GET_TASK_ENDPOINT}?worker={worker_name}"
+    endpoint = get_task_endpoint(queue_order)
+    request_url = f"{endpoint}?worker={worker_name}"
     request = urllib.request.Request(request_url, method="GET")
     try:
         with urllib.request.urlopen(request, timeout=10) as response:
@@ -43,6 +63,10 @@ def get_largest_task():
         return exc.code, exc.read().decode("utf-8")
     except URLError as exc:
         return None, f"Connection error: {exc}"
+
+
+def get_largest_task():
+    return get_task("LARGEST")
 
 # ----------------------------------------
 
@@ -129,30 +153,6 @@ def _contains_ignored_pattern(text):
     return False
 
 
-def validate_video_lite(file_path):
-    try:
-        command = 'ffmpeg -v error -fflags +genpts -t 300 -i "' + file_path + '" -f null -'
-        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        
-        # Check stdout for actual errors (not in ignored patterns)
-        combined_output = result.stdout + result.stderr
-        
-        if combined_output:
-            # If output contains only ignored patterns, pass validation
-            if _contains_ignored_pattern(combined_output):
-                logging.debug('File passed video integrity check (ignored non-critical errors)')
-                return True
-            else:
-                logging.debug('File failed video integrity check')
-                logging.debug(f'FFmpeg output: {combined_output}')
-                return False
-        else:
-            logging.debug('File passed video integrity check')
-            return True
-    except Exception as e:
-        logging.debug(f"Error during video integrity check: {e}")
-        return False
-    
 # We want to scruitinize the output of ffmpeg more closely after encoding to ensure that there aren't any critical errors that would cause the file to be unplayable, even if it is technically valid. So we use a more thorough validation function post-flight.
     
 def validate_video_full(file_path, duration=None):

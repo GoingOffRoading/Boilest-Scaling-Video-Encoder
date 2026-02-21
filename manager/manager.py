@@ -4,6 +4,8 @@ from flask import Flask, jsonify, request, render_template
 from db_status import get_database_status
 from flask_get_index import get_index_data
 from flask_get_largest_queue import get_largest_queue_logic
+from flask_get_smalled_queue import get_smallest_queue_logic
+from flask_get_fifo_queue import get_fifo_queue_logic
 from flask_post_completed_encode import post_completed_encode_logic
 from flask_post_queue import run_queue_workflow
 from flask_post_toggle_database import toggle_database_logic
@@ -36,6 +38,26 @@ def get_largest_queue():
     """
     worker = request.args.get('worker')
     response_data, status_code = get_largest_queue_logic(DB_DISABLED, worker)
+    return jsonify(response_data), status_code
+
+
+@app.route('/api/queue/smallest', methods=['GET'])
+def get_smallest_queue():
+    """
+    Query the queue table and return one row sorted by before_file_size ASC limit 1
+    """
+    worker = request.args.get('worker')
+    response_data, status_code = get_smallest_queue_logic(DB_DISABLED, worker)
+    return jsonify(response_data), status_code
+
+
+@app.route('/api/queue/fifo', methods=['GET'])
+def get_fifo_queue():
+    """
+    Query the queue table and return one row using FIFO order by table ROWID
+    """
+    worker = request.args.get('worker')
+    response_data, status_code = get_fifo_queue_logic(DB_DISABLED, worker)
     return jsonify(response_data), status_code
 
 
@@ -151,6 +173,8 @@ if __name__ == '__main__':
     logging.info("Available endpoints:")
     logging.info("  - GET  /                    (Main UI page)")
     logging.info("  - GET  /api/queue/largest   (Get largest queued item by file size)")
+    logging.info("  - GET  /api/queue/smallest  (Get smallest queued item by file size)")
+    logging.info("  - GET  /api/queue/fifo      (Get queued item by FIFO row order)")
     logging.info("  - POST /api/completed       (Create new completed record)")
     logging.info("  - POST /api/scan            (Scan directories and probe files)")
     logging.info("  - POST /api/queue/delete    (Delete all queued items)")

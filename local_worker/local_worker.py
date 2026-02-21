@@ -11,7 +11,13 @@ logging.basicConfig(level=getattr(logging, log_level), format='%(asctime)s - %(l
 __all__ = ["run_local_worker_loop"]
 
 def run_local_worker_loop():
+    queue_order_env = os.environ.get("queue-order", os.environ.get("QUEUE_ORDER", "FIFO"))
+    queue_order = normalize_queue_order(queue_order_env)
+    queue_endpoint = get_task_endpoint(queue_order)
+
     logging.info("Worker started. Polling for tasks...")
+    logging.info(f"Queue order configured: {queue_order} (source: '{queue_order_env}')")
+    logging.info(f"Queue endpoint selected: {queue_endpoint}")
     
     while True:
         try:
@@ -22,8 +28,8 @@ def run_local_worker_loop():
             logging.info("=" * 80)
             logging.info("Polling for new task...")
             
-            # Step 0: Get largest task from queue
-            status, response = get_largest_task()
+            # Step 0: Get task from queue
+            status, response = get_task(queue_order)
             
             if status != 200:
                 logging.error(f"✗ Failed to get task. Status: {status}, Response: {response}")
