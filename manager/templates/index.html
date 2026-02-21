@@ -759,16 +759,16 @@
             <div class="table-container">
                 <div class="button-container">
                     <div class="button-row">
-                        <button class="action-button compact" onclick="deleteFailedStatus('Failed: File not found', this)">Failed: File not found</button>
-                        <button class="action-button compact" onclick="deleteFailedStatus('Failed: Hash mismatch', this)">Failed: Hash mismatch</button>
-                        <button class="action-button compact" onclick="deleteFailedStatus('Failed: Input Integrity', this)">Failed: Input Integrity</button>
-                        <button class="action-button compact" onclick="deleteFailedStatus('Failed: FFmpeg failure', this)">Failed: FFmpeg failure</button>
-                        <button class="action-button compact" onclick="deleteFailedStatus('Failed: Temporary file not found', this)">Failed: Temporary file not found</button>
-                        <button class="action-button compact" onclick="deleteFailedStatus('Failed: Postflight Integrity', this)">Failed: Postflight Integrity</button>
-                        <button class="action-button compact" onclick="deleteFailedStatus('Failed: Postflight file size check', this)">Failed: Postflight file size check</button>
-                        <button class="action-button compact" onclick="deleteFailedStatus('Failed: Postflight delete source file', this)">Failed: Postflight delete source file</button>
-                                <button class="action-button compact" onclick="deleteFailedStatus('Failed: Postflight move temporary file to final destination', this)">Failed: Postflight move temporary file to final destination</button>
-                                <button class="action-button compact" onclick="deleteFailedStatus('stopped', this)">Stopped</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: File not found', this)">Failed: File not found</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: Hash mismatch', this)">Failed: Hash mismatch</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: Input Integrity', this)">Failed: Input Integrity</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: FFmpeg failure', this)">Failed: FFmpeg failure</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: Temporary file not found', this)">Failed: Temporary file not found</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: Postflight Integrity', this)">Failed: Postflight Integrity</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: Postflight file size check', this)">Failed: Postflight file size check</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: Postflight delete source file', this)">Failed: Postflight delete source file</button>
+                            <button class="action-button compact" onclick="openFailedModal('Failed: Postflight move temporary file to final destination', this)">Failed: Postflight move temporary file to final destination</button>
+                            <button class="action-button compact" onclick="openFailedModal('stopped', this)">Stopped</button>
                     </div>
                 </div>
                 <h2>Recently Failed</h2>
@@ -892,6 +892,41 @@
                 <div class="modal-actions">
                     <button class="action-button compact" id="saveDirectoryButton" onclick="saveDirectory()">Save</button>
                     <button class="action-button compact" onclick="closeDirectoryModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Failed Delete Modal -->
+        <div id="failedDeleteModal" class="modal hidden" aria-hidden="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">Delete Failed Records</div>
+                    <button class="modal-close" onclick="closeFailedModal()">×</button>
+                </div>
+                <div style="padding:8px 0 12px;">
+                    <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="failedSelectAll" onchange="toggleFailedSelectAll(this)"> Select all</label>
+                </div>
+                <div class="modal-body" style="grid-template-columns: 1fr; padding:0;">
+                    <div style="width:100%; overflow:auto; max-height:360px;">
+                        <table id="failedDeleteTable">
+                            <thead>
+                                <tr>
+                                    <th style="width:40px">Delete</th>
+                                    <th>Filename</th>
+                                    <th>Worker</th>
+                                    <th>Path</th>
+                                    <th>Pulled</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="action-button compact" onclick="closeFailedModal()">Cancel</button>
+                    <button class="action-button" id="failedDeleteSubmit" onclick="submitFailedDelete()">Submit</button>
                 </div>
             </div>
         </div>
@@ -1370,39 +1405,95 @@
             }
         }
 
-        async function deleteFailedStatus(statusValue, button) {
-            // Confirm before deleting
-            if (!confirm(`Delete records with status "${statusValue}"?`)) {
+        // Open modal and load rows matching the given failed status
+        let currentFailedStatus = null;
+        async function openFailedModal(statusValue, button) {
+            currentFailedStatus = statusValue;
+            const modal = document.getElementById('failedDeleteModal');
+            const tbody = document.querySelector('#failedDeleteTable tbody');
+            const selectAll = document.getElementById('failedSelectAll');
+            const submitBtn = document.getElementById('failedDeleteSubmit');
+            tbody.innerHTML = '';
+            if (selectAll) selectAll.checked = false;
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit';
+            try {
+                const resp = await fetch(`/api/v2/queue/failed?status=${encodeURIComponent(statusValue)}`);
+                if (!resp.ok) throw new Error(`Server returned ${resp.status}`);
+                const data = await resp.json();
+                const items = (data && data.data) || [];
+                if (!items || items.length === 0) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = '<td colspan="5" class="no-data">No matching records</td>';
+                    tbody.appendChild(tr);
+                } else {
+                    items.forEach(item => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><input type="checkbox" class="failed-delete-checkbox" data-guid="${item.file_guid}"></td>
+                            <td>${item.input_file_name || ''}</td>
+                            <td>${item.worker || ''}</td>
+                            <td>${item.directory_path || ''}</td>
+                            <td class="time-added">${item.datetime_pulled ? item.datetime_pulled.replace('T',' ').slice(0,16) : '—'}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to load failed items:', err);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="5" class="no-data">Failed to load items: ${err.message}</td>`;
+                tbody.appendChild(tr);
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function closeFailedModal() {
+            const modal = document.getElementById('failedDeleteModal');
+            modal.classList.add('hidden');
+            const tbody = document.querySelector('#failedDeleteTable tbody');
+            if (tbody) tbody.innerHTML = '';
+            currentFailedStatus = null;
+        }
+
+        function toggleFailedSelectAll(cb) {
+            const boxes = Array.from(document.querySelectorAll('.failed-delete-checkbox'));
+            boxes.forEach(b => b.checked = cb.checked);
+        }
+
+        async function submitFailedDelete() {
+            const submitBtn = document.getElementById('failedDeleteSubmit');
+            const boxes = Array.from(document.querySelectorAll('.failed-delete-checkbox:checked'));
+            if (boxes.length === 0) {
+                alert('Select at least one row to delete.');
                 return;
             }
-            
-            const originalText = button.textContent;
-            button.disabled = true;
-            button.textContent = 'Deleting...';
-            
+            const guids = boxes.map(b => b.dataset.guid).filter(Boolean);
+            if (guids.length === 0) {
+                alert('No valid GUIDs selected.');
+                return;
+            }
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Deleting...';
             try {
-                const response = await fetch('/api/v2/queue/delete-errors', {
+                const resp = await fetch('/api/v2/queue/delete-errors', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ status: statusValue })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: currentFailedStatus, guids })
                 });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    alert(`Successfully deleted ${data.deleted_count} records for "${statusValue}". Refreshing...`);
+                const data = await resp.json().catch(() => ({}));
+                if (resp.ok) {
+                    alert(`Successfully deleted ${data.deleted_count || guids.length} records. Refreshing...`);
                     location.reload();
                 } else {
-                    alert(`Delete failed: ${data.error || response.status}`);
-                    button.disabled = false;
-                    button.textContent = originalText;
+                    alert(`Delete failed: ${data.error || resp.status}`);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit';
                 }
-            } catch (error) {
-                alert(`Error: ${error.message}`);
-                button.disabled = false;
-                button.textContent = originalText;
+            } catch (err) {
+                alert(`Error: ${err.message}`);
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit';
             }
         }
 

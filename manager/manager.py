@@ -14,6 +14,7 @@ from flask_post_delete_errors import delete_errors_logic
 from flask_post_delete_queue import delete_queue_logic
 from flask_directories import create_directory_logic, update_directory_logic, delete_directory_logic
 from flask_get_encoding_queue import get_encoding_queue_logic
+from flask_get_failed_by_status import get_failed_by_status_logic
 
 # Get log level from environment variable (default: INFO)
 log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
@@ -170,6 +171,13 @@ def get_queue_status():
 @app.route('/api/v2/queue/encoding', methods=['GET'])
 def get_encoding_queue():
     response_data, status_code = get_encoding_queue_logic()
+    return jsonify(response_data), status_code
+
+
+@app.route('/api/v2/queue/failed', methods=['GET'])
+def get_failed_by_status():
+    status_value = request.args.get('status')
+    response_data, status_code = get_failed_by_status_logic(status_value)
     return jsonify(response_data), status_code
 
 
