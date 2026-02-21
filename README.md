@@ -82,10 +82,10 @@ Done.
 
 ---
 # How to start the Boilest/video encoding workflow
-Jump into the UI, click the start queu ebutton
+Jump into the UI, click the start queue button
 
 
 ---
 # How much of this is GenAI?
 - Everything but the UI: This was largely a refactoring of my existing code.  So GitHub copilot was used to setup some patterns, and the rest was done by hand.  Sans post_completed_encode.py.  I should have seperated this API into multiple (sucess, failure, delete, etc) but got lazy.
--UI: Everything is GitHub CoPilot.  I am bad at UI.  
+-UI: Everything is GitHub CoPilot.  I am bad at CSS and JavaScript is giberish.  
