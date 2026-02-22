@@ -74,6 +74,11 @@ def get_index_data():
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
         
+
+        # =====================================================
+        #                   Main Page Metrics
+        # =====================================================
+
         # Get queued count
         cur.execute("SELECT COUNT(*) FROM queue WHERE status='queued'")
         queued_count = cur.fetchone()[0]
@@ -100,33 +105,66 @@ def get_index_data():
             space_saved_value, space_saved_unit = 0.0, "MB"
         logging.debug(f"[UI] Space saved: {space_saved_gb} GB")
         
-        # Get queued items sorted by file size descending
+        # Calculate total processing time across all encoded records
+        cur.execute("""
+            SELECT SUM((julianday(datetime_encoded) - julianday(datetime_pulled)) * 24 * 60) AS total_minutes
+            FROM queue
+            WHERE status = 'encoded'
+              AND datetime_pulled IS NOT NULL
+              AND datetime_encoded IS NOT NULL
+        """)
+        total_minutes_result = cur.fetchone()
+        if total_minutes_result and total_minutes_result['total_minutes'] is not None:
+            total_processing_minutes = float(total_minutes_result['total_minutes'])
+        else:
+            total_processing_minutes = 0.0
+        total_processing_value, total_processing_unit = _format_minutes_duration(total_processing_minutes)
+        logging.debug(f"[UI] Total processing time: {total_processing_minutes} minutes")
+
+    
+        # =====================================================
+        #                   Queued Files Table
+        # =====================================================
+
+        # Get queued items
         cur.execute("""
             SELECT 
+                ROWID,
                 file_guid,
                 directory_path,
                 input_file_name,
                 before_file_size,
-                output_file_name,
                 ffmpeg_string,
                 datetime_added
             FROM queue 
             WHERE status = 'queued'
-            ORDER BY before_file_size DESC
+            ORDER BY ROWID DESC
+            LIMIT 100
         """)
-        queued_items = [dict(row) for row in cur.fetchall()]
-        # Convert queued item sizes from KB to MB for display
-        for item in queued_items:
-            try:
-                bfs = item.get('before_file_size')
-                if bfs is not None:
-                    item['before_file_size_mb'] = round(bfs / 1024, 2)
-                else:
-                    item['before_file_size_mb'] = None
-            except Exception:
-                item['before_file_size_mb'] = None
-
+        raw_items = cur.fetchall()
+        queued_items = []
+        for row in raw_items:
+            item = {
+                'ROWID': row['ROWID'],
+                'Filename': row['input_file_name'],
+                'Path': row['directory_path'],
+                'SizeMB': round(row['before_file_size'] / 1024, 2) if row['before_file_size'] is not None else None,
+                'ffmpeg_string': row['ffmpeg_string'],
+                'Added': None
+            }
+            dt = row['datetime_added']
+            if dt:
+                try:
+                    item['Added'] = datetime.fromisoformat(dt).strftime('%Y-%m-%d %H-%M')
+                except Exception:
+                    item['Added'] = dt
+            queued_items.append(item)
         logging.debug(f"[UI] Retrieved {len(queued_items)} queued items")
+
+
+        # =====================================================
+        #                   Currently Encoding Table
+        # =====================================================
         
         # Get currently encoding items sorted by datetime_pulled ascending
         cur.execute("""
@@ -135,32 +173,39 @@ def get_index_data():
                 directory_path,
                 input_file_name,
                 before_file_size,
-                output_file_name,
                 ffmpeg_string,
-                datetime_added,
                 datetime_pulled,
                 worker
             FROM queue 
             WHERE status = 'pulled'
             ORDER BY datetime_pulled ASC
+            LIMIT 100
         """)
-        encoding_items = [dict(row) for row in cur.fetchall()]
-        # Convert encoding item sizes from KB to MB for display
-        for item in encoding_items:
-            try:
-                bfs = item.get('before_file_size')
-                if bfs is not None:
-                    item['before_file_size_mb'] = round(bfs / 1024, 2)
-                else:
-                    item['before_file_size_mb'] = None
-            except Exception:
-                item['before_file_size_mb'] = None
-
+        raw_encoding = cur.fetchall()
+        encoding_items = []
+        for row in raw_encoding:
+            item = dict(row)
+            bfs = item.get('before_file_size')
+            item['SizeMB'] = round(bfs / 1024, 2) if bfs is not None else None
+            dt_pulled = item.get('datetime_pulled')
+            if dt_pulled:
+                try:
+                    item['Pulled'] = datetime.fromisoformat(dt_pulled).strftime('%Y-%m-%d %H:%M')
+                except Exception:
+                    item['Pulled'] = dt_pulled
+            else:
+                item['Pulled'] = None
+            encoding_items.append(item)
         logging.debug(f"[UI] Retrieved {len(encoding_items)} currently encoding items")
+
+        # =====================================================
+        #                   Recently Encoded Table
+        # =====================================================
         
         # Get recently encoded items sorted by datetime_encoded descending
         cur.execute("""
             SELECT 
+                ROWID,
                 output_file_name,
                 directory_path,
                 before_file_size - after_file_size as space_saved,
@@ -189,34 +234,31 @@ def get_index_data():
                     duration_minutes = None
             item['duration_minutes'] = duration_minutes
 
-            # Convert space_saved from KB to dynamic unit for display
+            # Convert space_saved from KB to MB for display
             try:
                 ss = item.get('space_saved')
                 if ss is not None:
-                    item['space_saved_value'], item['space_saved_unit'] = _format_kb_size(ss)
+                    item['space_saved_mb'] = round(ss / 1024, 2)
                 else:
-                    item['space_saved_value'], item['space_saved_unit'] = None, None
+                    item['space_saved_mb'] = None
             except Exception:
-                item['space_saved_value'], item['space_saved_unit'] = None, None
+                item['space_saved_mb'] = None
+
+            # Format datetime_encoded as YYYY-MM-DD HH:MM
+            if de:
+                try:
+                    item['Completed'] = datetime.fromisoformat(de).strftime('%Y-%m-%d %H:%M')
+                except Exception:
+                    item['Completed'] = de
+            else:
+                item['Completed'] = None
 
         logging.debug(f"[UI] Retrieved {len(encoded_items)} recently encoded items")
         
-        # Calculate total processing time across all encoded records
-        cur.execute("""
-            SELECT SUM((julianday(datetime_encoded) - julianday(datetime_pulled)) * 24 * 60) AS total_minutes
-            FROM queue
-            WHERE status = 'encoded'
-              AND datetime_pulled IS NOT NULL
-              AND datetime_encoded IS NOT NULL
-        """)
-        total_minutes_result = cur.fetchone()
-        if total_minutes_result and total_minutes_result['total_minutes'] is not None:
-            total_processing_minutes = float(total_minutes_result['total_minutes'])
-        else:
-            total_processing_minutes = 0.0
-        total_processing_value, total_processing_unit = _format_minutes_duration(total_processing_minutes)
-        logging.debug(f"[UI] Total processing time: {total_processing_minutes} minutes")
-        
+        # =====================================================
+        #                   Recently Failed Table
+        # =====================================================
+
         # Get recently failed items (include any non-active statuses and explicitly include 'stopped')
         cur.execute("""
             SELECT 
@@ -232,6 +274,11 @@ def get_index_data():
         """)
         failed_items = [dict(row) for row in cur.fetchall()]
         logging.debug(f"[UI] Retrieved {len(failed_items)} recently failed items")
+
+
+        # =====================================================
+        #                   Directories Table
+        # =====================================================
         
         # Get all active directories
         cur.execute("SELECT * FROM directories WHERE active = 'active'")
