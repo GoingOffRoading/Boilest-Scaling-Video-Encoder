@@ -25,7 +25,7 @@ def post_completed_encode_logic(request_data):
 
         file_guid = request_data.get('file_guid')
         after_file_size = request_data.get('after_file_size')
-        outcome = request_data.get('outcome')
+        status = request_data.get('status')
         datetime_encoded = datetime.now().isoformat()
 
         if not file_guid:
@@ -35,11 +35,11 @@ def post_completed_encode_logic(request_data):
                 'error': 'Missing required field: file_guid'
             }, 400
 
-        if not outcome:
-            logging.error("[ERROR] Missing required field: outcome")
+        if not status:
+            logging.error("[ERROR] Missing required field: status")
             return {
                 'success': False,
-                'error': 'Missing required field: outcome'
+                'error': 'Missing required field: status'
             }, 400
 
         # Connect to database
@@ -55,8 +55,8 @@ def post_completed_encode_logic(request_data):
             SET datetime_encoded = ?, after_file_size = COALESCE(?, after_file_size), status = ?
             WHERE file_guid = ?
         """
-        logging.debug(f"[UPDATE] Updating queue - file_guid: {file_guid}, after_file_size: {after_file_size}, outcome: {outcome}, datetime_encoded: {datetime_encoded}")
-        cur.execute(update_query, (datetime_encoded, after_file_size, outcome, file_guid))
+        logging.debug(f"[UPDATE] Updating queue - file_guid: {file_guid}, after_file_size: {after_file_size}, status: {status}, datetime_encoded: {datetime_encoded}")
+        cur.execute(update_query, (datetime_encoded, after_file_size, status, file_guid))
         
         rows_affected = cur.rowcount
         conn.commit()
