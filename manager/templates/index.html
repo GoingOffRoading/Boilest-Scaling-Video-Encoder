@@ -637,7 +637,7 @@
                     <table>
                         <thead>
                             <tr>
-                                <th style="width: 60px;">ROWID</th>
+                                <th style="width: 60px;">RowID</th>
                                 <th>Filename</th>
                                 <th>Path</th>
                                 <th style="text-align: right;">Size (MB)</th>
@@ -679,19 +679,19 @@
                     <table>
                         <thead>
                             <tr>
-                                <th style="width: 60px;">Rank</th>
+                                <th style="width: 60px;">RowID</th>
                                 <th>Worker</th>
                                 <th>Filename</th>
                                 <th>Path</th>
                                 <th style="text-align: right">Size (MB)</th>
                                 <th>FFmpeg String</th>
-                                <th style="width: 75px;">Pulled</th>
+                                <th style="width: 120px;">Pulled</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for item in encoding_items[:10] %}
                             <tr>
-                                <td><strong>{{ loop.index }}</strong></td>
+                                <td><strong>{{ item['ROWID'] }}</strong></td>
                                 <td>{{ item['worker'] if item['worker'] else '—' }}</td>
                                 <td>{{ item['input_file_name'] }}</td>
                                 <td>{{ item['directory_path'] }}</td>
