@@ -23,7 +23,7 @@ def run_local_worker_loop():
             logging.info("Polling for new task...")
             
             # Step 0: Get task from queue
-            status, response = get_task(queue_order)
+            status, response = get_task()
             
             if status != 200:
                 logging.error(f"✗ Failed to get task. Status: {status}, Response: {response}")
