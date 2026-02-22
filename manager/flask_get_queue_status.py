@@ -6,9 +6,8 @@ __all__ = ["get_queue_status_logic"]
 
 
 def get_queue_status_logic(file_guid):
-    logging.info("\n" + "="*80)
+    logging.info("="*80 + "\n")
     logging.info("[REQUEST] GET /api/v2/queue/status")
-    logging.info("="*80)
 
     if not file_guid:
         logging.error("[ERROR] Missing required query parameter: file_guid")
@@ -31,7 +30,7 @@ def get_queue_status_logic(file_guid):
         cur.close()
         conn.close()
         logging.debug("[DB] Connection closed")
-        logging.info("="*80 + "\n")
+        logging.info("\n" + "="*80)
 
         if row:
             result = {
@@ -59,7 +58,7 @@ def get_queue_status_logic(file_guid):
     except Exception as e:
         logging.error(f"[ERROR] Exception occurred: {type(e).__name__}")
         logging.error(f"[ERROR] Error message: {str(e)}")
-        logging.error("="*80 + "\n")
+        logging.error("="*80)
         return {
             'success': False,
             'error': str(e)

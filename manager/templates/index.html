@@ -626,8 +626,8 @@
                 <!-- Scan Button -->
                 <div class="button-container">
                     <div class="button-row">
-                        <button class="action-button" id="scanButton" onclick="openScanModal()">Scan for Files</button>
-                        <button class="action-button" id="deleteQueueButton" onclick="deleteQueue()">Delete Queue</button>
+                        <button class="action-button compact" id="scanButton" onclick="openScanModal()">Scan for Files</button>
+                        <button class="action-button compact" id="deleteQueueButton" onclick="deleteQueue()">Delete Queue</button>
                     </div>
                     <div class="status-message" id="statusMessage"></div>
                 </div>
@@ -668,9 +668,9 @@
         <!-- Currently Encoding Tab -->
         <div id="encoding" class="tab-content">
             <div class="table-container">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h2>Currently Encoding</h2>
-                    <div>
+                <div style="display:flex; flex-direction:column; align-items:center;">
+                    <h2 style="align-self:flex-start;">Currently Encoding</h2>
+                    <div style="margin-top:8px;">
                         <button class="action-button compact" onclick="openStopEncodeModal()">Stop Encode</button>
                     </div>
                 </div>
@@ -768,7 +768,7 @@
                         <button class="action-button compact" onclick="openFailedModal('Failed: Postflight File Size Check', this)">Postflight: File Size Check</button>
                         <button class="action-button compact" onclick="openFailedModal('Failed: Postflight Delete Source File', this)">Postflight: Delete Source File</button>
                         <button class="action-button compact" onclick="openFailedModal('Failed: Postflight Move Temp File', this)">Postflight: Move Temp File</button>
-                        <button class="action-button compact" onclick="openFailedModal('Failed: Stopped', this)">Stopped</button>
+                        <button class="action-button compact" onclick="openFailedModal('stopped', this)">Stopped</button>
                     </div>
                 </div>
                 <h2>Recently Failed</h2>
@@ -810,9 +810,9 @@
             <div class="table-container">
                 <div class="button-container">
                     <div class="button-row">
-                        <button class="action-button" onclick="openDirectoryModal('create')">Add Directory</button>
-                        <button class="action-button" onclick="openDirectoryModal('edit')">Edit Directory</button>
-                        <button class="action-button" onclick="deleteDirectory()">Remove Directory</button>
+                        <button class="action-button compact" onclick="openDirectoryModal('create')">Add Directory</button>
+                        <button class="action-button compact" onclick="openDirectoryModal('edit')">Edit Directory</button>
+                        <button class="action-button compact" onclick="deleteDirectory()">Remove Directory</button>
                     </div>
                 </div>
                 <h2>Directories</h2>
