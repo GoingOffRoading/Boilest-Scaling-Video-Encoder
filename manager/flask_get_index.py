@@ -138,7 +138,7 @@ def get_index_data():
                 datetime_added
             FROM queue 
             WHERE status = 'queued'
-            ORDER BY ROWID DESC
+            ORDER BY ROWID ASC
             LIMIT 100
         """)
         raw_items = cur.fetchall()
@@ -179,7 +179,7 @@ def get_index_data():
                 worker
             FROM queue 
             WHERE status = 'pulled'
-            ORDER BY datetime_pulled ASC
+            ORDER BY worker ASC
             LIMIT 100
         """)
         raw_encoding = cur.fetchall()
