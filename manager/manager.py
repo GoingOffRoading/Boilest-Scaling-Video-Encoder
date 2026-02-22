@@ -3,8 +3,6 @@ import logging
 from flask import Flask, jsonify, request, render_template
 from db_status import get_database_status
 from flask_get_index import get_index_data
-from flask_get_largest_queue import get_largest_queue_logic
-from flask_get_smalled_queue import get_smallest_queue_logic
 from flask_get_fifo_queue import get_fifo_queue_logic
 from flask_post_completed_encode import post_completed_encode_logic
 from flask_get_queue_status import get_queue_status_logic
@@ -172,8 +170,6 @@ if __name__ == '__main__':
     logging.info("="*80)
     logging.info("Available endpoints:")
     logging.info("  - GET  /                    (Main UI page)")
-    logging.info("  - GET  /api/v2/queue/largest   (Get largest queued item by file size)")
-    logging.info("  - GET  /api/v2/queue/smallest  (Get smallest queued item by file size)")
     logging.info("  - GET  /api/v2/queue/fifo      (Get queued item by FIFO row order)")
     logging.info("  - POST /api/v2/completed       (Create new completed record)")
     logging.info("  - POST /api/v2/scan            (Scan directories and probe files)")
