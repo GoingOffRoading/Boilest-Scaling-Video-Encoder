@@ -105,7 +105,6 @@ def run_local_worker_loop():
                 logging.info("Aborting current task due to manager stop (after step 3)")
                 continue
             
-
             logging.info(f"Preflight checks passed... Starting FFmpeg on: {input_file_name}")
 
 
@@ -114,6 +113,10 @@ def run_local_worker_loop():
             if not run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path, file_guid=file_guid):
                 step_4_duration = time.perf_counter() - step_4_start_perf
                 logging.error(f"✗ Step 4: FFmpeg encoding failed for: {input_file_name} (duration: {format_duration(step_4_duration)})")
+                # Check if the worker should stop before reporting failure
+                if not sleep_with_file_check(0, file_guid):
+                    logging.info("Aborting current task due to manager stop (after ffmpeg failure)")
+                    continue
                 report_encoding_completed(file_guid, 'Failed: FFmpeg Failure')
                 continue
             step_4_duration = time.perf_counter() - step_4_start_perf
