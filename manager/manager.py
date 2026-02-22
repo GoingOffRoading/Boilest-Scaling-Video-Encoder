@@ -33,27 +33,6 @@ def index():
     index_data = get_index_data()
     return render_template('index.html', **index_data)
 
-
-@app.route('/api/v2/queue/largest', methods=['GET'])
-def get_largest_queue():
-    """
-    Query the queue table and return one row sorted by before_file_size DESC limit 1
-    """
-    worker = request.args.get('worker')
-    response_data, status_code = get_largest_queue_logic(DB_DISABLED, worker)
-    return jsonify(response_data), status_code
-
-
-@app.route('/api/v2/queue/smallest', methods=['GET'])
-def get_smallest_queue():
-    """
-    Query the queue table and return one row sorted by before_file_size ASC limit 1
-    """
-    worker = request.args.get('worker')
-    response_data, status_code = get_smallest_queue_logic(DB_DISABLED, worker)
-    return jsonify(response_data), status_code
-
-
 @app.route('/api/v2/queue/fifo', methods=['GET'])
 def get_fifo_queue():
     """
@@ -157,9 +136,7 @@ def database_status():
     Get the current status of database operations
     """
     logging.info("[REQUEST] GET /api/v2/db/status")
-
     status_data = get_database_status(DB_DISABLED)
-
     return jsonify(status_data), 200
 
 

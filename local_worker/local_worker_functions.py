@@ -24,31 +24,10 @@ import time
 
 # ----------------------------------------
 API_BASE_URL = os.environ.get("MANAGER_BASE_URL", "http://192.168.1.110:31500")  # Get from container env var
-QUEUE_ENDPOINTS = {
-    "LARGEST": f"{API_BASE_URL}/api/v2/queue/largest",
-    "SMALLEST": f"{API_BASE_URL}/api/v2/queue/smallest",
-    "FIFO": f"{API_BASE_URL}/api/v2/queue/fifo",
-}
 
-
-def normalize_queue_order(queue_order):
-    if queue_order is None:
-        return "FIFO"
-
-    normalized = str(queue_order).strip().upper()
-    if normalized in QUEUE_ENDPOINTS:
-        return normalized
-    return "FIFO"
-
-
-def get_task_endpoint(queue_order=None):
-    normalized_queue_order = normalize_queue_order(queue_order)
-    return QUEUE_ENDPOINTS[normalized_queue_order]
-
-
-def get_task(queue_order=None):
+def get_task():
     worker_name = os.environ.get("NODE_NAME", socket.gethostname())
-    endpoint = get_task_endpoint(queue_order)
+    endpoint = f"{API_BASE_URL}/api/v2/queue/fifo"
     request_url = f"{endpoint}?worker={worker_name}"
     request = urllib.request.Request(request_url, method="GET")
     try:
@@ -64,10 +43,6 @@ def get_task(queue_order=None):
         return exc.code, exc.read().decode("utf-8")
     except URLError as exc:
         return None, f"Connection error: {exc}"
-
-
-def get_largest_task():
-    return get_task("LARGEST")
 
 # ----------------------------------------
 
@@ -315,73 +290,45 @@ def report_encoding_completed(file_guid, status, after_file_size=None):
     """
     Call the /api/v2/completed endpoint to report that encoding is finished.
     Retries up to 10 times on failure with exponential backoff.
-    
+
     Parameters:
       - file_guid (str): The unique identifier of the file that was encoded
       - status (str): The outcome status (e.g., 'encoded', 'failed', 'error')
       - after_file_size (int, optional): The file size in KB after encoding
-    
+
     Returns:
       - tuple: (status_code, response_data)
     """
     endpoint = f"{API_BASE_URL}/api/v2/completed"
-    
-    # Prepare the request data
     request_data = {
         "file_guid": file_guid,
-        "outcome": status
+        "status": status
     }
-    
-    # Add after_file_size if provided
     if after_file_size is not None:
         request_data["after_file_size"] = after_file_size
-    
+
     max_attempts = 10
-    attempt = 0
-    
-    while attempt < max_attempts:
-        attempt += 1
-        
-        if attempt == 1:
-            logging.info(f"\n[REPORT] Calling {endpoint}")
-        else:
-            logging.info(f"\n[REPORT] Retry attempt {attempt}/{max_attempts} - Calling {endpoint}")
-            
-        logging.debug(f"[REPORT] File GUID: {file_guid}")
-        logging.debug(f"[REPORT] Status: {status}")
-        if after_file_size is not None:
-            logging.debug(f"[REPORT] Encoded file size: {after_file_size} KB")
-        
+    last_status_code = None
+    last_response = None
+    for attempt in range(1, max_attempts + 1):
         try:
-            # Create and send the POST request
-            json_data = json.dumps(request_data).encode('utf-8')
+            data_bytes = json.dumps(request_data).encode("utf-8")
             request = urllib.request.Request(
                 endpoint,
-                data=json_data,
-                headers={'Content-Type': 'application/json'},
-                method='POST'
+                data=data_bytes,
+                headers={"Content-Type": "application/json"},
+                method="POST"
             )
-            
             with urllib.request.urlopen(request, timeout=10) as response:
                 status_code = response.getcode()
-                body = response.read().decode('utf-8')
+                body = response.read().decode("utf-8")
                 try:
                     response_data = json.loads(body)
                 except json.JSONDecodeError:
                     response_data = body
-                
-                logging.info(f"[SUCCESS] Status: {status_code}")
                 logging.debug(f"[RESPONSE] {json.dumps(response_data, indent=2)}")
-                
-                # Extract and report the new file size if available
-                if isinstance(response_data, dict) and 'data' in response_data:
-                    data = response_data['data']
-                    if 'after_file_size' in data:
-                        logging.debug(f"[RESULT] Encoded file size confirmed: {data['after_file_size']} KB")
-                
                 # Success - return immediately
                 return status_code, response_data
-                
         except HTTPError as exc:
             status_code = exc.code
             error_body = exc.read().decode('utf-8')
@@ -396,13 +343,13 @@ def report_encoding_completed(file_guid, status, after_file_size=None):
             logging.error(f"[ERROR] Exception: {type(e).__name__}: {str(e)}")
             last_status_code = None
             last_response = str(e)
-        
-        # If not the last attempt, wait before retrying (30 seconds between attempts)
+
+        # If not the last attempt, wait before retrying (exponential backoff)
         if attempt < max_attempts:
-            wait_time = 60 * (2 ** (attempt - 1))  # Exponential backoff: 60s, 120s, 240s, etc.
+            wait_time = 60 * (2 ** (attempt - 1))  # 60s, 120s, 240s, etc.
             logging.info(f"[RETRY] Waiting {wait_time} seconds before retry...")
             time.sleep(wait_time)
-    
+
     # All attempts failed
     logging.error(f"[FAILED] All {max_attempts} attempts failed")
     return last_status_code, last_response
