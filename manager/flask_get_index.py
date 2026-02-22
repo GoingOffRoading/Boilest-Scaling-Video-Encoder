@@ -169,6 +169,7 @@ def get_index_data():
         # Get currently encoding items sorted by datetime_pulled ascending
         cur.execute("""
             SELECT 
+                ROWID,
                 file_guid,
                 directory_path,
                 input_file_name,
@@ -195,6 +196,7 @@ def get_index_data():
                     item['Pulled'] = dt_pulled
             else:
                 item['Pulled'] = None
+            # ROWID is already included from SELECT
             encoding_items.append(item)
         logging.debug(f"[UI] Retrieved {len(encoding_items)} currently encoding items")
 

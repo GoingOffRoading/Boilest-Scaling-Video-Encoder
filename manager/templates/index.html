@@ -718,7 +718,7 @@
                     <table>
                         <thead>
                             <tr>
-                                <th style="width: 60px;">Rank</th>
+                                <th style="width: 60px;">RowID</th>
                                 <th>Worker</th>
                                 <th>Filee</th>
                                 <th>Path</th>
@@ -777,7 +777,7 @@
                     <table>
                         <thead>
                             <tr>
-                                <th style="width: 60px;">Rank</th>
+                                <th style="width: 60px;">RowID</th>
                                 <th>Worker</th>
                                 <th>Filename</th>
                                 <th>Path</th>
@@ -788,7 +788,7 @@
                         <tbody>
                             {% for item in failed_items[:100] %}
                             <tr>
-                                <td><strong>{{ loop.index }}</strong></td>
+                                <td><strong>{{ item['ROWID'] }}</strong></td>
                                 <td>{{ item['worker'] if item['worker'] else '—' }}</td>
                                 <td>{{ item['input_file_name'] }}</td>
                                 <td>{{ item['directory_path'] }}</td>
