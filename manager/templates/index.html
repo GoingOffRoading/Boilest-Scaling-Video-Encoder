@@ -1028,13 +1028,13 @@
             submitBtn.disabled = true;
             submitBtn.textContent = 'Stopping...';
             try {
-                // POST stopped outcome for each selected file
+                // POST stopped status for each selected file
                 for (const guid of guids) {
                     try {
                         const resp = await fetch('/api/v2/completed', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ file_guid: guid, outcome: 'Stopped' })
+                            body: JSON.stringify({ file_guid: guid, status: 'Stopped' })
                         });
                         if (!resp.ok) {
                             const data = await resp.json().catch(() => ({}));
