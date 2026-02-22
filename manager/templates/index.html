@@ -735,14 +735,14 @@
                                 <td>{{ item['output_file_name'] }}</td>
                                 <td>{{ item['directory_path'] }}</td>
                                 <td>
-                                    {% if item['space_saved_value'] is not none and item['space_saved_unit'] is not none %}
-                                        {{ "{:,.2f}".format(item['space_saved_value']) }} {{ item['space_saved_unit'] }}
+                                    {% if item['space_saved_mb'] is not none %}
+                                        {{ "{:,.2f}".format(item['space_saved_mb']) }} MB
                                     {% else %}
                                         —
                                     {% endif %}
                                 </td>
                                 <td>{{ item['duration_minutes'] if item['duration_minutes'] is not none else '—' }}</td>
-                                <td class="time-added">{{ item['datetime_encoded']|string|replace('T', ' ')|truncate(16, True, '') if item['datetime_encoded'] else '—' }}</td>
+                                <td class="time-added">{{ item['Completed'] if item['Completed'] else '—' }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
