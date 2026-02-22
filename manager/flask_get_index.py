@@ -185,18 +185,21 @@ def get_index_data():
         raw_encoding = cur.fetchall()
         encoding_items = []
         for row in raw_encoding:
-            item = dict(row)
-            bfs = item.get('before_file_size')
-            item['SizeMB'] = round(bfs / 1024, 2) if bfs is not None else None
-            dt_pulled = item.get('datetime_pulled')
+            item = {
+                'ROWID': row['ROWID'],
+                'worker': row['worker'],
+                'input_file_name': row['input_file_name'],
+                'directory_path': row['directory_path'],
+                'SizeMB': round(row['before_file_size'] / 1024, 2) if row['before_file_size'] is not None else None,
+                'ffmpeg_string': row['ffmpeg_string'],
+                'Pulled': None
+            }
+            dt_pulled = row['datetime_pulled']
             if dt_pulled:
                 try:
                     item['Pulled'] = datetime.fromisoformat(dt_pulled).strftime('%Y-%m-%d %H:%M')
                 except Exception:
                     item['Pulled'] = dt_pulled
-            else:
-                item['Pulled'] = None
-            # ROWID is already included from SELECT
             encoding_items.append(item)
         logging.debug(f"[UI] Retrieved {len(encoding_items)} currently encoding items")
 
@@ -219,23 +222,31 @@ def get_index_data():
             ORDER BY datetime_encoded DESC
             LIMIT 100
         """)
-        encoded_items = [dict(row) for row in cur.fetchall()]
-
-        # Compute encoding duration in minutes for each encoded item
-        for item in encoded_items:
+        raw_encoded = cur.fetchall()
+        encoded_items = []
+        for row in raw_encoded:
+            item = {
+                'ROWID': row['ROWID'],
+                'worker': row['worker'],
+                'output_file_name': row['output_file_name'],
+                'directory_path': row['directory_path'],
+                'space_saved': row['before_file_size - after_file_size'] if 'before_file_size - after_file_size' in row.keys() else row['space_saved'],
+                'datetime_pulled': row['datetime_pulled'],
+                'datetime_encoded': row['datetime_encoded'],
+                'duration_minutes': None,
+                'space_saved_mb': None,
+                'Completed': None
+            }
             dp = item.get('datetime_pulled')
             de = item.get('datetime_encoded')
-            duration_minutes = None
             if dp and de:
                 try:
                     dt_pulled = datetime.fromisoformat(dp)
                     dt_encoded = datetime.fromisoformat(de)
                     delta = dt_encoded - dt_pulled
-                    duration_minutes = round(delta.total_seconds() / 60, 2)
+                    item['duration_minutes'] = round(delta.total_seconds() / 60, 2)
                 except Exception:
-                    duration_minutes = None
-            item['duration_minutes'] = duration_minutes
-
+                    item['duration_minutes'] = None
             # Convert space_saved from KB to MB for display
             try:
                 ss = item.get('space_saved')
@@ -245,7 +256,6 @@ def get_index_data():
                     item['space_saved_mb'] = None
             except Exception:
                 item['space_saved_mb'] = None
-
             # Format datetime_encoded as YYYY-MM-DD HH:MM
             if de:
                 try:
@@ -254,7 +264,7 @@ def get_index_data():
                     item['Completed'] = de
             else:
                 item['Completed'] = None
-
+            encoded_items.append(item)
         logging.debug(f"[UI] Retrieved {len(encoded_items)} recently encoded items")
         
         # =====================================================
@@ -264,6 +274,7 @@ def get_index_data():
         # Get recently failed items (include any non-active statuses and explicitly include 'stopped')
         cur.execute("""
             SELECT 
+                ROWID,
                 input_file_name,
                 directory_path,
                 datetime_pulled,
@@ -274,7 +285,18 @@ def get_index_data():
             ORDER BY datetime_pulled DESC
             LIMIT 100
         """)
-        failed_items = [dict(row) for row in cur.fetchall()]
+        raw_failed = cur.fetchall()
+        failed_items = []
+        for row in raw_failed:
+            item = {
+                'ROWID': row['ROWID'],
+                'worker': row['worker'],
+                'input_file_name': row['input_file_name'],
+                'directory_path': row['directory_path'],
+                'datetime_pulled': row['datetime_pulled'],
+                'status': row['status']
+            }
+            failed_items.append(item)
         logging.debug(f"[UI] Retrieved {len(failed_items)} recently failed items")
 
 
