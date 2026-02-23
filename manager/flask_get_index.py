@@ -282,7 +282,8 @@ def get_index_data():
                 directory_path,
                 datetime_pulled,
                 status,
-                worker
+                worker,
+                notes
             FROM queue 
             WHERE status NOT IN ('queued', 'pulled', 'encoded') OR status = 'stopped'
             ORDER BY datetime_pulled DESC
@@ -297,7 +298,8 @@ def get_index_data():
                 'input_file_name': row['input_file_name'],
                 'directory_path': row['directory_path'],
                 'datetime_pulled': row['datetime_pulled'],
-                'status': row['status']
+                'status': row['status'],
+                'notes': row['notes'] if 'notes' in row.keys() else ''
             }
             failed_items.append(item)
         logging.debug(f"[UI] Retrieved {len(failed_items)} recently failed items")
