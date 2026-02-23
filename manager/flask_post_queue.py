@@ -265,24 +265,23 @@ def get_file_size_kb(directory_path, filename):
 
 
 def write_to_queue(directory_guid, directory_path, input_file_name, output_file_name, before_file_size, ffmpeg_string, priority, db_path):
-        """Write a row into `queue` using the updated schema. Now accepts priority as a parameter.
-
-        Schema columns inserted:
-            directory_guid, file_guid, directory_path, input_file_name,
-            output_file_name, before_file_size, after_file_size, ffmpeg_string,
-            datetime_added, datetime_pulled, datetime_encoded, priority
-
-        Parameters:
-            - directory_guid (str)
-            - directory_path (str)
-            - input_file_name (str)
-            - output_file_name (str)
-            - before_file_size (int)
-            - ffmpeg_string (str)
-            - priority (int)
-            - after_file_size (int|None) optional
-            - db_path (str|None) optional DB path; falls back to global `db_path` variable
-        """
+    """
+    Write a row into `queue` using the updated schema. Now accepts priority as a parameter.
+    Schema columns inserted:
+        directory_guid, file_guid, directory_path, input_file_name,
+        output_file_name, before_file_size, after_file_size, ffmpeg_string,
+        datetime_added, datetime_pulled, datetime_encoded, priority
+    Parameters:
+        - directory_guid (str)
+        - directory_path (str)
+        - input_file_name (str)
+        - output_file_name (str)
+        - before_file_size (int)
+        - ffmpeg_string (str)
+        - priority (int)
+        - after_file_size (int|None) optional
+        - db_path (str|None) optional DB path; falls back to global `db_path` variable
+    """
     try:
         file_guid = str(uuid.uuid4())
         datetime_added = datetime.now().isoformat()
@@ -362,12 +361,11 @@ def run_queue_workflow(db_path=None, extensions=None, selected_paths=None):
                 if 'error' in probe_data:
                     logging.warning(f"    Skipping {input_file_name}: {probe_data['error']}")
                     continue
-                    
                 # Check if format key exists (valid probe data)
                 if 'format' not in probe_data:
                     logging.warning(f"    Skipping {input_file_name}: Invalid ffprobe output (missing 'format' key)")
                     continue
-                
+                # Propagate priority through output_file_name_fx and check_codecs
                 output_file_name, file_encoding_decision, priority = output_file_name_fx(input_file_name, default_encoding_decision, priority)
                 final_encoding_decision, priority, ffmpeg_command = check_codecs(
                     file_encoding_decision,
@@ -377,18 +375,16 @@ def run_queue_workflow(db_path=None, extensions=None, selected_paths=None):
                     ffmpeg_video,
                     desired_video_codec,
                 )
-                
                 logging.debug(final_encoding_decision)
                 logging.debug(ffmpeg_command)
                 logging.debug(output_file_name)
-
                 if final_encoding_decision == True:
                     logging.info(f"    Adding to queue: {input_file_name}")
                     before_file_size = get_file_size_kb(directory, input_file_name)
                     file_guid = write_to_queue(directory_guid, directory, input_file_name, output_file_name, before_file_size, ffmpeg_command, priority, db_path)
                     logging.debug(f"    Queued file_guid: {file_guid}")
                 else:
-                    logging.debug(f"    Skiping: {input_file_name}")
+                    logging.debug(f"    Skipping: {input_file_name}")
 
 
 if __name__ == "__main__":

@@ -7,13 +7,13 @@ from datetime import datetime
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
 
-def write_to_queue(directory_guid, directory_path, input_file_name, output_file_name, before_file_size, ffmpeg_string, db_path):
-    """Write a row into `queue` using the updated schema.
+def write_to_queue(directory_guid, directory_path, input_file_name, output_file_name, before_file_size, ffmpeg_string, priority, db_path):
+    """Write a row into `queue` using the updated schema, including priority.
 
     Schema columns inserted:
       directory_guid, file_guid, directory_path, input_file_name,
       output_file_name, before_file_size, after_file_size, ffmpeg_string,
-      datetime_added, datetime_pulled, datetime_encoded
+      datetime_added, datetime_pulled, datetime_encoded, status, priority
 
     Parameters:
       - directory_guid (str)
@@ -22,6 +22,7 @@ def write_to_queue(directory_guid, directory_path, input_file_name, output_file_
       - output_file_name (str)
       - before_file_size (int)
       - ffmpeg_string (str)
+      - priority (int)
       - after_file_size (int|None) optional
       - db_path (str|None) optional DB path; falls back to global `db_path` variable
     """
@@ -37,7 +38,7 @@ def write_to_queue(directory_guid, directory_path, input_file_name, output_file_
         cur = conn.cursor()
 
         cur.execute(
-            "INSERT INTO queue (directory_guid, file_guid, directory_path, input_file_name, output_file_name, before_file_size, after_file_size, ffmpeg_string, datetime_added, datetime_pulled, datetime_encoded, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO queue (directory_guid, file_guid, directory_path, input_file_name, output_file_name, before_file_size, after_file_size, ffmpeg_string, datetime_added, datetime_pulled, datetime_encoded, status, priority) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 directory_guid,
                 file_guid,
@@ -51,6 +52,7 @@ def write_to_queue(directory_guid, directory_path, input_file_name, output_file_
                 datetime_pulled,
                 datetime_encoded,
                 status,
+                priority,
             ),
         )
         conn.commit()
