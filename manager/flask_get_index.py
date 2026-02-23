@@ -144,15 +144,15 @@ def get_index_data():
         raw_items = cur.fetchall()
         queued_items = []
         for row in raw_items:
-                item = {
-                    'ROWID': row['ROWID'],
-                    'file_guid': row['file_guid'],
-                    'Filename': row['input_file_name'],
-                    'Path': row['directory_path'],
-                    'SizeMB': round(row['before_file_size'] / 1024, 2) if row['before_file_size'] is not None else None,
-                    'ffmpeg_string': row['ffmpeg_string'],
-                    'Added': None
-                }
+            item = {
+                'ROWID': row['ROWID'],
+                'file_guid': row['file_guid'],
+                'Filename': row['input_file_name'],
+                'Path': row['directory_path'],
+                'SizeMB': round(row['before_file_size'] / 1024, 2) if row['before_file_size'] is not None else None,
+                'ffmpeg_string': row['ffmpeg_string'],
+                'Added': None
+            }
             dt = row['datetime_added']
             if dt:
                 try:
