@@ -650,7 +650,7 @@
                         <tbody>
                             {% for item in queued_items[:100] %}
                             <tr>
-                                <td><input type="checkbox" class="queued-delete-checkbox" data-guid="{{ item['guid'] }}"></td>
+                                <td><input type="checkbox" class="queued-delete-checkbox" data-guid="{{ item['file_guid'] }}"></td>
                                 <td><strong>{{ item['ROWID'] }}</strong></td>
                                 <td>{{ item['Filename'] }}</td>
                                 <td>{{ item['Path'] }}</td>
@@ -1028,7 +1028,7 @@
                     } else {
                         mainRows.forEach(row => {
                             const cells = row.children;
-                            const guid = cells[0]?.querySelector('input')?.dataset.guid || '';
+                            const file_guid = cells[0]?.querySelector('input')?.dataset.guid || '';
                             const rowid = cells[1]?.textContent.trim() || '';
                             const filename = cells[2]?.textContent.trim() || '';
                             const path = cells[3]?.textContent.trim() || '';
@@ -1037,7 +1037,7 @@
                             const added = cells[6]?.textContent.trim() || '';
                             const tr = document.createElement('tr');
                             tr.innerHTML = `
-                                <td><input type="checkbox" class="queued-delete-checkbox-modal" data-guid="${guid}"></td>
+                                <td><input type="checkbox" class="queued-delete-checkbox-modal" data-guid="${file_guid}"></td>
                                 <td>${rowid}</td>
                                 <td>${filename}</td>
                                 <td>${path}</td>
