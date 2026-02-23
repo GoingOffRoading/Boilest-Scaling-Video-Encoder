@@ -164,16 +164,16 @@ def delete_guid():
     Expects JSON body with: guid
     """
     data = request.get_json(silent=True) or {}
-    guid = data.get('guid')
+    file_guid = data.get('guid')
     from db_path import get_db_path
     import sqlite3
-    if not guid:
+    if not file_guid:
         return jsonify({'error': 'No GUID provided'}), 400
     db_path = get_db_path()
     try:
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
-        cur.execute('DELETE FROM queue WHERE guid = ?', (guid,))
+        cur.execute('DELETE FROM queue WHERE file_guid = ?', (file_guid,))
         deleted_count = cur.rowcount
         conn.commit()
         conn.close()
