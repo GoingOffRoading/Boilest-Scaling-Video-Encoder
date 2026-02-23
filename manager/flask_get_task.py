@@ -2,13 +2,13 @@ import sqlite3
 from datetime import datetime
 from db_path import get_db_path
 
-__all__ = ["get_fifo_queue_logic"]
+__all__ = ["get_task"]
 
 
-def get_fifo_queue_logic(db_disabled, worker):
+def get_task(db_disabled, worker):
     import logging
     logging.info("=" * 80)
-    logging.info("[REQUEST] GET /api/v2/queue/fifo")
+    logging.info("[REQUEST] GET /api/v2/queue/task")
     logging.info("=" * 80)
 
     # Check if database operations are disabled
@@ -60,7 +60,7 @@ def get_fifo_queue_logic(db_disabled, worker):
                     'data': result
                 }, 200
 
-        # Query the encode table using FIFO order (ROWID), limit 1
+        # Query the encode table using prioritized order (priority DESC, ROWID ASC), limit 1
         query = """
             SELECT 
                 ROWID AS row_number,
@@ -72,10 +72,10 @@ def get_fifo_queue_logic(db_disabled, worker):
                 ffmpeg_string
             FROM queue q
             WHERE status = 'queued'
-            ORDER BY ROWID ASC
+            ORDER BY priority DESC, ROWID ASC
             LIMIT 1
         """
-        logging.debug("[QUERY] Executing query to fetch FIFO queue by ROWID...")
+        logging.debug("[QUERY] Executing query to fetch prioritized queue by ROWID...")
         cur.execute(query)
 
         row = cur.fetchone()

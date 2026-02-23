@@ -31,7 +31,7 @@ def get_task():
         - (status_code, data) or (None, error message)
     """
     worker_name = os.environ.get("NODE_NAME", socket.gethostname())
-    endpoint = f"{API_BASE_URL}/api/v2/queue/fifo"
+    endpoint = f"{API_BASE_URL}/api/v2/queue/task"
     request_url = f"{endpoint}?worker={worker_name}"
     request = urllib.request.Request(request_url, method="GET")
     try:
@@ -367,7 +367,8 @@ def run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path,
     Description:
         - Runs ffmpeg with the provided file paths and command. Monitors for manager stop signal if file_guid is provided.
     Returns:
-        - bool
+        - bool: true if ffmpeg succeeded, false if it failed or was stopped
+        - str: A reason message 
     """
     try:
         ffmpeg_settings = 'ffmpeg -hide_banner -loglevel 16 -stats -stats_period 60 -y -i'

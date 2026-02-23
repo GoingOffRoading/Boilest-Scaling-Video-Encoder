@@ -112,16 +112,16 @@ def run_ffprobe(directory_path, filename):
         return {'error': str(e)}
 
 
-def check_codecs(encoding_decision, stream_info, ffmpeg_command, ffmpeg_video, desired_video_codec):
+def check_codecs(encoding_decision, priority, stream_info, ffmpeg_command, ffmpeg_video, desired_video_codec):
     """Check codecs in streams and build ffmpeg command."""
     # Safety check: ensure stream_info has the required structure
     if 'error' in stream_info:
         logging.error(f"Cannot check codecs: {stream_info['error']}")
-        return encoding_decision, ffmpeg_command
+        return encoding_decision, priority, ffmpeg_command
         
     if 'format' not in stream_info or 'nb_streams' not in stream_info['format']:
         logging.error("Cannot check codecs: Invalid stream_info structure (missing 'format' or 'nb_streams')")
-        return encoding_decision, ffmpeg_command
+        return encoding_decision, priority, ffmpeg_command
     
     streams_count = stream_info['format']['nb_streams']
     
@@ -129,8 +129,9 @@ def check_codecs(encoding_decision, stream_info, ffmpeg_command, ffmpeg_video, d
         codec_type = stream_info['streams'][i]['codec_type'] 
         if codec_type == 'video':
             logging.debug('Stream ' + str(i) + ' is video')
-            encoding_decision, ffmpeg_command = check_video_stream(
+            encoding_decision, priority, ffmpeg_command = check_video_stream(
                 encoding_decision,
+                priority,
                 i,
                 stream_info,
                 ffmpeg_command,
@@ -138,20 +139,20 @@ def check_codecs(encoding_decision, stream_info, ffmpeg_command, ffmpeg_video, d
                 desired_video_codec,
             )
         elif codec_type == 'audio':
-            encoding_decision, ffmpeg_command = check_audio_stream(encoding_decision, i, stream_info, ffmpeg_command)
+            encoding_decision, priority, ffmpeg_command = check_audio_stream(encoding_decision, priority, i, stream_info, ffmpeg_command)
             logging.debug('audio stream')
         elif codec_type == 'subtitle':
-            encoding_decision, ffmpeg_command = check_subtitle_stream(encoding_decision, i, stream_info, ffmpeg_command)
+            encoding_decision, priority, ffmpeg_command = check_subtitle_stream(encoding_decision, priority, i, stream_info, ffmpeg_command)
             logging.debug('subtitle stream')
         elif codec_type == 'attachment':
-            encoding_decision, ffmpeg_command = check_attachmeent_stream(encoding_decision, i, stream_info, ffmpeg_command) 
+            encoding_decision, priority, ffmpeg_command = check_attachmeent_stream(encoding_decision, priority, i, stream_info, ffmpeg_command) 
             logging.debug('attachment stream')    
     logging.debug(encoding_decision)   
     logging.debug(ffmpeg_command)
-    return encoding_decision, ffmpeg_command
+    return encoding_decision, priority, ffmpeg_command
 
 
-def check_video_stream(encoding_decision, i, stream_info, ffmpeg_command, ffmpeg_video, desired_video_codec):
+def check_video_stream(encoding_decision, priority, i, stream_info, ffmpeg_command, ffmpeg_video, desired_video_codec):
     """Checks the video stream from check_codecs to determine if the stream needs encoding."""
     codec_name = stream_info['streams'][i]['codec_name'] 
 
@@ -171,20 +172,26 @@ def check_video_stream(encoding_decision, i, stream_info, ffmpeg_command, ffmpeg
 
     logging.debug('Steam ' + str(i) + ' codec is: ' + codec_name)
     if codec_name == desired_video_codec:
+        encoding_decision = False
         ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:v copy'
     elif codec_name == 'mjpeg':
+        encoding_decision = False
         ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:v copy'
     elif is_hdr:
+        encoding_decision = False
         ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:v copy'
     elif codec_name != desired_video_codec: 
         encoding_decision = True
+        # We want to bump priority for less efficient encodes as this will have a bigger impact on disk space
+        if codec_name in ("h264", "vp8", "theora", "mpeg4"):  
+            priority += 1
         ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:v ' + ffmpeg_video
     else:
         logging.debug('ignoring for now')
-    return encoding_decision, ffmpeg_command
+    return encoding_decision, priority, ffmpeg_command
 
 
-def check_audio_stream(encoding_decision, i, stream_info, ffmpeg_command):
+def check_audio_stream(encoding_decision, priority, i, stream_info, ffmpeg_command):
     """Checks the audio stream from check_codecs to determine if the stream needs encoding."""
     codec_name = stream_info['streams'][i]['codec_name'] 
     # This will be populated at a later date
@@ -194,13 +201,14 @@ def check_audio_stream(encoding_decision, i, stream_info, ffmpeg_command):
     logging.debug('Steam ' + str(i) + ' codec is: ' + codec_name)
     if codec_name == 'opus':
         encoding_decision = True
+        priority += 1
         ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:a aac -b:a 128k -ac 2'
     else:
         ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:a copy'
-    return encoding_decision, ffmpeg_command
+    return encoding_decision, priority, ffmpeg_command
 
 
-def check_subtitle_stream(encoding_decision, i, stream_info, ffmpeg_command):
+def check_subtitle_stream(encoding_decision, priority, i, stream_info, ffmpeg_command):
     """Checks the subtitle stream from check_codecs to determine if the stream needs encoding."""
     codec_name = stream_info['streams'][i]['codec_name'] 
     # This will be populated at a later date
@@ -209,10 +217,10 @@ def check_subtitle_stream(encoding_decision, i, stream_info, ffmpeg_command):
     #    encoding_decision = True
     logging.debug('Steam ' + str(i) + ' codec is: ' + codec_name)
     ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:s copy'
-    return encoding_decision, ffmpeg_command
+    return encoding_decision, priority, ffmpeg_command
 
 
-def check_attachmeent_stream(encoding_decision, i, stream_info, ffmpeg_command):
+def check_attachmeent_stream(encoding_decision, priority, i, stream_info, ffmpeg_command):
     """Checks the attachment stream from check_codecs to determine if the stream needs encoding."""
     # This will be populated at a later date
     #desired_attachment_codec = '???'
@@ -220,11 +228,11 @@ def check_attachmeent_stream(encoding_decision, i, stream_info, ffmpeg_command):
     #    encoding_decision = True
     # Note, attachments may not have a codec name if the attachment is an image
     ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:t copy'
-    return encoding_decision, ffmpeg_command
+    return encoding_decision, priority, ffmpeg_command
 
 
-def output_file_name_fx(input_file_name, encoding_decision):
-    """Generate output filename with .mkv extension if needed."""
+def output_file_name_fx(input_file_name, encoding_decision, priority):
+    """Generate output filename with .mkv extension if needed. Accepts and returns priority."""
     # Get the current extension from the filename
     name_without_ext = os.path.splitext(input_file_name)[0]
     current_ext = os.path.splitext(input_file_name)[1]
@@ -233,11 +241,12 @@ def output_file_name_fx(input_file_name, encoding_decision):
     if current_ext.lower() != '.mkv':
         output_file_name = name_without_ext + '.mkv'
         encoding_decision = True
+        priority += 1
     else:
         output_file_name = input_file_name
     
     # Return just the new filename without any directory path
-    return output_file_name, encoding_decision
+    return output_file_name, encoding_decision, priority
 
 
 def get_file_size_kb(directory_path, filename):
@@ -255,24 +264,25 @@ def get_file_size_kb(directory_path, filename):
         return 0
 
 
-def write_to_queue(directory_guid, directory_path, input_file_name, output_file_name, before_file_size, ffmpeg_string, db_path):
-    """Write a row into `queue` using the updated schema.
+def write_to_queue(directory_guid, directory_path, input_file_name, output_file_name, before_file_size, ffmpeg_string, priority, db_path):
+        """Write a row into `queue` using the updated schema. Now accepts priority as a parameter.
 
-    Schema columns inserted:
-      directory_guid, file_guid, directory_path, input_file_name,
-      output_file_name, before_file_size, after_file_size, ffmpeg_string,
-      datetime_added, datetime_pulled, datetime_encoded
+        Schema columns inserted:
+            directory_guid, file_guid, directory_path, input_file_name,
+            output_file_name, before_file_size, after_file_size, ffmpeg_string,
+            datetime_added, datetime_pulled, datetime_encoded, priority
 
-    Parameters:
-      - directory_guid (str)
-      - directory_path (str)
-      - input_file_name (str)
-      - output_file_name (str)
-      - before_file_size (int)
-      - ffmpeg_string (str)
-      - after_file_size (int|None) optional
-      - db_path (str|None) optional DB path; falls back to global `db_path` variable
-    """
+        Parameters:
+            - directory_guid (str)
+            - directory_path (str)
+            - input_file_name (str)
+            - output_file_name (str)
+            - before_file_size (int)
+            - ffmpeg_string (str)
+            - priority (int)
+            - after_file_size (int|None) optional
+            - db_path (str|None) optional DB path; falls back to global `db_path` variable
+        """
     try:
         file_guid = str(uuid.uuid4())
         datetime_added = datetime.now().isoformat()
@@ -285,7 +295,7 @@ def write_to_queue(directory_guid, directory_path, input_file_name, output_file_
         cur = conn.cursor()
 
         cur.execute(
-            "INSERT INTO queue (directory_guid, file_guid, directory_path, input_file_name, output_file_name, before_file_size, after_file_size, ffmpeg_string, datetime_added, datetime_pulled, datetime_encoded, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO queue (directory_guid, file_guid, directory_path, input_file_name, output_file_name, before_file_size, after_file_size, ffmpeg_string, datetime_added, datetime_pulled, datetime_encoded, status, priority) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 directory_guid,
                 file_guid,
@@ -299,6 +309,7 @@ def write_to_queue(directory_guid, directory_path, input_file_name, output_file_
                 datetime_pulled,
                 datetime_encoded,
                 status,
+                priority
             ),
         )
         conn.commit()
@@ -343,6 +354,7 @@ def run_queue_workflow(db_path=None, extensions=None, selected_paths=None):
             logging.debug(f"  Found: {file_path}")
             if is_file_unpulled_in_queue(input_file_name, directory, db_path) == False:
                 default_encoding_decision = False
+                priority = 1
                 ffmpeg_command = ''
                 probe_data = run_ffprobe(directory, input_file_name)
                 
@@ -356,9 +368,10 @@ def run_queue_workflow(db_path=None, extensions=None, selected_paths=None):
                     logging.warning(f"    Skipping {input_file_name}: Invalid ffprobe output (missing 'format' key)")
                     continue
                 
-                output_file_name, file_encoding_decision = output_file_name_fx(input_file_name, default_encoding_decision)
-                final_encoding_decision, ffmpeg_command = check_codecs(
+                output_file_name, file_encoding_decision, priority = output_file_name_fx(input_file_name, default_encoding_decision, priority)
+                final_encoding_decision, priority, ffmpeg_command = check_codecs(
                     file_encoding_decision,
+                    priority,
                     probe_data,
                     ffmpeg_command,
                     ffmpeg_video,
@@ -372,7 +385,7 @@ def run_queue_workflow(db_path=None, extensions=None, selected_paths=None):
                 if final_encoding_decision == True:
                     logging.info(f"    Adding to queue: {input_file_name}")
                     before_file_size = get_file_size_kb(directory, input_file_name)
-                    file_guid = write_to_queue(directory_guid, directory, input_file_name, output_file_name, before_file_size, ffmpeg_command, db_path)
+                    file_guid = write_to_queue(directory_guid, directory, input_file_name, output_file_name, before_file_size, ffmpeg_command, priority, db_path)
                     logging.debug(f"    Queued file_guid: {file_guid}")
                 else:
                     logging.debug(f"    Skiping: {input_file_name}")

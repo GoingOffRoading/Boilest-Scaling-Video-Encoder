@@ -138,7 +138,7 @@ def get_index_data():
                 datetime_added
             FROM queue 
             WHERE status = 'queued'
-            ORDER BY ROWID ASC
+            ORDER BY priority DESC, ROWID ASC
             LIMIT 100
         """)
         raw_items = cur.fetchall()
