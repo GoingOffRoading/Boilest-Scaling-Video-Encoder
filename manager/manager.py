@@ -3,7 +3,7 @@ import logging
 from flask import Flask, jsonify, request, render_template
 from db_status import get_database_status
 from flask_get_index import get_index_data
-from flask_get_fifo_queue import get_fifo_queue_logic
+from flask_get_task import get_task
 from flask_post_completed_encode import post_completed_encode_logic
 from flask_get_queue_status import get_queue_status_logic
 from flask_post_queue import run_queue_workflow
@@ -31,13 +31,13 @@ def index():
     index_data = get_index_data()
     return render_template('index.html', **index_data)
 
-@app.route('/api/v2/queue/fifo', methods=['GET'])
-def get_fifo_queue():
+@app.route('/api/v2/queue/task', methods=['GET'])
+def get_task_endpoint():
     """
-    Query the queue table and return one row using FIFO order by table ROWID
+    Query the queue table and return one row using prioritized order (priority DESC, ROWID ASC)
     """
     worker = request.args.get('worker')
-    response_data, status_code = get_fifo_queue_logic(DB_DISABLED, worker)
+    response_data, status_code = get_task(DB_DISABLED, worker)
     return jsonify(response_data), status_code
 
 
