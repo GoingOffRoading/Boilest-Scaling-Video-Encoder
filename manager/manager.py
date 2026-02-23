@@ -14,6 +14,7 @@ from flask_directories import create_directory_logic, update_directory_logic, de
 from flask_get_encoding_queue import get_encoding_queue_logic
 from flask_get_failed_by_status import get_failed_by_status_logic
 
+
 # Get log level from environment variable (default: INFO)
 log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(level=getattr(logging, log_level), format='%(asctime)s - %(levelname)s - %(message)s')
@@ -22,7 +23,6 @@ app = Flask(__name__)
 
 # Global flag to disable database operations
 DB_DISABLED = False
-
 
 @app.route('/', methods=['GET'])
 def index():
@@ -156,6 +156,31 @@ def get_failed_by_status():
     response_data, status_code = get_failed_by_status_logic(status_value)
     return jsonify(response_data), status_code
 
+
+@app.route('/api/v2/queue/delete-guid', methods=['POST'])
+def delete_guid():
+    """
+    Delete records from the queue table matching a given GUID
+    Expects JSON body with: guid
+    """
+    data = request.get_json(silent=True) or {}
+    guid = data.get('guid')
+    from db_path import get_db_path
+    import sqlite3
+    if not guid:
+        return jsonify({'error': 'No GUID provided'}), 400
+    db_path = get_db_path()
+    try:
+        conn = sqlite3.connect(db_path)
+        cur = conn.cursor()
+        cur.execute('DELETE FROM queue WHERE guid = ?', (guid,))
+        deleted_count = cur.rowcount
+        conn.commit()
+        conn.close()
+        return jsonify({'deleted_count': deleted_count}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
 
 @app.route('/health', methods=['GET'])
 def health():

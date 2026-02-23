@@ -627,6 +627,7 @@
                 <div class="button-container">
                     <div class="button-row">
                         <button class="action-button compact" id="scanButton" onclick="openScanModal()">Scan for Files</button>
+                        <button class="action-button compact" id="deleteRowButton" onclick="openDeleteRowModal()">Delete Row(s)</button>
                         <button class="action-button compact" id="deleteQueueButton" onclick="deleteQueue()">Delete Queue</button>
                     </div>
                     <div class="status-message" id="statusMessage"></div>
@@ -634,9 +635,10 @@
                 <h2>Queued Files</h2>
                 {% if queued_items %}
                 <div class="scroll-wrapper">
-                    <table>
+                    <table id="queuedDeleteTable">
                         <thead>
                             <tr>
+                                <th style="width: 40px;">Delete</th>
                                 <th style="width: 60px;">RowID</th>
                                 <th>Filename</th>
                                 <th>Path</th>
@@ -648,6 +650,7 @@
                         <tbody>
                             {% for item in queued_items[:100] %}
                             <tr>
+                                <td><input type="checkbox" class="queued-delete-checkbox" data-guid="{{ item['guid'] }}"></td>
                                 <td><strong>{{ item['ROWID'] }}</strong></td>
                                 <td>{{ item['Filename'] }}</td>
                                 <td>{{ item['Path'] }}</td>
@@ -659,6 +662,42 @@
                         </tbody>
                     </table>
                 </div>
+                    <!-- Queued Delete Modal -->
+                    <div id="queuedDeleteModal" class="modal hidden" aria-hidden="true">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <div class="modal-title">Delete Queued Row(s)</div>
+                                <button class="modal-close" onclick="closeQueuedDeleteModal()">×</button>
+                            </div>
+                            <div style="padding:8px 0 12px;">
+                                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="queuedSelectAll" onchange="toggleQueuedSelectAll(this)"> Select all</label>
+                            </div>
+                            <div class="modal-body" style="grid-template-columns: 1fr; padding:0;">
+                                <div style="width:100%; overflow:auto; max-height:360px;">
+                                    <table id="queuedDeleteTableModal">
+                                        <thead>
+                                            <tr>
+                                                <th style="width:40px">Delete</th>
+                                                <th>RowID</th>
+                                                <th>Filename</th>
+                                                <th>Path</th>
+                                                <th>Size (MB)</th>
+                                                <th>FFmpeg String</th>
+                                                <th>Added</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Populated dynamically -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="modal-actions">
+                                <button class="action-button compact" onclick="closeQueuedDeleteModal()">Cancel</button>
+                                <button class="action-button" id="queuedDeleteSubmit" onclick="submitQueuedDelete()">Submit</button>
+                            </div>
+                        </div>
+                    </div>
                 {% else %}
                 <div class="no-data">No queued files at this time</div>
                 {% endif %}
@@ -970,6 +1009,97 @@
     </div>
     
     <script>
+                // Queued Delete Modal logic
+                function openDeleteRowModal() {
+                    const modal = document.getElementById('queuedDeleteModal');
+                    const tbody = document.querySelector('#queuedDeleteTableModal tbody');
+                    const selectAll = document.getElementById('queuedSelectAll');
+                    const submitBtn = document.getElementById('queuedDeleteSubmit');
+                    tbody.innerHTML = '';
+                    if (selectAll) selectAll.checked = false;
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit';
+                    // Copy rows from main table
+                    const mainRows = document.querySelectorAll('#queuedDeleteTable tbody tr');
+                    if (!mainRows.length) {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = '<td colspan="7" class="no-data">No queued files at this time</td>';
+                        tbody.appendChild(tr);
+                    } else {
+                        mainRows.forEach(row => {
+                            const cells = row.children;
+                            const guid = cells[0]?.querySelector('input')?.dataset.guid || '';
+                            const rowid = cells[1]?.textContent.trim() || '';
+                            const filename = cells[2]?.textContent.trim() || '';
+                            const path = cells[3]?.textContent.trim() || '';
+                            const size = cells[4]?.textContent.trim() || '';
+                            const ffmpeg = cells[5]?.textContent.trim() || '';
+                            const added = cells[6]?.textContent.trim() || '';
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td><input type="checkbox" class="queued-delete-checkbox-modal" data-guid="${guid}"></td>
+                                <td>${rowid}</td>
+                                <td>${filename}</td>
+                                <td>${path}</td>
+                                <td>${size}</td>
+                                <td style="font-size: 0.85rem; font-family: 'Courier New', monospace;">${ffmpeg}</td>
+                                <td class="time-added">${added}</td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    }
+                    modal.classList.remove('hidden');
+                }
+
+                function closeQueuedDeleteModal() {
+                    const modal = document.getElementById('queuedDeleteModal');
+                    modal.classList.add('hidden');
+                    const tbody = document.querySelector('#queuedDeleteTableModal tbody');
+                    if (tbody) tbody.innerHTML = '';
+                }
+
+                function toggleQueuedSelectAll(cb) {
+                    const boxes = Array.from(document.querySelectorAll('.queued-delete-checkbox-modal'));
+                    boxes.forEach(b => b.checked = cb.checked);
+                }
+
+                async function submitQueuedDelete() {
+                    const submitBtn = document.getElementById('queuedDeleteSubmit');
+                    const boxes = Array.from(document.querySelectorAll('.queued-delete-checkbox-modal:checked'));
+                    if (boxes.length === 0) {
+                        alert('Select at least one row to delete.');
+                        return;
+                    }
+                    const guids = boxes.map(b => b.dataset.guid).filter(Boolean);
+                    if (guids.length === 0) {
+                        alert('No valid GUIDs selected.');
+                        return;
+                    }
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Deleting...';
+                    try {
+                        for (const guid of guids) {
+                            const resp = await fetch('/api/v2/queue/delete-guid', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ guid })
+                            });
+                            const data = await resp.json().catch(() => ({}));
+                            if (!resp.ok) {
+                                alert(`Delete failed: ${data.error || resp.status}`);
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = 'Submit';
+                                return;
+                            }
+                        }
+                        alert(`Successfully deleted ${guids.length} row(s). Refreshing...`);
+                        location.reload();
+                    } catch (err) {
+                        alert(`Error: ${err.message}`);
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Submit';
+                    }
+                }
         // When opening the Stop Encode modal, fetch live encoding items from server
         async function openStopEncodeModal() {
             const modal = document.getElementById('stopEncodeModal');
