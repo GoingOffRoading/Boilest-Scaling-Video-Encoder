@@ -26,6 +26,7 @@ def post_completed_encode_logic(request_data):
         file_guid = request_data.get('file_guid')
         after_file_size = request_data.get('after_file_size')
         status = request_data.get('status')
+        notes = request_data.get('notes')  # Optional
         datetime_encoded = datetime.now().isoformat()
 
         if not file_guid:
@@ -49,20 +50,28 @@ def post_completed_encode_logic(request_data):
         cur = conn.cursor()
         logging.info("[DB] Connected to database successfully")
 
-        # Update queue table with encoded status and file size
-        update_query = """
-            UPDATE queue
-            SET datetime_encoded = ?, after_file_size = COALESCE(?, after_file_size), status = ?
-            WHERE file_guid = ?
-        """
-        logging.debug(f"[UPDATE] Updating queue - file_guid: {file_guid}, after_file_size: {after_file_size}, status: {status}, datetime_encoded: {datetime_encoded}")
-        cur.execute(update_query, (datetime_encoded, after_file_size, status, file_guid))
-        
+        # Update queue table with encoded status, file size, and notes if provided
+        if notes is not None:
+            update_query = """
+                UPDATE queue
+                SET datetime_encoded = ?, after_file_size = COALESCE(?, after_file_size), status = ?, notes = ?
+                WHERE file_guid = ?
+            """
+            logging.debug(f"[UPDATE] Updating queue - file_guid: {file_guid}, after_file_size: {after_file_size}, status: {status}, notes: {notes}, datetime_encoded: {datetime_encoded}")
+            cur.execute(update_query, (datetime_encoded, after_file_size, status, notes, file_guid))
+        else:
+            update_query = """
+                UPDATE queue
+                SET datetime_encoded = ?, after_file_size = COALESCE(?, after_file_size), status = ?
+                WHERE file_guid = ?
+            """
+            logging.debug(f"[UPDATE] Updating queue - file_guid: {file_guid}, after_file_size: {after_file_size}, status: {status}, datetime_encoded: {datetime_encoded}")
+            cur.execute(update_query, (datetime_encoded, after_file_size, status, file_guid))
         rows_affected = cur.rowcount
         conn.commit()
 
         # Get the updated record to return it
-        cur.execute("SELECT file_guid, directory_path, input_file_name, output_file_name, before_file_size, after_file_size, datetime_encoded, status FROM queue WHERE file_guid = ?", (file_guid,))
+        cur.execute("SELECT file_guid, directory_path, input_file_name, output_file_name, before_file_size, after_file_size, datetime_encoded, status, notes FROM queue WHERE file_guid = ?", (file_guid,))
         row = cur.fetchone()
 
         cur.close()
@@ -80,7 +89,8 @@ def post_completed_encode_logic(request_data):
                 'before_file_size': row[4],
                 'after_file_size': row[5],
                 'datetime_encoded': row[6],
-                'status': row[7]
+                'status': row[7],
+                'notes': row[8]
             }
             return {
                 'success': True,

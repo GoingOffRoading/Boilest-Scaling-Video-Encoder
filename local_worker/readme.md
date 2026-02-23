@@ -13,7 +13,7 @@
 - [x] Rework the pre/post check list to include determining if the file exists, add appropraite messaging
 - [x] Refactor how media file integrity is done 
 - [x] Video validation, need to revisit how validation is done to let in some videos that would otherwise be fixed with encoding
-- [ ] Do a little cleanup and formatting of local_worker_functions
+- [x] Do a little cleanup and formatting of local_worker_functions
 - [x] On status messaging between phases, mention the directory path
 - [x] Resolve an issue where a postflight validation check leaves an ophaned file
 - [x] Add a random delay to the next task piece

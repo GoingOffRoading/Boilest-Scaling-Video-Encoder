@@ -217,7 +217,8 @@ def get_index_data():
                 before_file_size - after_file_size as space_saved,
                 datetime_pulled,
                 datetime_encoded,
-                worker
+                worker,
+                notes
             FROM queue 
             WHERE status = 'encoded'
             ORDER BY datetime_encoded DESC
@@ -236,7 +237,8 @@ def get_index_data():
                 'datetime_encoded': row['datetime_encoded'],
                 'duration_minutes': None,
                 'space_saved_mb': None,
-                'Completed': None
+                'Completed': None,
+                'notes': row['notes'] if 'notes' in row.keys() else ''
             }
             dp = item.get('datetime_pulled')
             de = item.get('datetime_encoded')

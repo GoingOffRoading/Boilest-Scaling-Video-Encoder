@@ -768,7 +768,7 @@
                         </thead>
                         <tbody>
                             {% for item in encoded_items[:100] %}
-                            <tr>
+                            <tr title="{{ item['notes'] }}">
                                 <td><strong>{{ item['ROWID'] }}</strong></td>
                                 <td>{{ item['worker'] if item['worker'] else '—' }}</td>
                                 <td>{{ item['output_file_name'] }}</td>

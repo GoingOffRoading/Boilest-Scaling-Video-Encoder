@@ -54,111 +54,139 @@ def run_local_worker_loop():
             logging.info(f"Task received: {file_guid}")
             logging.info(f"  Input: {directory_path}/{input_file_name}")
             
+            # ===============================================================
+            # =                       Preflight Checks                      =
+            # ===============================================================
+
+
             logging.info(f"Running preflight checks on: {input_file_name}")
 
-            if not sleep_with_file_check(1, file_guid):
+
+            if not sleep_with_file_check(1, file_guid, check='no'):
                 logging.info("Aborting current task due to manager stop (during initial sleep)")
                 continue
 
-            
             # Step 1: Validate file existence
             step_1_start_perf = time.perf_counter()
-            if not file_exists(before_file_size_file_path):
+            exists, reason = file_exists(before_file_size_file_path)
+            if not exists:
                 step_1_duration = time.perf_counter() - step_1_start_perf
-                logging.error(f"✗ Step 1: File existence validation failed for: {input_file_name} (duration: {format_duration(step_1_duration)})")
-                report_encoding_completed(file_guid, 'Failed: File Not Found')
+                logging.error(f"✗ Step 1: File existence validation failed for: {input_file_name} (duration: {format_duration(step_1_duration)}) Reason: {reason}")
+                report_encoding_completed(file_guid, 'Failed: File Not Found', notes=reason)
                 continue
             step_1_duration = time.perf_counter() - step_1_start_perf
             logging.info(f"✓ Step 1: File existence validated (duration: {format_duration(step_1_duration)})")
 
-            if not sleep_with_file_check(1, file_guid):
+
+            if not sleep_with_file_check(1, file_guid, check='no'):
                 logging.info("Aborting current task due to manager stop (after step 1)")
                 continue
 
 
             # Step 2: Validate file size hasn't changed
             step_2_start_perf = time.perf_counter()
-            if not validate_hash(before_file_size_file_path, before_file_size):
+            valid_hash, reason = validate_hash(before_file_size_file_path, before_file_size)
+            if not valid_hash:
                 step_2_duration = time.perf_counter() - step_2_start_perf
-                logging.error(f"✗ Step 2: File hash validation failed for: {input_file_name} (duration: {format_duration(step_2_duration)})")
-                report_encoding_completed(file_guid, 'Failed: Hash Mismatch')
+                logging.error(f"✗ Step 2: File hash validation failed for: {input_file_name} (duration: {format_duration(step_2_duration)}) Reason: {reason}")
+                report_encoding_completed(file_guid, 'Failed: Hash Mismatch', notes=reason)
                 continue
             step_2_duration = time.perf_counter() - step_2_start_perf
             logging.info(f"✓ Step 2: File hash validated (duration: {format_duration(step_2_duration)})")
 
-            if not sleep_with_file_check(1, file_guid):
+            if not sleep_with_file_check(1, file_guid, check='yes'):
                 logging.info("Aborting current task due to manager stop (after step 2)")
                 continue
             
 
             # Step 3: Validate video integrity
             step_3_start_perf = time.perf_counter()
-            if not validate_video(before_file_size_file_path, 15):
+            is_valid, reason = validate_video(before_file_size_file_path, 30)
+            if not is_valid:
                 step_3_duration = time.perf_counter() - step_3_start_perf
-                logging.error(f"✗ Step 3: Video integrity check failed for: {input_file_name} (duration: {format_duration(step_3_duration)})")
-                report_encoding_completed(file_guid, 'Failed: Input Integrity')
+                logging.error(f"✗ Step 3: Video integrity check failed for: {input_file_name} (duration: {format_duration(step_3_duration)}) Reason: {reason}")
+                report_encoding_completed(file_guid, 'Failed: Input Integrity', notes=reason)
                 continue
             step_3_duration = time.perf_counter() - step_3_start_perf
             logging.info(f"✓ Step 3: Video integrity validated (duration: {format_duration(step_3_duration)})")
 
-            if not sleep_with_file_check(1, file_guid):
+
+            if not sleep_with_file_check(1, file_guid, check='yes'):
                 logging.info("Aborting current task due to manager stop (after step 3)")
                 continue
-            
+
+
+            # ===============================================================
+            # =                          Run FFmpeg                         =
+            # ===============================================================
+
             logging.info(f"Preflight checks passed... Starting FFmpeg on: {input_file_name}")
 
 
             # Step 4: Run ffmpeg encoding
             step_4_start_perf = time.perf_counter()
-            if not run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path, file_guid=file_guid):
+            ffmpeg_success, ffmpeg_reason = run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path, file_guid=file_guid)
+            if not ffmpeg_success:
                 step_4_duration = time.perf_counter() - step_4_start_perf
-                logging.error(f"✗ Step 4: FFmpeg encoding failed for: {input_file_name} (duration: {format_duration(step_4_duration)})")
+                logging.error(f"✗ Step 4: FFmpeg encoding failed for: {input_file_name} (duration: {format_duration(step_4_duration)}) Reason: {ffmpeg_reason}")
                 # Check if the worker should stop before reporting failure
                 if not sleep_with_file_check(0, file_guid):
                     logging.info("Aborting current task due to manager stop (after ffmpeg failure)")
                     continue
-                report_encoding_completed(file_guid, 'Failed: FFmpeg Failure')
+                report_encoding_completed(file_guid, 'Failed: FFmpeg Failure', notes=ffmpeg_reason)
                 continue
             step_4_duration = time.perf_counter() - step_4_start_perf
             logging.info(f"✓ Step 4: FFmpeg encoding completed (duration: {format_duration(step_4_duration)})")
 
-            if not sleep_with_file_check(1, file_guid):
+            if not sleep_with_file_check(1, file_guid, check='yes'):
                 logging.info("Aborting current task due to manager stop (after ffmpeg)")
                 continue
 
+
+            # ===============================================================
+            # =                     Postflight Checks                       =
+            # ===============================================================
 
             logging.info(f"FFmpeg completed... Starting postflight checks on: {input_file_name}")
             
 
             # Step 5: Validate temporary file existence
             step_5_start_perf = time.perf_counter()
-            if not file_exists(templorary_file_path):
+            exists, reason = file_exists(templorary_file_path)
+            if not exists:
                 step_5_duration = time.perf_counter() - step_5_start_perf
-                logging.error(f"✗ Step 5: Temporary file existence validation failed for: {output_file_name} (duration: {format_duration(step_5_duration)})")
-                report_encoding_completed(file_guid, 'Failed: Temporary File Not Found')
+                logging.error(f"✗ Step 5: Temporary file existence validation failed for: {output_file_name} (duration: {format_duration(step_5_duration)}) Reason: {reason}")
+                report_encoding_completed(file_guid, 'Failed: Temporary File Not Found', notes=reason)
                 continue
             step_5_duration = time.perf_counter() - step_5_start_perf
             logging.info(f"✓ Step 5: Temporary file existence validated (duration: {format_duration(step_5_duration)})")
 
-            if not sleep_with_file_check(1, file_guid):
+
+            if not sleep_with_file_check(1, file_guid, check='no'):
                 logging.info("Aborting current task due to manager stop (after step 5)")
                 continue
 
 
-
             # Step 6: Postflight check - validate output video integrity
             step_6_start_perf = time.perf_counter()
-            if not post_flight_validate_video_full(templorary_file_path):
+            is_valid, reason = post_flight_validate_video_full(templorary_file_path)
+            if not is_valid:
                 step_6_duration = time.perf_counter() - step_6_start_perf
-                logging.error(f"✗ Step 6: Output video integrity check failed for: {input_file_name} (duration: {format_duration(step_6_duration)})")
-                report_encoding_completed(file_guid, 'Failed: Postflight Integrity')
+                logging.error(f"✗ Step 6: Output video integrity check failed for: {input_file_name} (duration: {format_duration(step_6_duration)}) Reason: {reason}")
+                report_encoding_completed(file_guid, 'Failed: Postflight Integrity', notes=reason)
                 continue
             step_6_duration = time.perf_counter() - step_6_start_perf
             logging.info(f"✓ Step 6: Output video integrity validated (duration: {format_duration(step_6_duration)})")
 
-            if not sleep_with_file_check(1, file_guid):
+
+            if not sleep_with_file_check(1, file_guid, check='yes'):
                 logging.info("Aborting current task due to manager stop (after step 6)")
                 continue
+
+
+            # ===============================================================
+            # =                     Postflight Workflow                     =
+            # ===============================================================
 
 
             logging.info(f"Postflight checks passed... Starting postflight workflow on: {input_file_name}")
@@ -166,53 +194,58 @@ def run_local_worker_loop():
 
             # Step 7: Get output file size
             step_7_start_perf = time.perf_counter()
-            after_file_size = get_file_size_kb(templorary_file_path)
+            after_file_size, reason = get_file_size_kb(templorary_file_path)
             if after_file_size == 0:
                 step_7_duration = time.perf_counter() - step_7_start_perf
-                logging.error(f"✗ Step 7: File size check failed for: {input_file_name} (duration: {format_duration(step_7_duration)})")
-                report_encoding_completed(file_guid, 'Failed: Postflight File Size Check')
+                logging.error(f"✗ Step 7: File size check failed for: {input_file_name} (duration: {format_duration(step_7_duration)}) Reason: {reason}")
+                report_encoding_completed(file_guid, 'Failed: Postflight File Size Check', notes=reason)
                 continue
             step_7_duration = time.perf_counter() - step_7_start_perf
             logging.info(f"✓ Step 7: Output file size captured (duration: {format_duration(step_7_duration)})")
 
-            if not sleep_with_file_check(1, file_guid):
+
+            if not sleep_with_file_check(1, file_guid, check='no'):
                 logging.info("Aborting current task due to manager stop (after step 7)")
                 continue
 
 
             # Step 8: Delete source
             step_8_start_perf = time.perf_counter()
-            if not delete_file(before_file_size_file_path):
+            deleted, reason = delete_file(before_file_size_file_path)
+            if not deleted:
                 step_8_duration = time.perf_counter() - step_8_start_perf
-                logging.error(f"✗ Step 8: Source file deletion failed for: {input_file_name} (duration: {format_duration(step_8_duration)})")
-                report_encoding_completed(file_guid, 'Failed: Postflight Delete Source File')
+                logging.error(f"✗ Step 8: Source file deletion failed for: {input_file_name} (duration: {format_duration(step_8_duration)}) Reason: {reason}")
+                report_encoding_completed(file_guid, 'Failed: Postflight Delete Source File', notes=reason)
                 continue
             step_8_duration = time.perf_counter() - step_8_start_perf
             logging.info(f"✓ Step 8: Source file deleted (duration: {format_duration(step_8_duration)})")
 
-            if not sleep_with_file_check(1, file_guid):
+
+            if not sleep_with_file_check(1, file_guid, check='no'):
                 logging.info("Aborting current task due to manager stop (after step 8)")
                 continue
 
 
             # Step 9: Move temporary file to final destination
             step_9_start_perf = time.perf_counter()
-            if not move_file(templorary_file_path, after_file_path):
+            moved, reason = move_file(templorary_file_path, after_file_path)
+            if not moved:
                 step_9_duration = time.perf_counter() - step_9_start_perf
-                logging.error(f"✗ Step 9: File move failed for: {input_file_name} (duration: {format_duration(step_9_duration)})")
-                report_encoding_completed(file_guid, 'Failed: Postflight Move Temporary File To Final Destination')
+                logging.error(f"✗ Step 9: File move failed for: {input_file_name} (duration: {format_duration(step_9_duration)}) Reason: {reason}")
+                report_encoding_completed(file_guid, 'Failed: Postflight Move Temporary File To Final Destination', notes=reason)
                 continue
             step_9_duration = time.perf_counter() - step_9_start_perf
             logging.info(f"✓ Step 9: File moved to final destination (duration: {format_duration(step_9_duration)})")
 
-            if not sleep_with_file_check(1, file_guid):
+
+            if not sleep_with_file_check(1, file_guid, check='no'):
                 logging.info("Aborting current task due to manager stop (after step 9)")
                 continue
 
 
             # Step 10: Report completion to manager
             step_10_start_perf = time.perf_counter()
-            report_status, report_response = report_encoding_completed(file_guid, 'encoded', after_file_size)
+            report_status, report_response = report_encoding_completed(file_guid, 'encoded', after_file_size=after_file_size, notes='Success')
             if report_status != 200:
                 step_10_duration = time.perf_counter() - step_10_start_perf
                 # Note: Even if reporting fails, the file has been processed successfully

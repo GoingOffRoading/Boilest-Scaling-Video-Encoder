@@ -1,10 +1,3 @@
-# ----------------------------------------
-
-# Preflight Check Functions
-# Ensures that the video about to be encoded hasn't changed since it was first scanned & has integrity
-
-# ----------------------------------------
-
 from pathlib import Path
 import logging
 import os
@@ -20,12 +13,23 @@ import time
 
 # ----------------------------------------
 
-#API Configuration  
+# API Configuration  
 
 # ----------------------------------------
+
+
 API_BASE_URL = os.environ.get("MANAGER_BASE_URL", "http://192.168.1.110:31500")  # Get from container env var
 
+
 def get_task():
+    """
+    Parameters:
+        - None
+    Description:
+        - Fetches the next task from the manager for this worker node.
+    Returns:
+        - (status_code, data) or (None, error message)
+    """
     worker_name = os.environ.get("NODE_NAME", socket.gethostname())
     endpoint = f"{API_BASE_URL}/api/v2/queue/fifo"
     request_url = f"{endpoint}?worker={worker_name}"
@@ -44,27 +48,23 @@ def get_task():
     except URLError as exc:
         return None, f"Connection error: {exc}"
 
-# ----------------------------------------
-
-# validate_hash checks to see if the file hasn't changed since it was originally scanned
 
 # ----------------------------------------
 
+# Helper functions - Used in Pre-Post Processes
 
-def get_file_size_kb(file_path):
-    try:
-        file_size_bytes = Path(file_path).stat().st_size
-        file_size_kb = int(file_size_bytes / 1024)
-        return file_size_kb
-    except FileNotFoundError:
-        logging.debug(f"✗ File not found: {file_path}")
-        return 0
-    except Exception as e:
-        logging.debug(f"✗ Error getting file size: {e}")
-        return 0
+# ----------------------------------------
 
 
 def format_duration(duration_seconds):
+    """
+    Parameters:
+        - duration_seconds (float)
+    Description:
+        - Formats a duration in seconds into a human-readable string with units (s, m, h).
+    Returns:
+        - str
+    """
     total_seconds = float(duration_seconds)
 
     if total_seconds < 60:
@@ -76,62 +76,56 @@ def format_duration(duration_seconds):
 
 def file_exists(file_path):
     """
-    Check if a file exists at the specified path.
-    
     Parameters:
-      - file_path (str): The path to the file to check
-    
+        - file_path (str)
+    Description:
+        - Checks if a file exists at the specified path.
     Returns:
-      - bool: True if the file exists, False otherwise
+        - bool: True if the file exists, False otherwise
+        - str: A reason message
     """
-    return os.path.exists(file_path)
-    
-
-def validate_hash(before_file_path, before_file_size):
-    current_size_kb = get_file_size_kb(before_file_path)
-    if current_size_kb == before_file_size:
-        logging.debug(f"✓ Preflight check passed: {current_size_kb} KB == {before_file_size} KB")
-        return True
-    else:
-        logging.debug(f"✗ Preflight check failed: {current_size_kb} KB != {before_file_size} KB")
-        return False
+    try:
+        exists = os.path.exists(file_path)
+        return exists, 'Success'
+    except Exception as e:
+        return False, str(e)
 
 
-# ----------------------------------------
 
-# validate_video checks video integrity using ffmpeg
-# Used to validate the input file before encoding and the output file after encoding
-
-# ----------------------------------------
-
-# Patterns that should be ignored during video validation
-# Not currently used as videos would pass this check and fail in encoding.  Will revisit.
-IGNORED_PATTERNS = [
-    r"non monotonically increasing",
-    r"invalid pts",
-    r"invalid dts",
-]
-
-
-def _contains_ignored_pattern(text):
+def get_file_size_kb(file_path):
     """
-    Check if text contains any of the ignored patterns.
-    
     Parameters:
-      - text (str): The text to check
-    
+        - file_path (str)
+    Description:
+        - Gets the size of a file in kilobytes.
     Returns:
-      - bool: True if an ignored pattern is found, False otherwise
+        - int: The file size in KB
+        - str: A reason message
     """
-    for pattern in IGNORED_PATTERNS:
-        if re.search(pattern, text, re.IGNORECASE):
-            return True
-    return False
+    try:
+        file_size_bytes = Path(file_path).stat().st_size
+        file_size_kb = int(file_size_bytes / 1024)
+        return file_size_kb, 'success'
+    except FileNotFoundError:
+        logging.debug(f"✗ File not found: {file_path}")
+        return 0, 'FileNotFoundError'
+    except Exception as e:
+        logging.debug(f"✗ Error getting file size: {e}")
+        return 0, str(e)
 
 
-# We want to scruitinize the output of ffmpeg more closely after encoding to ensure that there aren't any critical errors that would cause the file to be unplayable, even if it is technically valid. So we use a more thorough validation function post-flight.
-    
+
 def validate_video(file_path, duration=None):
+    """
+    Parameters:
+        - file_path (str)
+        - duration (float, optional)
+    Description:
+        - Validates a video file using ffmpeg. If duration is provided, only checks that duration of video can be processed without error.
+    Returns:
+        - bool: True if the video is valid, False otherwise
+        - str: A reason message
+    """
     try:
         if duration is not None:
             command = f'ffmpeg -v error -xerror -t {int(duration)} -i "{file_path}" -f null -'
@@ -144,161 +138,53 @@ def validate_video(file_path, duration=None):
         if ffmpeg_output:
             logging.warning(f"FFmpeg validation output for {file_path}:\n{ffmpeg_output}")
             logging.debug('File failed video integrity check')
-            return False
+            return False, ffmpeg_output
         else:
             logging.debug('File passed video integrity check')
-            return True
+            return True, 'success'
     except Exception as e:
         logging.debug(f"Error during video integrity check: {e}")
-        return False
+        return False, str(e)
 
 
-def post_flight_validate_video_full(file_path):
-    """
-    Validate video after encoding and delete the file if validation fails.
-    
-    Parameters:
-      - file_path (str): Path to the video file to validate
-    
-    Returns:
-      - bool: True if validation passed, False if validation failed (file will be deleted)
-    """
-    if not validate_video(file_path):
-        logging.debug(f"Post-flight validation failed for: {file_path}")
-        delete_file(file_path)
-        return False
-    logging.debug(f"Post-flight validation passed for: {file_path}")
-    return True
-
-
-# ----------------------------------------
-
-# Run FFMPEG Command
-
-# ----------------------------------------
-
-def run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path, file_guid=None):
-    """
-    Runs ffmpeg with the provided file paths and ffmpeg command.
-    Returns True on success, False on failure.
-
-    Parameters:
-      - before_file_size_file_path: Full path to the input file
-      - ffmpeg_command: FFmpeg command string (video/audio/subtitle codec specifications)
-      - templorary_file_path: Full path to the output file (temporary location)
-    """
-    try:
-        ffmpeg_settings = 'ffmpeg -hide_banner -loglevel 16 -stats -stats_period 60 -y -i'
-
-        logging.debug(before_file_size_file_path)
-        logging.debug(templorary_file_path)
-        
-        command = f"{ffmpeg_settings} \"{before_file_size_file_path}\" {ffmpeg_command} \"{templorary_file_path}\""
-
-        logging.debug(command)
-
-        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-        # Read output line by line and check manager stop signal periodically
-        try:
-            for line in process.stdout:
-                logging.info(line.rstrip())
-                if file_guid:
-                    try:
-                        if file_should_stop(file_guid):
-                            logging.info(f"Manager requested stop for file {file_guid}; attempting to terminate ffmpeg")
-                            try:
-                                process.terminate()
-                                try:
-                                    process.wait(timeout=10)
-                                    logging.info(f"ffmpeg terminated gracefully for file {file_guid}")
-                                except subprocess.TimeoutExpired:
-                                    logging.warning(f"ffmpeg did not terminate gracefully, force killing for file {file_guid}")
-                                    process.kill()
-                                    process.wait(timeout=5)
-                                    logging.info(f"ffmpeg killed for file {file_guid}")
-                            except Exception as kill_exc:
-                                logging.error(f"Failed to terminate/kill ffmpeg for file {file_guid}: {kill_exc}")
-                            return False
-                    except Exception as check_exc:
-                        logging.error(f"Error checking manager stop signal: {check_exc}")
-                        pass
-            process.wait()
-            return process.returncode == 0
-        except Exception as exc:
-            logging.error(f"Error while running ffmpeg: {exc}")
-            try:
-                process.kill()
-            except Exception as kill_exc:
-                logging.error(f"Failed to kill ffmpeg after error: {kill_exc}")
-            return False
-    except Exception as exc:
-        logging.error(f"Error: {exc}")
-        return False
-
-
-
-# ----------------------------------------
-
-# delete_file deletes a file from the specified directory
-# Used to remove files after processing or if they fail validation
-
-# ----------------------------------------
 
 def delete_file(file_path):
+    """
+    Parameters:
+        - file_path (str)
+    Description:
+        - Deletes a file at the specified path.
+    Returns:
+        - bool: True if the file was deleted successfully, False otherwise
+        - str: A reason message
+    """
     try:
         logging.debug(f"Deleting file: {file_path}")
         os.remove(file_path)
         logging.debug(f"✓ File deleted successfully: {file_path}")
-        return True
+        return True, 'success'
     except FileNotFoundError:
         logging.debug(f"✗ File not found: {file_path}")
-        return False
+        return False, 'FileNotFoundError'
     except Exception as e:
         logging.debug(f"✗ Error deleting file: {e}")
-        return False
+        return False, str(e)
 
-# ----------------------------------------
-# This function validates the video after encoding and deletes it if it fails validation
 
-def validate_post_flight_video(after_file_path):
-    if not validate_video(after_file_path):
-        if not delete_file(after_file_path):
-            return False
-        return False
-    return True
-
-# ----------------------------------------
-# This function validates the video after encoding and deletes it if it fails validation
-
-def move_file(source_path, destination_path):
-    try:
-        logging.debug(f"Moving file from {source_path} to {destination_path}")
-        shutil.move(source_path, destination_path)
-        logging.debug(f"✓ File moved successfully: {source_path} -> {destination_path}")
-        return True
-    except FileNotFoundError:
-        logging.debug(f"✗ File not found: {source_path}")
-        return False
-    except Exception as e:
-        logging.debug(f"✗ Error moving file: {e}")
-        return False
-
-# ----------------------------------------
-# This function calls the manager with findings
-
-def report_encoding_completed(file_guid, status, after_file_size=None):
+def report_encoding_completed(file_guid, status, after_file_size=None, notes=None):
     """
-    Call the /api/v2/completed endpoint to report that encoding is finished.
-    Retries up to 10 times on failure with exponential backoff.
-
     Parameters:
-      - file_guid (str): The unique identifier of the file that was encoded
-      - status (str): The outcome status (e.g., 'encoded', 'failed', 'error')
-      - after_file_size (int, optional): The file size in KB after encoding
-
+        - file_guid (str): The unique identifier of the file that was encoded
+        - status (str): The outcome status (e.g., 'encoded', 'failed', 'error')
+        - after_file_size (int, optional): The file size in KB after encoding
+        - notes (str, optional): Notes or exception details to record
+    Description:
+        - Calls the manager's /api/v2/completed endpoint to report that encoding is finished, along with status, file size, and notes.
+        - Implements retry logic with exponential backoff (up to 10 attempts) in case of failures or connection issues.
     Returns:
-      - tuple: (status_code, response_data)
+        - tuple: (status_code, response_data)
     """
+
     endpoint = f"{API_BASE_URL}/api/v2/completed"
     request_data = {
         "file_guid": file_guid,
@@ -306,6 +192,8 @@ def report_encoding_completed(file_guid, status, after_file_size=None):
     }
     if after_file_size is not None:
         request_data["after_file_size"] = after_file_size
+    if notes is not None:
+        request_data["notes"] = notes
 
     max_attempts = 10
     last_status_code = None
@@ -355,10 +243,16 @@ def report_encoding_completed(file_guid, status, after_file_size=None):
     return last_status_code, last_response
 
 
+
+
 def get_file_status_from_manager(file_guid):
     """
-    Query the manager for the queue record for `file_guid` and return the `status` value.
-    Returns the status string (e.g. 'queued','pulled','encoded','stop', etc.) or None on error.
+    Parameters:
+        - file_guid (str)
+    Description:
+        - Queries the manager for the queue record for file_guid and returns the status value.
+    Returns:
+        - status string or None
     """
     if not file_guid:
         return None
@@ -379,23 +273,37 @@ def get_file_status_from_manager(file_guid):
         return None
 
 
+
 def file_should_stop(file_guid):
-    """Return True if manager reports the given file's status is 'stop'."""
+    """
+    Parameters:
+        - file_guid (str)
+    Description:
+        - Checks if the manager reports the given file's status as 'Stopped'.
+    Returns:
+        - bool
+    """
     try:
         status = get_file_status_from_manager(file_guid)
-        if isinstance(status, str) and status.lower() == 'Stopped':
+        if isinstance(status, str) and status == 'Stopped':
             return True
     except Exception:
         pass
     return False
 
 
-def sleep_with_file_check(total_seconds, file_guid):
+def sleep_with_file_check(total_seconds, file_guid, check='yes'):
     """
-    Sleep for total_seconds but check the manager for file status every MANAGER_POLL_INTERVAL seconds.
-    Returns True if completed without a stop signal; False if manager requested stop for this file.
+    Parameters:
+        - total_seconds (float)
+        - file_guid (str)
+        - check (str)
+    Description:
+        - Sleeps for total_seconds but checks the manager for file status every MANAGER_POLL_INTERVAL seconds if check=='yes'.
+    Returns:
+        - bool
     """
-    check_interval = int(os.environ.get('MANAGER_POLL_INTERVAL', '60'))
+    check_interval = 60
     end_time = time.time() + float(total_seconds)
     last_check = 0
     while time.time() < end_time:
@@ -403,14 +311,165 @@ def sleep_with_file_check(total_seconds, file_guid):
         now = time.time()
         if (now - last_check) >= check_interval:
             last_check = now
-            if file_should_stop(file_guid):
-                logging.info(f"Manager reported 'stop' for file {file_guid}")
-                # best-effort report
-                try:
-                    report_encoding_completed(file_guid, 'Stopped')
-                except Exception:
-                    pass
-                return False
+            if check == 'yes':
+                if file_should_stop(file_guid):
+                    logging.info(f"Manager reported 'stop' for file {file_guid}")
+                    # best-effort report
+                    try:
+                        report_encoding_completed(file_guid, 'Stopped')
+                    except Exception:
+                        pass
+                    return False
     return True
-    
+
+
+# ----------------------------------------
+
+# Preflgiht Specific Functions
+
+# ----------------------------------------
+
+
+def validate_hash(before_file_path, before_file_size):
+    """
+    Parameters:
+        - before_file_path (str)
+        - before_file_size (int)
+    Description:
+        - Checks if the file size matches the expected size for integrity validation.
+    Returns:
+        - (bool, reason)
+    """
+    current_size_kb, reason = get_file_size_kb(before_file_path)
+    if current_size_kb == before_file_size:
+        logging.debug(f"✓ Preflight check passed: {current_size_kb} KB == {before_file_size} KB")
+        return True, reason
+    else:
+        logging.debug(f"✗ Preflight check failed: {current_size_kb} KB != {before_file_size} KB")
+        return False, reason
+
+
+# ----------------------------------------
+
+# Run FFMPEG Command
+
+# ----------------------------------------
+
+
+
+def run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path, file_guid=None):
+    """
+    Parameters:
+        - before_file_size_file_path (str)
+        - ffmpeg_command (str)
+        - templorary_file_path (str)
+        - file_guid (str, optional)
+    Description:
+        - Runs ffmpeg with the provided file paths and command. Monitors for manager stop signal if file_guid is provided.
+    Returns:
+        - bool
+    """
+    try:
+        ffmpeg_settings = 'ffmpeg -hide_banner -loglevel 16 -stats -stats_period 60 -y -i'
+
+        logging.debug(before_file_size_file_path)
+        logging.debug(templorary_file_path)
+        
+        command = f"{ffmpeg_settings} \"{before_file_size_file_path}\" {ffmpeg_command} \"{templorary_file_path}\""
+
+        logging.debug(command)
+
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        # Read output line by line and check manager stop signal periodically
+        try:
+            for line in process.stdout:
+                logging.info(line.rstrip())
+                if file_guid:
+                    try:
+                        if file_should_stop(file_guid):
+                            logging.info(f"Manager requested stop for file {file_guid}; attempting to terminate ffmpeg")
+                            try:
+                                process.terminate()
+                                try:
+                                    process.wait(timeout=10)
+                                    logging.info(f"ffmpeg terminated gracefully for file {file_guid}")
+                                except subprocess.TimeoutExpired:
+                                    logging.warning(f"ffmpeg did not terminate gracefully, force killing for file {file_guid}")
+                                    process.kill()
+                                    process.wait(timeout=5)
+                                    logging.info(f"ffmpeg killed for file {file_guid}")
+                            except Exception as kill_exc:
+                                logging.error(f"Failed to terminate/kill ffmpeg for file {file_guid}: {kill_exc}")
+                                return False, str(kill_exc)
+                            return False, 'Stopped by manager'
+                    except Exception as check_exc:
+                        logging.error(f"Error checking manager stop signal: {check_exc}")
+                        pass
+            process.wait()
+            if process.returncode == 0:
+                return True, 'success'
+            else:
+                return False, f'ffmpeg exited with code {process.returncode}'
+        except Exception as exc:
+            logging.error(f"Error while running ffmpeg: {exc}")
+            try:
+                process.kill()
+            except Exception as kill_exc:
+                logging.error(f"Failed to kill ffmpeg after error: {kill_exc}")
+                return False, str(kill_exc)
+            return False, str(exc)
+    except Exception as exc:
+        logging.error(f"Error: {exc}")
+        return False, str(exc)
+
+
+# ----------------------------------------
+
+# Postflight Specific Functions
+
+# ----------------------------------------
+
+
+def post_flight_validate_video_full(file_path):
+        """   
+        Parameters:
+            - file_path (str): Path to the video file to validate
+        Description:
+            - Validate video after encoding and delete the file if validation fails.
+        Returns:
+            - (bool, reason): True if validation passed, False if validation failed (file will be deleted), with reason string
+        """
+        is_valid, reason = validate_video(file_path)
+        if not is_valid:
+                logging.debug(f"Post-flight validation failed for: {file_path}")
+                deleted = delete_file(file_path)
+                if not deleted:
+                        return False, f"Validation failed: {reason}; File deletion failed"
+                return False, f"Validation failed: {reason}; File deleted"
+        logging.debug(f"Post-flight validation passed for: {file_path}")
+        return True, 'success'
+
+
+
+def move_file(source_path, destination_path):
+    """
+    Parameters:
+        - source_path (str)
+        - destination_path (str)
+    Description:
+        - Moves a file from the source path to the destination path. Logs the operation and handles errors.
+    Returns:
+        - (bool, reason)
+    """
+    try:
+        logging.debug(f"Moving file from {source_path} to {destination_path}")
+        shutil.move(source_path, destination_path)
+        logging.debug(f"✓ File moved successfully: {source_path} -> {destination_path}")
+        return True, 'success'
+    except FileNotFoundError:
+        logging.debug(f"✗ File not found: {source_path}")
+        return False, 'FileNotFoundError'
+    except Exception as e:
+        logging.debug(f"✗ Error moving file: {e}")
+        return False, str(e)
 
