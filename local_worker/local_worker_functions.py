@@ -402,7 +402,7 @@ def run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path,
                             except Exception as kill_exc:
                                 logging.error(f"Failed to terminate/kill ffmpeg for file {file_guid}: {kill_exc}")
                                 return False, str(kill_exc)
-                            return False, 'Stopped by manager'
+                            return False, 'Stopped by Manager'
                     except Exception as check_exc:
                         logging.error(f"Error checking manager stop signal: {check_exc}")
                         pass

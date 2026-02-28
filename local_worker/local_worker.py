@@ -130,7 +130,7 @@ def run_local_worker_loop():
                 step_4_duration = time.perf_counter() - step_4_start_perf
                 logging.error(f"✗ Step 4: FFmpeg encoding failed for: {input_file_name} (duration: {format_duration(step_4_duration)}) Reason: {ffmpeg_reason}")
                 # Check if the worker should stop before reporting failure
-                if not sleep_with_file_check(0, file_guid):
+                if not sleep_with_file_check(0, file_guid, check='yes'):
                     logging.info("Aborting current task due to manager stop (after ffmpeg failure)")
                     continue
                 report_encoding_completed(file_guid, 'Failed: FFmpeg Failure', notes=ffmpeg_reason)
