@@ -200,7 +200,7 @@ def check_audio_stream(encoding_decision, priority, i, stream_info, ffmpeg_comma
     #    encoding_decision = True
     logging.debug('Steam ' + str(i) + ' codec is: ' + codec_name)
     if codec_name == 'opus':
-        encoding_decision = True
+        encoding_decision = False
         priority += 1
         ffmpeg_command = ffmpeg_command + ' -map 0:' + str(i) + ' -c:a aac -b:a 128k -ac 2'
     else:
