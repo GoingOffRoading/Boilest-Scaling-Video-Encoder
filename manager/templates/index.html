@@ -638,7 +638,6 @@
                     <table id="queuedDeleteTable">
                         <thead>
                             <tr>
-                                <th style="width: 40px;">Delete</th>
                                 <th style="width: 60px;">RowID</th>
                                 <th>Filename</th>
                                 <th>Path</th>
@@ -649,8 +648,7 @@
                         </thead>
                         <tbody>
                             {% for item in queued_items[:100] %}
-                            <tr>
-                                <td><input type="checkbox" class="queued-delete-checkbox" data-guid="{{ item['file_guid'] }}"></td>
+                            <tr data-guid="{{ item['file_guid'] }}">
                                 <td><strong>{{ item['ROWID'] }}</strong></td>
                                 <td>{{ item['Filename'] }}</td>
                                 <td>{{ item['Path'] }}</td>
@@ -1028,13 +1026,13 @@
                     } else {
                         mainRows.forEach(row => {
                             const cells = row.children;
-                            const file_guid = cells[0]?.querySelector('input')?.dataset.guid || '';
-                            const rowid = cells[1]?.textContent.trim() || '';
-                            const filename = cells[2]?.textContent.trim() || '';
-                            const path = cells[3]?.textContent.trim() || '';
-                            const size = cells[4]?.textContent.trim() || '';
-                            const ffmpeg = cells[5]?.textContent.trim() || '';
-                            const added = cells[6]?.textContent.trim() || '';
+                            const file_guid = row.dataset.guid || '';
+                            const rowid = cells[0]?.textContent.trim() || '';
+                            const filename = cells[1]?.textContent.trim() || '';
+                            const path = cells[2]?.textContent.trim() || '';
+                            const size = cells[3]?.textContent.trim() || '';
+                            const ffmpeg = cells[4]?.textContent.trim() || '';
+                            const added = cells[5]?.textContent.trim() || '';
                             const tr = document.createElement('tr');
                             tr.innerHTML = `
                                 <td><input type="checkbox" class="queued-delete-checkbox-modal" data-guid="${file_guid}"></td>
