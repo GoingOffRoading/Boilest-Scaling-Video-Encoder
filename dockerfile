@@ -82,7 +82,6 @@ ENV Role=Worker
 ENV LOG_LEVEL=INFO
 ENV FFMPEG_SETTINGS='ffmpeg -hide_banner -loglevel 16 -stats -stats_period 60 -y -i'
 ENV MANAGER_BASE_URL='http://localhost:5000'
-ENV QUEUE_ORDER='FIFO'
 
 # Entrypoint will choose manager or worker based on the `Manager` environment variable
 RUN chmod +x /boil/entrypoint.sh && \
