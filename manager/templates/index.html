@@ -580,31 +580,31 @@
 
         <!-- Metrics -->
         <div class="metrics-container">
-            <div class="metric-box">
+            <div class="metric-box" title="Total number of files currently waiting in the queue to be encoded.">
                 <div class="metric-label">Queued</div>
                 <div class="metric-value">{{ queued_count }}</div>
                 <div class="metric-unit">items waiting</div>
             </div>
             
-            <div class="metric-box">
+            <div class="metric-box" title="Number of workers who have picked up a file for processing in the last 24 hours.">
                 <div class="metric-label">Workers</div>
                 <div class="metric-value">{{ processing_count }}</div>
                 <div class="metric-unit">active nodes</div>
             </div>
             
-            <div class="metric-box">
+            <div class="metric-box" title="Total files successfully encoded.">
                 <div class="metric-label">Encoded</div>
                 <div class="metric-value">{{ encoded_count }}</div>
                 <div class="metric-unit">items completed</div>
             </div>
             
-            <div class="metric-box">
+            <div class="metric-box" title="Cumulative storage savings from completed encodes.">
                 <div class="metric-label">Space Saved</div>
                 <div class="metric-value">{{ space_saved_value }}</div>
                 <div class="metric-unit">{{ space_saved_unit }}</div>
             </div>
             
-            <div class="metric-box">
+            <div class="metric-box" title="Total time spent encoding completed files.">
                 <div class="metric-label">Encoding Time</div>
                 <div class="metric-value">{{ total_processing_value }}</div>
                 <div class="metric-unit">{{ total_processing_unit }}</div>
@@ -626,9 +626,9 @@
                 <!-- Scan Button -->
                 <div class="button-container">
                     <div class="button-row">
-                        <button class="action-button compact" id="scanButton" onclick="openScanModal()">Scan for Files</button>
-                        <button class="action-button compact" id="deleteRowButton" onclick="openDeleteRowModal()">Delete Row(s)</button>
-                        <button class="action-button compact" id="deleteQueueButton" onclick="deleteQueue()">Delete Queue</button>
+                        <button class="action-button compact" id="scanButton" onclick="openScanModal()" title="Open the scan dialog to scan selected directories for new files.">Scan for Files</button>
+                        <button class="action-button compact" id="deleteRowButton" onclick="openDeleteRowModal()" title="Open a dialog to select and delete specific queued rows.">Delete Row(s)</button>
+                        <button class="action-button compact" id="deleteQueueButton" onclick="deleteQueue()" title="Delete all files currently in the queue.">Delete Queue</button>
                     </div>
                     <div class="status-message" id="statusMessage"></div>
                 </div>
@@ -665,7 +665,7 @@
                         <div class="modal-content">
                             <div class="modal-header">
                                 <div class="modal-title">Delete Queued Row(s)</div>
-                                <button class="modal-close" onclick="closeQueuedDeleteModal()">×</button>
+                                <button class="modal-close" onclick="closeQueuedDeleteModal()" title="Close this dialog without deleting rows.">×</button>
                             </div>
                             <div style="padding:8px 0 12px;">
                                 <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="queuedSelectAll" onchange="toggleQueuedSelectAll(this)"> Select all</label>
@@ -691,8 +691,8 @@
                                 </div>
                             </div>
                             <div class="modal-actions">
-                                <button class="action-button compact" onclick="closeQueuedDeleteModal()">Cancel</button>
-                                <button class="action-button" id="queuedDeleteSubmit" onclick="submitQueuedDelete()">Submit</button>
+                                <button class="action-button compact" onclick="closeQueuedDeleteModal()" title="Cancel and return to the queued files table.">Cancel</button>
+                                <button class="action-button" id="queuedDeleteSubmit" onclick="submitQueuedDelete()" title="Delete the selected queued rows.">Submit</button>
                             </div>
                         </div>
                     </div>
@@ -708,7 +708,7 @@
                 <div style="display:flex; flex-direction:column; align-items:center;">
                     <h2 style="align-self:flex-start;">Currently Encoding</h2>
                     <div style="margin-top:8px;">
-                        <button class="action-button compact" onclick="openStopEncodeModal()">Stop Encode</button>
+                        <button class="action-button compact" onclick="openStopEncodeModal()" title="Open a dialog to select currently encoding files to stop.">Stop Encode</button>
                     </div>
                 </div>
                 {% if encoding_items %}
@@ -757,7 +757,7 @@
                             <tr>
                                 <th style="width: 60px;">RowID</th>
                                 <th>Worker</th>
-                                <th>Filee</th>
+                                <th>File</th>
                                 <th>Path</th>
                                 <th>Space Saved</th>
                                 <th>Duration (min)</th>
@@ -796,16 +796,16 @@
             <div class="table-container">
                 <div class="button-container">
                     <div class="button-row">
-                        <button class="action-button compact" onclick="openFailedModal('Failed: File Not Found', this)">Preflight: File Not Found</button>
-                        <button class="action-button compact" onclick="openFailedModal('Failed: Hash Mismatch', this)">Preflight: Hash Mismatch</button>
-                        <button class="action-button compact" onclick="openFailedModal('Failed: Input Integrity', this)">Preflight: Input Integrity</button>
-                        <button class="action-button compact" onclick="openFailedModal('Failed: FFmpeg Failure', this)">Flight: FFmpeg Failure</button>
-                        <button class="action-button compact" onclick="openFailedModal('Failed: Temporary File Not Found', this)">Postflight: Temporary File Not Found</button>
-                        <button class="action-button compact" onclick="openFailedModal('Failed: Postflight Integrity', this)">Postflight: Integrity</button>
-                        <button class="action-button compact" onclick="openFailedModal('Failed: Postflight File Size Check', this)">Postflight: File Size Check</button>
-                        <button class="action-button compact" onclick="openFailedModal('Failed: Postflight Delete Source File', this)">Postflight: Delete Source File</button>
-                        <button class="action-button compact" onclick="openFailedModal('Failed: Postflight Move Temp File', this)">Postflight: Move Temp File</button>
-                        <button class="action-button compact" onclick="openFailedModal('Stopped', this)">Stopped</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: File Not Found', this)" title="Delete failed encoding tasks where the source file could not be found.">Preflight: File Not Found</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: Hash Mismatch', this)" title="Delete failed encoding tasks where the file has changed since it was scanned.">Preflight: Hash Mismatch</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: Input Integrity', this)" title="Delete failed encoding tasks where input integrity checks failed.">Preflight: Input Integrity</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: FFmpeg Failure', this)" title="Delete failed encoding tasks where FFmpeg processing failed.">Flight: FFmpeg Failure</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: Temporary File Not Found', this)" title="Delete failed encoding tasks where the temporary output file was missing.">Postflight: Temporary File Not Found</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: Postflight Integrity', this)" title="Delete failed encoding tasks where postflight integrity checks failed.">Postflight: Integrity</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: Postflight File Size Check', this)" title="Delete failed encoding tasks where postflight size validation failed.">Postflight: File Size Check</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: Postflight Delete Source File', this)" title="Delete failed encoding tasks where source-file deletion failed after encode.">Postflight: Delete Source File</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: Postflight Move Temp File', this)" title="Delete failed encoding tasks where moving the temp file to final destination failed.">Postflight: Move Temp File</button>
+                        <button class="action-button compact" onclick="openFailedModal('Stopped', this)" title="Delete encoding tasks that were manually stopped.">Stopped</button>
                     </div>
                 </div>
                 <h2>Recently Failed</h2>
@@ -847,9 +847,9 @@
             <div class="table-container">
                 <div class="button-container">
                     <div class="button-row">
-                        <button class="action-button compact" onclick="openDirectoryModal('create')">Add Directory</button>
-                        <button class="action-button compact" onclick="openDirectoryModal('edit')">Edit Directory</button>
-                        <button class="action-button compact" onclick="deleteDirectory()">Remove Directory</button>
+                        <button class="action-button compact" onclick="openDirectoryModal('create')" title="Open a form to add a new directory and encoding settings.">Add Directory</button>
+                        <button class="action-button compact" onclick="openDirectoryModal('edit')" title="Edit the currently selected directory.">Edit Directory</button>
+                        <button class="action-button compact" onclick="deleteDirectory()" title="Delete the currently selected directory.">Remove Directory</button>
                     </div>
                 </div>
                 <h2>Directories</h2>
@@ -938,7 +938,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <div class="modal-title">Delete Failed Records</div>
-                    <button class="modal-close" onclick="closeFailedModal()">×</button>
+                    <button class="modal-close" onclick="closeFailedModal()" title="Close this dialog without deleting records.">×</button>
                 </div>
                 <div style="padding:8px 0 12px;">
                     <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="failedSelectAll" onchange="toggleFailedSelectAll(this)"> Select all</label>
@@ -962,8 +962,8 @@
                     </div>
                 </div>
                 <div class="modal-actions">
-                    <button class="action-button compact" onclick="closeFailedModal()">Cancel</button>
-                    <button class="action-button" id="failedDeleteSubmit" onclick="submitFailedDelete()">Submit</button>
+                    <button class="action-button compact" onclick="closeFailedModal()" title="Cancel and return to the Recently Failed tab.">Cancel</button>
+                    <button class="action-button" id="failedDeleteSubmit" onclick="submitFailedDelete()" title="Delete the selected failed records.">Submit</button>
                 </div>
             </div>
         </div>
@@ -1026,13 +1026,13 @@
                     } else {
                         mainRows.forEach(row => {
                             const cells = row.children;
-                            const file_guid = row.dataset.guid || '';
-                            const rowid = cells[0]?.textContent.trim() || '';
-                            const filename = cells[1]?.textContent.trim() || '';
-                            const path = cells[2]?.textContent.trim() || '';
-                            const size = cells[3]?.textContent.trim() || '';
-                            const ffmpeg = cells[4]?.textContent.trim() || '';
-                            const added = cells[5]?.textContent.trim() || '';
+                            const file_guid = cells[0]?.querySelector('input')?.dataset.guid || '';
+                            const rowid = cells[1]?.textContent.trim() || '';
+                            const filename = cells[2]?.textContent.trim() || '';
+                            const path = cells[3]?.textContent.trim() || '';
+                            const size = cells[4]?.textContent.trim() || '';
+                            const ffmpeg = cells[5]?.textContent.trim() || '';
+                            const added = cells[6]?.textContent.trim() || '';
                             const tr = document.createElement('tr');
                             tr.innerHTML = `
                                 <td><input type="checkbox" class="queued-delete-checkbox-modal" data-guid="${file_guid}"></td>
