@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  boilest-manager:
+    image: ghcr.io/goingoffroading/boilest:dev
+    container_name: boilest-manager
+    pull_policy: always
+    environment:
+      - Role=Manager
+      - NODE_NAME=${HOSTNAME}
+    ports:
+      - "31500:5000"
+    volumes:
+      # Config directory (emptyDir equivalent - anonymous volume)
+      - boilest-config:/boil/app
+      # Media volumes - adjust the host paths as needed
+      - ${MEDIA_PATH}/TV-Unsorted:/tv-unsorted:ro
+      - ${MEDIA_PATH}/TV-Live-Action:/tv-live-action:ro
+      - ${MEDIA_PATH}/TV-Live-Action-Favorites:/tv-live-action-favorites:ro
+      - ${MEDIA_PATH}/TV-Animated:/tv-animated:ro
+      - ${MEDIA_PATH}/TV-Animated-Favorites:/tv-animated-favorites:ro
+      - ${MEDIA_PATH}/Movies-Unsorted:/movies-unsorted:ro
+      - ${MEDIA_PATH}/Movies-Live-Action:/movies-live-action:ro
+      - ${MEDIA_PATH}/Movies-Live-Action-Favorites:/movies-live-action-favorites:ro
+      - ${MEDIA_PATH}/Movies-Animated:/movies-animated:ro
+      - ${MEDIA_PATH}/Movies-Animated-Favorites:/movies-animated-favorites:ro
+      - ${MEDIA_PATH}/Anime-Unsorted:/anime-unsorted:ro
+      - ${MEDIA_PATH}/Anime:/anime:ro
+      - ${MEDIA_PATH}/Anime-Favorites:/anime-favorites:ro
+      - ${MEDIA_PATH}/YouTube:/youtube:ro
+      - ${MEDIA_PATH}/Home-Movies:/home-movies:ro
+    restart: unless-stopped
+    networks:
+      - boilest-network
+
+  boilest-worker:
+    image: ghcr.io/goingoffroading/boilest:dev
+    pull_policy: always
+    environment:
+      - Role=Worker
+      - MANAGER_BASE_URL=http://boilest-manager:5000
+      - NODE_NAME=${HOSTNAME}
+    volumes:
+      # Media volumes - adjust the host paths as needed
+      - ${MEDIA_PATH}/TV-Unsorted:/tv-unsorted
+      - ${MEDIA_PATH}/TV-Live-Action:/tv-live-action
+      - ${MEDIA_PATH}/TV-Live-Action-Favorites:/tv-live-action-favorites
+      - ${MEDIA_PATH}/TV-Animated:/tv-animated
+      - ${MEDIA_PATH}/TV-Animated-Favorites:/tv-animated-favorites
+      - ${MEDIA_PATH}/Movies-Unsorted:/movies-unsorted
+      - ${MEDIA_PATH}/Movies-Live-Action:/movies-live-action
+      - ${MEDIA_PATH}/Movies-Live-Action-Favorites:/movies-live-action-favorites
+      - ${MEDIA_PATH}/Movies-Animated:/movies-animated
+      - ${MEDIA_PATH}/Movies-Animated-Favorites:/movies-animated-favorites
+      - ${MEDIA_PATH}/Anime-Unsorted:/anime-unsorted
+      - ${MEDIA_PATH}/Anime:/anime
+      - ${MEDIA_PATH}/Anime-Favorites:/anime-favorites
+      - ${MEDIA_PATH}/YouTube:/youtube
+      - ${MEDIA_PATH}/Home-Movies:/home-movies
+    restart: unless-stopped
+    depends_on:
+      - boilest-manager
+    networks:
+      - boilest-network
+    # Scale workers by running: docker-compose up -d --scale boilest-worker=3
+    deploy:
+      replicas: 1
+
+volumes:
+  boilest-config:
+
+networks:
+  boilest-network:
+    driver: bridge

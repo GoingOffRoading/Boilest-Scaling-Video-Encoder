@@ -1,14 +1,14 @@
 # Use the official Python image based on Alpine
-FROM python:3.9-alpine
+FROM python:3.13-alpine
 
 # Install dependencies and supervisor
 RUN apk update && \
     apk add --no-cache \
         build-base \
         linux-headers \
-        supervisor \
-        ffmpeg && \
-    pip install --no-cache-dir celery requests mysql-connector-python && \
+        ffmpeg \
+        sqlite && \
+    pip install --no-cache-dir flask requests && \
     apk upgrade
 
 # Create a non-root user and group
@@ -17,39 +17,82 @@ ARG GID=1000
 RUN addgroup -g $GID appgroup && \
     adduser -D -u $UID -G appgroup appuser
 
-# Create additional directories without setting ownership
-RUN mkdir -p /tv /anime /moviles /boil_hold
+# Create directories for the persisted application data
+RUN mkdir -p /boil/app 
+
+# Create directories for the unpersisted persisted application data
+RUN mkdir -p /boil/manager
+RUN mkdir -p /boil/local_worker
+RUN mkdir -p /boil/cloud_worker
+RUN mkdir -p /boil/boil_hold
+
+# Create directories for media data
+RUN mkdir -p /tv-unsorted && \
+    mkdir -p /tv-live-action && \
+    mkdir -p /tv-live-action-favorites && \
+    mkdir -p /tv-animated && \
+    mkdir -p /tv-animated-favorites && \
+    mkdir -p /movies-unsorted && \
+    mkdir -p /movies-live-action && \
+    mkdir -p /movies-live-action-favorites && \
+    mkdir -p /movies-animated && \
+    mkdir -p /movies-animated-favorites && \
+    mkdir -p /anime-unsorted && \
+    mkdir -p /anime && \
+    mkdir -p /anime-favorites && \
+    mkdir -p /youtube && \
+    mkdir -p /home-movies
 
 # Create application directory and set ownership
-WORKDIR /app
-COPY . /app
-RUN chown -R appuser:appgroup /app /boil_hold
+COPY manager /boil/manager
+COPY local_worker /boil/local_worker
+COPY cloud_worker /boil/cloud_worker
+COPY entrypoint.sh /boil/entrypoint.sh
 
-# Create log directory and set ownership
-RUN mkdir -p /app/logs && \
-    chown -R appuser:appgroup /app/logs
+# Create directories for unpersisted application data 
+RUN chown -R appuser:appgroup /boil && \
+    chown -R appuser:appgroup /tv-unsorted && \
+    chown -R appuser:appgroup /tv-live-action && \
+    chown -R appuser:appgroup /tv-live-action-favorites && \
+    chown -R appuser:appgroup /tv-animated && \
+    chown -R appuser:appgroup /tv-animated-favorites && \
+    chown -R appuser:appgroup /movies-unsorted && \
+    chown -R appuser:appgroup /movies-live-action && \
+    chown -R appuser:appgroup /movies-live-action-favorites && \
+    chown -R appuser:appgroup /movies-animated && \
+    chown -R appuser:appgroup /movies-animated-favorites && \
+    chown -R appuser:appgroup /anime-unsorted && \
+    chown -R appuser:appgroup /anime && \
+    chown -R appuser:appgroup /anime-favorites && \
+    chown -R appuser:appgroup /youtube && \
+    chown -R appuser:appgroup /home-movies
 
-# Environment variables
+# Global Variables
+ENV NODE_NAME=""
+
+# Manager Variables
+ENV FLASK_APP=Flask.py
+ENV FLASK_ENV=development
+ENV FLASK_RUN_HOST=0.0.0.0
+ENV FLASK_RUN_PORT=5000
+
+# Worker Variables
 ENV TZ=US/Pacific
+ENV Role=Worker
+ENV LOG_LEVEL=INFO
+ENV FFMPEG_SETTINGS='ffmpeg -hide_banner -loglevel 16 -stats -stats_period 60 -y -i'
+ENV MANAGER_BASE_URL='http://localhost:5000'
+ENV QUEUE_ORDER='FIFO'
 
-# Used in celery and rabbitmq
-ENV user celery
-ENV password celery
-ENV celery_host 192.168.1.110
-ENV celery_port 31672
-ENV celery_vhost celery
-ENV rabbitmq_host 192.168.1.110
-ENV rabbitmq_port 32311
+# Entrypoint will choose manager or worker based on the `Manager` environment variable
+RUN chmod +x /boil/entrypoint.sh && \
+    chown appuser:appgroup /boil/entrypoint.sh
 
-# Used in celery and rabbitmq
-ENV sql_host 192.168.1.110
-ENV sql_port 32053
-ENV sql_database boilest
-ENV sql_user boilest
-ENV sql_pswd boilest
-
-# Run as non-root user
+# Run as non-root user (after permissions are set)
 USER appuser
 
-# Start supervisord
-CMD ["celery", "-A", "tasks", "worker"]
+#Exposes port 5000 for Flask by default
+EXPOSE 5000
+
+ENTRYPOINT ["/boil/entrypoint.sh"]
+CMD [""]

@@ -1,0 +1,1634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boilest</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #475569 0%, #1e293b 100%);
+            font-family: 'Arial', sans-serif;
+            padding: 40px 20px;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Boiling water animation background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 100%, rgba(96, 165, 250, 0.15) 0%, transparent 70%);
+            z-index: -1;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+        }
+
+        /* Simmering water surface at bottom */
+        .water-surface {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 120px;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .water-surface::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: -50%;
+            width: 200%;
+            height: 100%;
+            background: linear-gradient(180deg, 
+                transparent 0%, 
+                rgba(96, 165, 250, 0.1) 30%,
+                rgba(96, 165, 250, 0.2) 60%,
+                rgba(96, 165, 250, 0.3) 100%
+            );
+            animation: wave 8s ease-in-out infinite;
+        }
+
+        .water-surface::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: -50%;
+            width: 200%;
+            height: 100%;
+            background: linear-gradient(180deg, 
+                transparent 0%, 
+                rgba(147, 197, 253, 0.05) 40%,
+                rgba(147, 197, 253, 0.15) 70%,
+                rgba(147, 197, 253, 0.25) 100%
+            );
+            animation: wave 6s ease-in-out infinite reverse;
+        }
+
+        @keyframes wave {
+            0%, 100% {
+                transform: translateX(0) translateY(0);
+            }
+            25% {
+                transform: translateX(5%) translateY(-3px);
+            }
+            50% {
+                transform: translateX(0) translateY(-6px);
+            }
+            75% {
+                transform: translateX(-5%) translateY(-3px);
+            }
+        }
+
+        .bubble {
+            position: fixed;
+            bottom: -100px;
+            background: radial-gradient(circle at 30% 30%, rgba(191, 219, 254, 0.8), rgba(147, 197, 253, 0.4));
+            border-radius: 50%;
+            opacity: 0.6;
+            z-index: -1;
+            animation: rise linear infinite;
+            box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        @keyframes rise {
+            0% {
+                bottom: -100px;
+                transform: translateX(0) scale(1);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.6;
+            }
+            90% {
+                opacity: 0.6;
+            }
+            100% {
+                bottom: 110vh;
+                transform: translateX(var(--drift)) scale(0.3);
+                opacity: 0;
+            }
+        }
+
+        .bubble:nth-child(1) { left: 10%; width: 40px; height: 40px; animation-duration: 8s; animation-delay: 0s; --drift: 30px; }
+        .bubble:nth-child(2) { left: 25%; width: 60px; height: 60px; animation-duration: 10s; animation-delay: 1s; --drift: -40px; }
+        .bubble:nth-child(3) { left: 40%; width: 30px; height: 30px; animation-duration: 7s; animation-delay: 2s; --drift: 20px; }
+        .bubble:nth-child(4) { left: 55%; width: 50px; height: 50px; animation-duration: 9s; animation-delay: 0.5s; --drift: -30px; }
+        .bubble:nth-child(5) { left: 70%; width: 45px; height: 45px; animation-duration: 8.5s; animation-delay: 1.5s; --drift: 35px; }
+        .bubble:nth-child(6) { left: 85%; width: 35px; height: 35px; animation-duration: 7.5s; animation-delay: 0.8s; --drift: -25px; }
+        .bubble:nth-child(7) { left: 15%; width: 55px; height: 55px; animation-duration: 9.5s; animation-delay: 2.5s; --drift: 40px; }
+        .bubble:nth-child(8) { left: 60%; width: 38px; height: 38px; animation-duration: 8.2s; animation-delay: 1.8s; --drift: -35px; }
+        .bubble:nth-child(9) { left: 32%; width: 42px; height: 42px; animation-duration: 7.8s; animation-delay: 0.3s; --drift: 28px; }
+        .bubble:nth-child(10) { left: 78%; width: 48px; height: 48px; animation-duration: 8.8s; animation-delay: 2.2s; --drift: -38px; }
+        .bubble:nth-child(11) { left: 5%; width: 44px; height: 44px; animation-duration: 8.3s; animation-delay: 0.4s; --drift: 32px; }
+        .bubble:nth-child(12) { left: 20%; width: 52px; height: 52px; animation-duration: 9.2s; animation-delay: 1.2s; --drift: -42px; }
+        .bubble:nth-child(13) { left: 35%; width: 36px; height: 36px; animation-duration: 7.6s; animation-delay: 2.1s; --drift: 26px; }
+        .bubble:nth-child(14) { left: 50%; width: 46px; height: 46px; animation-duration: 8.7s; animation-delay: 0.7s; --drift: -28px; }
+        .bubble:nth-child(15) { left: 65%; width: 41px; height: 41px; animation-duration: 8.1s; animation-delay: 1.6s; --drift: 33px; }
+        .bubble:nth-child(16) { left: 80%; width: 39px; height: 39px; animation-duration: 7.9s; animation-delay: 0.9s; --drift: -27px; }
+        .bubble:nth-child(17) { left: 12%; width: 51px; height: 51px; animation-duration: 9.1s; animation-delay: 2.3s; --drift: 37px; }
+        .bubble:nth-child(18) { left: 45%; width: 43px; height: 43px; animation-duration: 8.4s; animation-delay: 1.4s; --drift: -31px; }
+        .bubble:nth-child(19) { left: 72%; width: 47px; height: 47px; animation-duration: 8.6s; animation-delay: 0.6s; --drift: 29px; }
+        .bubble:nth-child(20) { left: 90%; width: 37px; height: 37px; animation-duration: 7.7s; animation-delay: 1.9s; --drift: -36px; }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .title-box {
+            background: white;
+            padding: 18px 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 12px;
+        }
+        
+        .title-box h1 {
+            font-size: 2.4rem;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            font-size: 1rem;
+            font-style: italic;
+            color: #666;
+        }
+        
+        .subtitle a {
+            color: #64748b;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s;
+        }
+        
+        .subtitle a:hover {
+            color: #475569;
+            text-decoration: underline;
+        }
+        
+        .metrics-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .metric-box {
+            background: white;
+            padding: 12px 14px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+        
+        .metric-label {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .metric-value {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #64748b;
+        }
+        
+        .metric-unit {
+            font-size: 0.9rem;
+            color: #999;
+            margin-top: 5px;
+        }
+        
+        .table-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+        
+        .table-container h2 {
+            color: #64748b;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .scroll-wrapper {
+            max-height: 960px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 6px;
+        }
+
+        .scroll-wrapper table {
+            margin-bottom: 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        table thead {
+            background-color: #475569;
+            color: white;
+        }
+        
+        table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        table th.sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        table th.sortable::after {
+            content: "";
+            font-size: 0.8rem;
+            margin-left: 6px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        table th.sortable[data-sort-dir="asc"]::after {
+            content: "^";
+        }
+
+        table th.sortable[data-sort-dir="desc"]::after {
+            content: "v";
+        }
+        
+        table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        table tbody tr:hover {
+            background-color: #f9f9f9;
+        }
+        
+        table tbody tr:nth-child(odd) {
+            background-color: #f5f5f5;
+        }
+        
+        .no-data {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+            font-size: 1.1rem;
+        }
+        
+        .file-size {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .time-added {
+            color: #999;
+            font-size: 0.9rem;
+        }
+        
+        .button-container {
+            margin: 4px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .action-button {
+            background-color: #64748b;
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            font-size: 1.15rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.12s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        .action-button.compact {
+            padding: 10px 16px;
+            font-size: 0.9rem;
+        }
+
+        .directory-row.selected {
+            outline: 2px solid #64748b;
+            outline-offset: -2px;
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal.hidden {
+            display: none;
+        }
+
+        .modal-content {
+            background: #fff;
+            width: min(600px, 92vw);
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            padding: 18px 20px 20px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+            color: #64748b;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .modal-body label {
+            display: flex;
+            flex-direction: column;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .modal-body input {
+            margin-top: 6px;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .action-button:hover:not(:disabled) {
+            background-color: #475569;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+        }
+
+        .action-button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .action-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        
+        
+        .status-message {
+            margin-top: 8px;
+            font-size: 0.95rem;
+            min-height: 20px;
+        }
+        
+        .status-success {
+            color: #28a745;
+        }
+        
+        .status-error {
+            color: #dc3545;
+        }
+        
+        .status-loading {
+            color: #64748b;
+        }
+
+        .tab-nav {
+            display: flex;
+            gap: 0;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 12px;
+            border-bottom: 2px solid #64748b;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 16px 20px;
+            background: #f5f5f5;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            text-align: left;
+        }
+
+        .tab-btn:hover {
+            background: #eee;
+            color: #64748b;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #64748b;
+            border-bottom: 3px solid #64748b;
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .tab-content .table-container {
+            background: transparent;
+            padding: 0;
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        .tab-content h2 {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Boiling water bubbles -->
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    
+    <!-- Simmering water surface -->
+    <div class="water-surface"></div>
+    
+    <div class="container">
+        <!-- Title Box -->
+        <div class="title-box">
+            <h1>Boilest</h1>
+            <p class="subtitle">to read more, go <a href="https://github.com/GoingOffRoading/Boilest-Scaling-Video-Encoder" target="_blank">HERE</a></p>
+        </div>
+        
+        <!-- Stop Encode Modal -->
+        <div id="stopEncodeModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">Stop Encoding - Select Files</div>
+                    <button class="modal-close" onclick="closeStopEncodeModal()">&times;</button>
+                </div>
+                <div class="modal-body" style="grid-template-columns: 1fr;">
+                    <div style="width:100%; overflow:auto; max-height:360px;">
+                        <table id="stopEncodeTable">
+                            <thead>
+                                <tr>
+                                    <th style="width:40px">Stop</th>
+                                    <th>Filename</th>
+                                    <th>Worker</th>
+                                    <th>Path</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="action-button compact" onclick="closeStopEncodeModal()">Cancel</button>
+                    <button class="action-button" id="stopEncodeSubmit" onclick="submitStopEncode()">Submit</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metrics -->
+        <div class="metrics-container">
+            <div class="metric-box" title="Total number of files currently waiting in the queue to be encoded.">
+                <div class="metric-label">Queued</div>
+                <div class="metric-value">{{ queued_count }}</div>
+                <div class="metric-unit">items waiting</div>
+            </div>
+            
+            <div class="metric-box" title="Number of workers who have picked up a file for processing in the last 24 hours.">
+                <div class="metric-label">Workers</div>
+                <div class="metric-value">{{ processing_count }}</div>
+                <div class="metric-unit">active nodes</div>
+            </div>
+            
+            <div class="metric-box" title="Total files successfully encoded.">
+                <div class="metric-label">Encoded</div>
+                <div class="metric-value">{{ encoded_count }}</div>
+                <div class="metric-unit">items completed</div>
+            </div>
+            
+            <div class="metric-box" title="Cumulative storage savings from completed encodes.">
+                <div class="metric-label">Space Saved</div>
+                <div class="metric-value">{{ space_saved_value }}</div>
+                <div class="metric-unit">{{ space_saved_unit }}</div>
+            </div>
+            
+            <div class="metric-box" title="Total time spent encoding completed files.">
+                <div class="metric-label">Encoding Time</div>
+                <div class="metric-value">{{ total_processing_value }}</div>
+                <div class="metric-unit">{{ total_processing_unit }}</div>
+            </div>
+        </div>
+        
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab(this, 'queued')">Queued Files</button>
+            <button class="tab-btn" onclick="switchTab(this, 'encoding')">Currently Encoding</button>
+            <button class="tab-btn" onclick="switchTab(this, 'encoded')">Recently Encoded</button>
+            <button class="tab-btn" onclick="switchTab(this, 'failed')">Recently Failed</button>
+            <button class="tab-btn" onclick="switchTab(this, 'settings')">Settings</button>
+        </div>
+        
+        <!-- Queued Files Tab -->
+        <div id="queued" class="tab-content active">
+            <div class="table-container queued-table">
+                <!-- Scan Button -->
+                <div class="button-container">
+                    <div class="button-row">
+                        <button class="action-button compact" id="scanButton" onclick="openScanModal()" title="Open the scan dialog to scan selected directories for new files.">Scan for Files</button>
+                        <button class="action-button compact" id="deleteRowButton" onclick="openDeleteRowModal()" title="Open a dialog to select and delete specific queued rows.">Delete Row(s)</button>
+                        <button class="action-button compact" id="deleteQueueButton" onclick="deleteQueue()" title="Delete all files currently in the queue.">Delete Queue</button>
+                    </div>
+                    <div class="status-message" id="statusMessage"></div>
+                </div>
+                <h2>Queued Files</h2>
+                {% if queued_items %}
+                <div class="scroll-wrapper">
+                    <table id="queuedDeleteTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">RowID</th>
+                                <th>Filename</th>
+                                <th>Path</th>
+                                <th style="text-align: right;">Size (MB)</th>
+                                <th>FFmpeg String</th>
+                                <th style="width: 120px;">Added</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in queued_items[:100] %}
+                            <tr data-guid="{{ item['file_guid'] }}">
+                                <td><strong>{{ item['ROWID'] }}</strong></td>
+                                <td>{{ item['Filename'] }}</td>
+                                <td>{{ item['Path'] }}</td>
+                                <td class="file-size">{{ "{:,.2f}".format(item['SizeMB']) if item['SizeMB'] is not none else '—' }}</td>
+                                <td style="font-size: 0.85rem; font-family: 'Courier New', monospace;">{{ item['ffmpeg_string'][:300] ~ '…' if item['ffmpeg_string'] and item['ffmpeg_string']|length > 300 else item['ffmpeg_string'] }}</td>
+                                <td class="time-added">{{ item['Added'] if item['Added'] else '—' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                    <!-- Queued Delete Modal -->
+                    <div id="queuedDeleteModal" class="modal hidden" aria-hidden="true">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <div class="modal-title">Delete Queued Row(s)</div>
+                                <button class="modal-close" onclick="closeQueuedDeleteModal()" title="Close this dialog without deleting rows.">×</button>
+                            </div>
+                            <div style="padding:8px 0 12px;">
+                                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="queuedSelectAll" onchange="toggleQueuedSelectAll(this)"> Select all</label>
+                            </div>
+                            <div class="modal-body" style="grid-template-columns: 1fr; padding:0;">
+                                <div style="width:100%; overflow:auto; max-height:360px;">
+                                    <table id="queuedDeleteTableModal">
+                                        <thead>
+                                            <tr>
+                                                <th style="width:40px">Delete</th>
+                                                <th>RowID</th>
+                                                <th>Filename</th>
+                                                <th>Path</th>
+                                                <th>Size (MB)</th>
+                                                <th>FFmpeg String</th>
+                                                <th>Added</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Populated dynamically -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="modal-actions">
+                                <button class="action-button compact" onclick="closeQueuedDeleteModal()" title="Cancel and return to the queued files table.">Cancel</button>
+                                <button class="action-button" id="queuedDeleteSubmit" onclick="submitQueuedDelete()" title="Delete the selected queued rows.">Submit</button>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                <div class="no-data">No queued files at this time</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Currently Encoding Tab -->
+        <div id="encoding" class="tab-content">
+            <div class="table-container">
+                <div style="display:flex; flex-direction:column; align-items:center;">
+                    <h2 style="align-self:flex-start;">Currently Encoding</h2>
+                    <div style="margin-top:8px;">
+                        <button class="action-button compact" onclick="openStopEncodeModal()" title="Open a dialog to select currently encoding files to stop.">Stop Encode</button>
+                    </div>
+                </div>
+                {% if encoding_items %}
+                <div class="scroll-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">RowID</th>
+                                <th>Worker</th>
+                                <th>Filename</th>
+                                <th>Path</th>
+                                <th style="text-align: right">Size (MB)</th>
+                                <th>FFmpeg String</th>
+                                <th style="width: 120px;">Pulled</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in encoding_items[:10] %}
+                            <tr>
+                                <td><strong>{{ item['ROWID'] }}</strong></td>
+                                <td>{{ item['worker'] if item['worker'] else '—' }}</td>
+                                <td>{{ item['input_file_name'] }}</td>
+                                <td>{{ item['directory_path'] }}</td>
+                                <td class="file-size">{{ "{:,.2f}".format(item['SizeMB']) if item['SizeMB'] is not none else '—' }}</td>
+                                <td style="font-size: 0.85rem; font-family: 'Courier New', monospace;">{{ item['ffmpeg_string'][:300] ~ '…' if item['ffmpeg_string'] and item['ffmpeg_string']|length > 300 else item['ffmpeg_string'] }}</td>
+                                <td class="time-added">{{ item['Pulled'] if item['Pulled'] else '—' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="no-data">No files currently encoding</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Recently Encoded Tab -->
+        <div id="encoded" class="tab-content">
+            <div class="table-container recently-encoded-table">
+                <h2>Recently Encoded</h2>
+                {% if encoded_items %}
+                <div class="scroll-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">RowID</th>
+                                <th>Worker</th>
+                                <th>File</th>
+                                <th>Path</th>
+                                <th>Space Saved</th>
+                                <th>Duration (min)</th>
+                                <th>Completed</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in encoded_items[:100] %}
+                            <tr title="{{ item['notes'] }}">
+                                <td><strong>{{ item['ROWID'] }}</strong></td>
+                                <td>{{ item['worker'] if item['worker'] else '—' }}</td>
+                                <td>{{ item['output_file_name'] }}</td>
+                                <td>{{ item['directory_path'] }}</td>
+                                <td>
+                                    {% if item['space_saved_mb'] is not none %}
+                                        {{ "{:,.2f}".format(item['space_saved_mb']) }} MB
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td>{{ item['duration_minutes'] if item['duration_minutes'] is not none else '—' }}</td>
+                                <td class="time-added">{{ item['Completed'] if item['Completed'] else '—' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="no-data">No recently encoded files</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Recently Failed Tab -->
+        <div id="failed" class="tab-content">
+            <div class="table-container">
+                <div class="button-container">
+                    <div class="button-row">
+                        <button class="action-button compact" onclick="openFailedModal('Failed: File Not Found', this)" title="Delete failed encoding tasks where the source file could not be found.">Preflight: File Not Found</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: Hash Mismatch', this)" title="Delete failed encoding tasks where the file has changed since it was scanned.">Preflight: Hash Mismatch</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: Input Integrity', this)" title="Delete failed encoding tasks where input integrity checks failed.">Preflight: Input Integrity</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: FFmpeg Failure', this)" title="Delete failed encoding tasks where FFmpeg processing failed.">Flight: FFmpeg Failure</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: Temporary File Not Found', this)" title="Delete failed encoding tasks where the temporary output file was missing.">Postflight: Temporary File Not Found</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: Postflight Integrity', this)" title="Delete failed encoding tasks where postflight integrity checks failed.">Postflight: Integrity</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: Postflight File Size Check', this)" title="Delete failed encoding tasks where postflight size validation failed.">Postflight: File Size Check</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: Postflight Delete Source File', this)" title="Delete failed encoding tasks where source-file deletion failed after encode.">Postflight: Delete Source File</button>
+                        <button class="action-button compact" onclick="openFailedModal('Failed: Postflight Move Temp File', this)" title="Delete failed encoding tasks where moving the temp file to final destination failed.">Postflight: Move Temp File</button>
+                        <button class="action-button compact" onclick="openFailedModal('Stopped', this)" title="Delete encoding tasks that were manually stopped.">Stopped</button>
+                    </div>
+                </div>
+                <h2>Recently Failed</h2>
+                {% if failed_items %}
+                <div class="scroll-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">RowID</th>
+                                <th>Worker</th>
+                                <th>Filename</th>
+                                <th>Path</th>
+                                <th>Pulled</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in failed_items[:100] %}
+                            <tr title="{{ item['notes'] }}">
+                                <td><strong>{{ item['ROWID'] }}</strong></td>
+                                <td>{{ item['worker'] if item['worker'] else '—' }}</td>
+                                <td>{{ item['input_file_name'] }}</td>
+                                <td>{{ item['directory_path'] }}</td>
+                                <td class="time-added">{{ item['datetime_pulled']|string|replace('T', ' ')|truncate(16, True, '') if item['datetime_pulled'] else '—' }}</td>
+                                <td>{{ item['status'] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="no-data">No recently failed files</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Settings Tab -->
+        <div id="settings" class="tab-content">
+            <div class="table-container">
+                <div class="button-container">
+                    <div class="button-row">
+                        <button class="action-button compact" onclick="openDirectoryModal('create')" title="Open a form to add a new directory and encoding settings.">Add Directory</button>
+                        <button class="action-button compact" onclick="openDirectoryModal('edit')" title="Edit the currently selected directory.">Edit Directory</button>
+                        <button class="action-button compact" onclick="deleteDirectory()" title="Delete the currently selected directory.">Remove Directory</button>
+                    </div>
+                </div>
+                <h2>Directories</h2>
+                {% if directories_items %}
+                {% set hidden_directory_columns = [
+                    'guid',
+                    'added_at',
+                    'desired_video_codec',
+                    'desired_audio_codec',
+                    'desired_subtitle_codec',
+                    'video_codec',
+                    'audio_codec',
+                    'subtitle_codec',
+                    'active'
+                ] %}
+                <div class="scroll-wrapper">
+                    <table id="directoriesTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 70px;">Select</th>
+                                {% for column in directories_items[0].keys() %}
+                                {% if column not in hidden_directory_columns %}
+                                <th>{{ column }}</th>
+                                {% endif %}
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in directories_items %}
+                            <tr class="directory-row" data-guid="{{ item['guid'] }}" data-desired-video-codec="{{ item.get('desired_video_codec', '') }}" data-desired-audio-codec="{{ item.get('desired_audio_codec', '') }}" data-desired-subtitle-codec="{{ item.get('desired_subtitle_codec', '') }}">
+                                <td><input type="radio" name="directorySelect"></td>
+                                {% for column in item.keys() %}
+                                {% if column not in hidden_directory_columns %}
+                                <td>{{ item[column] }}</td>
+                                {% endif %}
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="no-data">No directories configured</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div id="directoryModal" class="modal hidden" aria-hidden="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title" id="directoryModalTitle">Add Directory</div>
+                    <button class="modal-close" onclick="closeDirectoryModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <label>Path
+                        <input id="dirPath" type="text" placeholder="/tv" />
+                    </label>
+                    <label>FFmpeg Video
+                        <input id="dirFfmpegVideo" type="text" placeholder="-c:v libsvtav1" />
+                    </label>
+                    <label>FFmpeg Audio
+                        <input id="dirFfmpegAudio" type="text" placeholder="-c:a aac" />
+                    </label>
+                    <label>FFmpeg Subtitle
+                        <input id="dirFfmpegSubtitle" type="text" placeholder="-c:s copy" />
+                    </label>
+                    <label>Video Codec
+                        <input id="dirVideoCodec" type="text" placeholder="av1" />
+                    </label>
+                    <label>Audio Codec
+                        <input id="dirAudioCodec" type="text" placeholder="aac" />
+                    </label>
+                    <label>Subtitle Codec
+                        <input id="dirSubtitleCodec" type="text" placeholder="copy" />
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button class="action-button compact" id="saveDirectoryButton" onclick="saveDirectory()">Save</button>
+                    <button class="action-button compact" onclick="closeDirectoryModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Failed Delete Modal -->
+        <div id="failedDeleteModal" class="modal hidden" aria-hidden="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">Delete Failed Records</div>
+                    <button class="modal-close" onclick="closeFailedModal()" title="Close this dialog without deleting records.">×</button>
+                </div>
+                <div style="padding:8px 0 12px;">
+                    <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="failedSelectAll" onchange="toggleFailedSelectAll(this)"> Select all</label>
+                </div>
+                <div class="modal-body" style="grid-template-columns: 1fr; padding:0;">
+                    <div style="width:100%; overflow:auto; max-height:360px;">
+                        <table id="failedDeleteTable">
+                            <thead>
+                                <tr>
+                                    <th style="width:40px">Delete</th>
+                                    <th>Filename</th>
+                                    <th>Worker</th>
+                                    <th>Path</th>
+                                    <th>Pulled</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="action-button compact" onclick="closeFailedModal()" title="Cancel and return to the Recently Failed tab.">Cancel</button>
+                    <button class="action-button" id="failedDeleteSubmit" onclick="submitFailedDelete()" title="Delete the selected failed records.">Submit</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="scanModal" class="modal hidden" aria-hidden="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">Scan Directories</div>
+                    <button class="modal-close" onclick="closeScanModal()">×</button>
+                </div>
+                <div class="modal-body" style="display:block;">
+                    {% if directories_items %}
+                    <div class="scroll-wrapper" style="max-height: 340px;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 90px;">Scan</th>
+                                    <th>Path</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in directories_items %}
+                                <tr>
+                                    <td><input type="checkbox" class="scan-directory-checkbox" value="{{ item['path'] }}"></td>
+                                    <td>{{ item['path'] }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="no-data">No directories configured</div>
+                    {% endif %}
+                </div>
+                <div class="modal-actions">
+                    <button class="action-button compact" onclick="scanSelectedDirectories()">Scan</button>
+                    <button class="action-button compact" onclick="closeScanModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+                // Queued Delete Modal logic
+                function openDeleteRowModal() {
+                    const modal = document.getElementById('queuedDeleteModal');
+                    const tbody = document.querySelector('#queuedDeleteTableModal tbody');
+                    const selectAll = document.getElementById('queuedSelectAll');
+                    const submitBtn = document.getElementById('queuedDeleteSubmit');
+                    tbody.innerHTML = '';
+                    if (selectAll) selectAll.checked = false;
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit';
+                    // Copy rows from main table
+                    const mainRows = document.querySelectorAll('#queuedDeleteTable tbody tr');
+                    if (!mainRows.length) {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = '<td colspan="7" class="no-data">No queued files at this time</td>';
+                        tbody.appendChild(tr);
+                    } else {
+                        mainRows.forEach(row => {
+                            const cells = row.children;
+                            const file_guid = cells[0]?.querySelector('input')?.dataset.guid || '';
+                            const rowid = cells[1]?.textContent.trim() || '';
+                            const filename = cells[2]?.textContent.trim() || '';
+                            const path = cells[3]?.textContent.trim() || '';
+                            const size = cells[4]?.textContent.trim() || '';
+                            const ffmpeg = cells[5]?.textContent.trim() || '';
+                            const added = cells[6]?.textContent.trim() || '';
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td><input type="checkbox" class="queued-delete-checkbox-modal" data-guid="${file_guid}"></td>
+                                <td>${rowid}</td>
+                                <td>${filename}</td>
+                                <td>${path}</td>
+                                <td>${size}</td>
+                                <td style="font-size: 0.85rem; font-family: 'Courier New', monospace;">${ffmpeg}</td>
+                                <td class="time-added">${added}</td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    }
+                    modal.classList.remove('hidden');
+                }
+
+                function closeQueuedDeleteModal() {
+                    const modal = document.getElementById('queuedDeleteModal');
+                    modal.classList.add('hidden');
+                    const tbody = document.querySelector('#queuedDeleteTableModal tbody');
+                    if (tbody) tbody.innerHTML = '';
+                }
+
+                function toggleQueuedSelectAll(cb) {
+                    const boxes = Array.from(document.querySelectorAll('.queued-delete-checkbox-modal'));
+                    boxes.forEach(b => b.checked = cb.checked);
+                }
+
+                async function submitQueuedDelete() {
+                    const submitBtn = document.getElementById('queuedDeleteSubmit');
+                    const boxes = Array.from(document.querySelectorAll('.queued-delete-checkbox-modal:checked'));
+                    if (boxes.length === 0) {
+                        alert('Select at least one row to delete.');
+                        return;
+                    }
+                    const guids = boxes.map(b => b.dataset.guid).filter(Boolean);
+                    if (guids.length === 0) {
+                        alert('No valid GUIDs selected.');
+                        return;
+                    }
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Deleting...';
+                    try {
+                        for (const guid of guids) {
+                            const resp = await fetch('/api/v2/queue/delete-guid', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ guid })
+                            });
+                            const data = await resp.json().catch(() => ({}));
+                            if (!resp.ok) {
+                                alert(`Delete failed: ${data.error || resp.status}`);
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = 'Submit';
+                                return;
+                            }
+                        }
+                        alert(`Successfully deleted ${guids.length} row(s). Refreshing...`);
+                        location.reload();
+                    } catch (err) {
+                        alert(`Error: ${err.message}`);
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Submit';
+                    }
+                }
+        // When opening the Stop Encode modal, fetch live encoding items from server
+        async function openStopEncodeModal() {
+            const modal = document.getElementById('stopEncodeModal');
+            const tbody = document.querySelector('#stopEncodeTable tbody');
+            tbody.innerHTML = '';
+            try {
+                const resp = await fetch('/api/v2/queue/encoding');
+                if (!resp.ok) throw new Error(`Server returned ${resp.status}`);
+                const data = await resp.json();
+                const items = (data && data.data) || [];
+                if (!items || items.length === 0) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = '<td colspan="4" class="no-data">No files currently encoding</td>';
+                    tbody.appendChild(tr);
+                } else {
+                    items.forEach(item => {
+                        const tr = document.createElement('tr');
+                        const guid = item.file_guid || '';
+                        tr.innerHTML = `
+                            <td><input type="checkbox" class="stop-encode-checkbox" data-guid="${guid}"></td>
+                            <td>${item.input_file_name || ''}</td>
+                            <td>${item.worker || ''}</td>
+                            <td>${item.directory_path || ''}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to load encoding items:', err);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="4" class="no-data">Failed to load items: ${err.message}</td>`;
+                tbody.appendChild(tr);
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function closeStopEncodeModal() {
+            const modal = document.getElementById('stopEncodeModal');
+            modal.classList.add('hidden');
+            const tbody = document.querySelector('#stopEncodeTable tbody');
+            if (tbody) tbody.innerHTML = '';
+        }
+
+        async function submitStopEncode() {
+            const submitBtn = document.getElementById('stopEncodeSubmit');
+            const checkboxes = Array.from(document.querySelectorAll('.stop-encode-checkbox:checked'));
+            if (checkboxes.length === 0) {
+                alert('Select at least one file to stop.');
+                return;
+            }
+            const guids = checkboxes.map(cb => cb.dataset.guid).filter(Boolean);
+            if (guids.length === 0) {
+                alert('No valid file GUIDs selected.');
+                return;
+            }
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Stopping...';
+            try {
+                // POST stopped status for each selected file
+                for (const guid of guids) {
+                    try {
+                        const resp = await fetch('/api/v2/completed', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ file_guid: guid, status: 'Stopped' })
+                        });
+                        if (!resp.ok) {
+                            const data = await resp.json().catch(() => ({}));
+                            console.error('Failed to stop', guid, resp.status, data);
+                            alert(`Failed to stop ${guid}: ${resp.status}`);
+                        }
+                    } catch (err) {
+                        console.error('Error stopping', guid, err);
+                        alert(`Error stopping ${guid}: ${err.message}`);
+                    }
+                }
+                // Refresh page to reflect changes
+                location.reload();
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit';
+            }
+        }
+        function getCellValue(row, index) {
+            const cell = row.children[index];
+            if (!cell) {
+                return '';
+            }
+            return cell.textContent.trim();
+        }
+
+        function normalizeValue(value) {
+            if (value === '—' || value === '') {
+                return { type: 'empty', value: '' };
+            }
+
+            const numeric = value.replace(/[,\s]/g, '');
+            if (/^-?\d+(\.\d+)?$/.test(numeric)) {
+                return { type: 'number', value: parseFloat(numeric) };
+            }
+
+            const dateValue = Date.parse(value);
+            if (!Number.isNaN(dateValue)) {
+                return { type: 'date', value: dateValue };
+            }
+
+            return { type: 'text', value: value.toLowerCase() };
+        }
+
+        function compareValues(a, b, direction) {
+            if (a.type !== b.type) {
+                if (a.type === 'empty') return 1;
+                if (b.type === 'empty') return -1;
+            }
+
+            if (a.value < b.value) {
+                return direction === 'asc' ? -1 : 1;
+            }
+            if (a.value > b.value) {
+                return direction === 'asc' ? 1 : -1;
+            }
+            return 0;
+        }
+
+        function switchTab(button, tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            button.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        let selectedDirectoryGuid = null;
+        let selectedDirectoryData = null;
+        let directoryModalMode = 'create';
+
+        const directoryFieldMap = {
+            path: 'dirPath',
+            ffmpeg_video: 'dirFfmpegVideo',
+            ffmpeg_audio: 'dirFfmpegAudio',
+            ffmpeg_subtitle: 'dirFfmpegSubtitle',
+            desired_video_codec: 'dirVideoCodec',
+            desired_audio_codec: 'dirAudioCodec',
+            desired_subtitle_codec: 'dirSubtitleCodec'
+        };
+
+        function setupDirectorySelection() {
+            const table = document.getElementById('directoriesTable');
+            if (!table) {
+                return;
+            }
+            table.querySelectorAll('tbody tr').forEach(row => {
+                row.addEventListener('click', () => selectDirectoryRow(row));
+            });
+        }
+
+        function selectDirectoryRow(row) {
+            document.querySelectorAll('.directory-row').forEach(r => r.classList.remove('selected'));
+            row.classList.add('selected');
+            selectedDirectoryGuid = row.dataset.guid;
+            selectedDirectoryData = getDirectoryRowData(row);
+            const radio = row.querySelector('input[type="radio"]');
+            if (radio) {
+                radio.checked = true;
+            }
+        }
+
+        function getDirectoryRowData(row) {
+            const table = document.getElementById('directoriesTable');
+            const headers = Array.from(table.querySelectorAll('thead th')).slice(1);
+            const cells = Array.from(row.querySelectorAll('td')).slice(1);
+            const data = {};
+            headers.forEach((header, index) => {
+                const key = header.textContent.trim();
+                data[key] = cells[index] ? cells[index].textContent.trim() : '';
+            });
+            // Add hidden codec fields from data attributes
+            data['desired_video_codec'] = row.dataset.desiredVideoCodec || '';
+            data['desired_audio_codec'] = row.dataset.desiredAudioCodec || '';
+            data['desired_subtitle_codec'] = row.dataset.desiredSubtitleCodec || '';
+            return data;
+        }
+
+        function openDirectoryModal(mode) {
+            if (mode === 'edit' && !selectedDirectoryGuid) {
+                alert('Select a directory row first.');
+                return;
+            }
+            directoryModalMode = mode;
+            document.getElementById('directoryModalTitle').textContent = mode === 'edit' ? 'Edit Directory' : 'Add Directory';
+            clearDirectoryForm();
+            if (mode === 'edit') {
+                fillDirectoryForm(selectedDirectoryData || {});
+            }
+            document.getElementById('directoryModal').classList.remove('hidden');
+        }
+
+        function closeDirectoryModal() {
+            document.getElementById('directoryModal').classList.add('hidden');
+        }
+
+        function openScanModal() {
+            const modal = document.getElementById('scanModal');
+            if (!modal) {
+                return;
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function closeScanModal() {
+            const modal = document.getElementById('scanModal');
+            if (!modal) {
+                return;
+            }
+            modal.classList.add('hidden');
+        }
+
+        function getSelectedScanPaths() {
+            return Array.from(document.querySelectorAll('.scan-directory-checkbox:checked')).map((checkbox) => checkbox.value);
+        }
+
+        async function scanSelectedDirectories() {
+            const selectedPaths = getSelectedScanPaths();
+            if (selectedPaths.length === 0) {
+                alert('Select at least one directory to scan.');
+                return;
+            }
+
+            closeScanModal();
+            await triggerScan(selectedPaths);
+        }
+
+        function clearDirectoryForm() {
+            Object.values(directoryFieldMap).forEach(id => {
+                const input = document.getElementById(id);
+                if (input) {
+                    input.value = '';
+                }
+            });
+        }
+
+        function fillDirectoryForm(data) {
+            Object.entries(directoryFieldMap).forEach(([key, id]) => {
+                const input = document.getElementById(id);
+                if (input && data[key] !== undefined) {
+                    input.value = data[key];
+                }
+            });
+        }
+
+        function collectDirectoryPayload() {
+            const payload = {};
+            Object.entries(directoryFieldMap).forEach(([key, id]) => {
+                const input = document.getElementById(id);
+                if (input && input.value.trim() !== '') {
+                    payload[key] = input.value.trim();
+                }
+            });
+            return payload;
+        }
+
+        async function saveDirectory() {
+            const payload = collectDirectoryPayload();
+            if (!payload.path && directoryModalMode === 'create') {
+                alert('Path is required.');
+                return;
+            }
+
+            let url = '/api/v2/directories';
+            let method = 'POST';
+            if (directoryModalMode === 'edit') {
+                url = `/api/v2/directories/${selectedDirectoryGuid}`;
+                method = 'PATCH';
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Directory saved. Refreshing...');
+                    location.reload();
+                } else {
+                    alert(`Save failed: ${data.error || response.status}`);
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        async function deleteDirectory() {
+            if (!selectedDirectoryGuid) {
+                alert('Select a directory row first.');
+                return;
+            }
+            if (!confirm('Delete selected directory?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/v2/directories/${selectedDirectoryGuid}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Directory deleted. Refreshing...');
+                    location.reload();
+                } else {
+                    alert(`Delete failed: ${data.error || response.status}`);
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        function setupSortableTables() {
+            const tables = document.querySelectorAll('table');
+            tables.forEach((table) => {
+                const headers = table.querySelectorAll('thead th');
+                const tbody = table.querySelector('tbody');
+                if (!tbody) {
+                    return;
+                }
+
+                headers.forEach((th, index) => {
+                    th.classList.add('sortable');
+                    th.addEventListener('click', () => {
+                        const currentDir = th.getAttribute('data-sort-dir');
+                        const nextDir = currentDir === 'asc' ? 'desc' : 'asc';
+
+                        headers.forEach((header) => header.removeAttribute('data-sort-dir'));
+                        th.setAttribute('data-sort-dir', nextDir);
+
+                        const rows = Array.from(tbody.querySelectorAll('tr'));
+                        rows.sort((rowA, rowB) => {
+                            const rawA = getCellValue(rowA, index);
+                            const rawB = getCellValue(rowB, index);
+                            const normA = normalizeValue(rawA);
+                            const normB = normalizeValue(rawB);
+                            return compareValues(normA, normB, nextDir);
+                        });
+
+                        rows.forEach((row) => tbody.appendChild(row));
+                    });
+                });
+            });
+        }
+        async function triggerScan(selectedPaths = null) {
+            const button = document.getElementById('scanButton');
+            const statusMessage = document.getElementById('statusMessage');
+            
+            // Disable button and show loading message
+            button.disabled = true;
+            statusMessage.className = 'status-message status-loading';
+            statusMessage.textContent = 'Scanning for files...';
+            
+            try {
+                const response = await fetch('/api/v2/scan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ paths: selectedPaths })
+                });
+                
+                if (response.ok) {
+                    statusMessage.className = 'status-message status-success';
+                    statusMessage.textContent = '✓ Scan completed successfully! Refreshing...';
+                    
+                    // Refresh the page after 2 seconds to show updated metrics
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    statusMessage.className = 'status-message status-error';
+                    statusMessage.textContent = `✗ Scan failed with status ${response.status}`;
+                    button.disabled = false;
+                }
+            } catch (error) {
+                statusMessage.className = 'status-message status-error';
+                statusMessage.textContent = `✗ Error: ${error.message}`;
+                button.disabled = false;
+            }
+        }
+
+        async function deleteQueue() {
+            const button = document.getElementById('deleteQueueButton');
+            const statusMessage = document.getElementById('statusMessage');
+            
+            // Confirm before deleting
+            if (!confirm('Are you sure you want to delete all queued items?')) {
+                return;
+            }
+            
+            // Disable button and show loading message
+            button.disabled = true;
+            statusMessage.className = 'status-message status-loading';
+            statusMessage.textContent = 'Deleting queued items...';
+            
+            try {
+                const response = await fetch('/api/v2/queue/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    statusMessage.className = 'status-message status-success';
+                    statusMessage.textContent = `✓ ${data.message} Refreshing...`;
+                    
+                    // Refresh the page after 2 seconds to show updated metrics
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    statusMessage.className = 'status-message status-error';
+                    statusMessage.textContent = `✗ Delete failed: ${data.error || response.status}`;
+                    button.disabled = false;
+                }
+            } catch (error) {
+                statusMessage.className = 'status-message status-error';
+                statusMessage.textContent = `✗ Error: ${error.message}`;
+                button.disabled = false;
+            }
+        }
+
+        // Open modal and load rows matching the given failed status
+        let currentFailedStatus = null;
+        async function openFailedModal(statusValue, button) {
+            currentFailedStatus = statusValue;
+            const modal = document.getElementById('failedDeleteModal');
+            const tbody = document.querySelector('#failedDeleteTable tbody');
+            const selectAll = document.getElementById('failedSelectAll');
+            const submitBtn = document.getElementById('failedDeleteSubmit');
+            tbody.innerHTML = '';
+            if (selectAll) selectAll.checked = false;
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit';
+            try {
+                const resp = await fetch(`/api/v2/queue/failed?status=${encodeURIComponent(statusValue)}`);
+                if (!resp.ok) throw new Error(`Server returned ${resp.status}`);
+                const data = await resp.json();
+                const items = (data && data.data) || [];
+                if (!items || items.length === 0) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = '<td colspan="5" class="no-data">No matching records</td>';
+                    tbody.appendChild(tr);
+                } else {
+                    items.forEach(item => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><input type="checkbox" class="failed-delete-checkbox" data-guid="${item.file_guid}"></td>
+                            <td>${item.input_file_name || ''}</td>
+                            <td>${item.worker || ''}</td>
+                            <td>${item.directory_path || ''}</td>
+                            <td class="time-added">${item.datetime_pulled ? item.datetime_pulled.replace('T',' ').slice(0,16) : '—'}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to load failed items:', err);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="5" class="no-data">Failed to load items: ${err.message}</td>`;
+                tbody.appendChild(tr);
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function closeFailedModal() {
+            const modal = document.getElementById('failedDeleteModal');
+            modal.classList.add('hidden');
+            const tbody = document.querySelector('#failedDeleteTable tbody');
+            if (tbody) tbody.innerHTML = '';
+            currentFailedStatus = null;
+        }
+
+        function toggleFailedSelectAll(cb) {
+            const boxes = Array.from(document.querySelectorAll('.failed-delete-checkbox'));
+            boxes.forEach(b => b.checked = cb.checked);
+        }
+
+        async function submitFailedDelete() {
+            const submitBtn = document.getElementById('failedDeleteSubmit');
+            const boxes = Array.from(document.querySelectorAll('.failed-delete-checkbox:checked'));
+            if (boxes.length === 0) {
+                alert('Select at least one row to delete.');
+                return;
+            }
+            const guids = boxes.map(b => b.dataset.guid).filter(Boolean);
+            if (guids.length === 0) {
+                alert('No valid GUIDs selected.');
+                return;
+            }
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Deleting...';
+            try {
+                const resp = await fetch('/api/v2/queue/delete-errors', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: currentFailedStatus, guids })
+                });
+                const data = await resp.json().catch(() => ({}));
+                if (resp.ok) {
+                    alert(`Successfully deleted ${data.deleted_count || guids.length} records. Refreshing...`);
+                    location.reload();
+                } else {
+                    alert(`Delete failed: ${data.error || resp.status}`);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit';
+                }
+            } catch (err) {
+                alert(`Error: ${err.message}`);
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setupSortableTables();
+            setupDirectorySelection();
+        });
+    </script>
+</body>
+</html>
