@@ -49,7 +49,8 @@ Boilest is a two step pipeline:
 - Go through a series of pre-flight checks:
     - Validate that the video file still exists
     - Validate that it's the same video file that was previously scanned
-- Assuming pre-flight checks pass, encode the video (this does not affect the source file yet)
+- Assuming pre-flight checks pass
+    - Encode the video (this does not affect the source file yet)
 - Assuming encoding the video is sucsesful, go through a series of post-flight checks:
     - Validate that the encoded file in the temp directory exists
     - Validate the integrity of the video (no sense in replacing source if the encoded video file is broken)
