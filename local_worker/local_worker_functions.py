@@ -385,6 +385,32 @@ def run_ffmpeg(before_file_size_file_path, ffmpeg_command, templorary_file_path,
         try:
             for line in process.stdout:
                 logging.info(line.rstrip())
+
+                # ffmpeg status lines include "fps=..."; stop if it drops too low.
+                fps_match = re.search(r"\bfps=\s*([0-9]*\.?[0-9]+)", line)
+                if fps_match:
+                    try:
+                        current_fps = float(fps_match.group(1))
+                        if current_fps < 24:
+                            logging.warning(f"ffmpeg fps dropped below threshold: {current_fps} < 24; stopping process")
+                            try:
+                                process.terminate()
+                                try:
+                                    process.wait(timeout=10)
+                                    logging.info("ffmpeg terminated gracefully due to low fps")
+                                except subprocess.TimeoutExpired:
+                                    logging.warning("ffmpeg did not terminate gracefully after low fps, force killing")
+                                    process.kill()
+                                    process.wait(timeout=5)
+                                    logging.info("ffmpeg killed due to low fps")
+                            except Exception as kill_exc:
+                                logging.error(f"Failed to terminate/kill ffmpeg due to low fps: {kill_exc}")
+                                return False, str(kill_exc)
+                            return False, f"Stopped: fps below threshold ({current_fps} < 24)"
+                    except ValueError:
+                        pass
+
+                # Stop ffmpeg is told to stop by manager 
                 if file_guid:
                     try:
                         if file_should_stop(file_guid):
